@@ -44,6 +44,9 @@ interface State {
   achievements: string[];
   pkWins: number;
   visitsSent: number;
+  dailyLoginDay: number;
+  lastLoginDate: string;
+  anniversaries: Array<{ id: string; label: string; date: string; recurring: boolean; emoji: string }>;
   notice: typeof NOTICE;
 
   login: (role: Role) => void;
@@ -68,6 +71,9 @@ interface State {
   checkAchievements: () => void;
   recordPkWin: () => void;
   recordVisit: () => void;
+  claimDailyBonus: () => { claimed: boolean; day?: number; reward?: string };
+  addAnniversary: (label: string, date: string, recurring: boolean, emoji: string) => void;
+  removeAnniversary: (id: string) => void;
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -122,6 +128,9 @@ export const useGame = create<State>()(
       achievements: [],
       pkWins: 0,
       visitsSent: 0,
+      dailyLoginDay: 0,
+      lastLoginDate: "",
+      anniversaries: [],
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -315,6 +324,70 @@ export const useGame = create<State>()(
 
       recordPkWin: () => set({ pkWins: get().pkWins + 1 }),
       recordVisit: () => set({ visitsSent: get().visitsSent + 1 }),
+
+      claimDailyBonus: () => {
+        const today = new Date().toISOString().slice(0, 10);
+        if (get().lastLoginDate === today) return { claimed: false };
+
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        const continuous = get().lastLoginDate === yesterday;
+        const nextDay = continuous ? (get().dailyLoginDay % 7) + 1 : 1;
+
+        // 根據 DAILY_BONUSES[nextDay-1] 發獎
+        const bonus = [
+          { coins: 10 },
+          { coins: 20 },
+          { card: true },
+          { coins: 30, xp: 10 },
+          { coins: 50 },
+          { petBoost: 5 },
+          { coins: 100, xp: 30, card: true },
+        ][nextDay - 1];
+
+        let rewardLabel: string[] = [];
+        if (bonus.coins) {
+          set({ couple: { ...get().couple, coins: get().couple.coins + bonus.coins } });
+          rewardLabel.push(`+${bonus.coins} 金幣`);
+        }
+        if (bonus.xp) {
+          const nextLove = get().couple.loveIndex + bonus.xp;
+          const nextLevel = Math.max(get().couple.kingdomLevel, Math.floor(nextLove / 50) + 1);
+          set({ couple: { ...get().couple, loveIndex: nextLove, kingdomLevel: nextLevel } });
+          rewardLabel.push(`+${bonus.xp} 愛意`);
+        }
+        if (bonus.card) {
+          const uncollected = get().codex.filter((c) => !c.obtainedAt);
+          if (uncollected.length) {
+            const pick = uncollected[Math.floor(Math.random() * uncollected.length)];
+            set({
+              codex: get().codex.map((c) =>
+                c.id === pick.id ? { ...c, obtainedAt: today } : c,
+              ),
+            });
+            rewardLabel.push(`${pick.emoji} ${pick.rarity} 卡`);
+          }
+        }
+        if (bonus.petBoost) {
+          const attrs = get().pet.attrs;
+          const boosted = Object.fromEntries(
+            Object.entries(attrs).map(([k, v]) => [k, Math.min(100, v + bonus.petBoost!)]),
+          ) as typeof attrs;
+          set({ pet: { ...get().pet, attrs: boosted } });
+          rewardLabel.push(`寵物全屬性 +${bonus.petBoost}`);
+        }
+
+        set({ lastLoginDate: today, dailyLoginDay: nextDay });
+        return { claimed: true, day: nextDay, reward: rewardLabel.join("、") };
+      },
+
+      addAnniversary: (label, date, recurring, emoji) => {
+        const id = uid();
+        set({ anniversaries: [...get().anniversaries, { id, label, date, recurring, emoji }] });
+      },
+
+      removeAnniversary: (id) => {
+        set({ anniversaries: get().anniversaries.filter((a) => a.id !== id) });
+      },
 
       resetAllData: () => {
         // 清掉所有 persist 並重新 hydrate → 等同首次使用

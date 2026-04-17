@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { isSupabaseEnabled } from "@/lib/auth";
+// useGame used inside AnniversarySection component
 
 export default function SettingsPage() {
   const couple = useGame((s) => s.couple);
@@ -126,6 +127,64 @@ function Field({ label, value, onChange, onBlur }: { label: string; value: strin
         onBlur={onBlur}
         className="mt-1 w-full border-2 border-empire-cloud rounded-xl px-3 py-2 focus:outline-none focus:border-empire-sky"
       />
+    </div>
+  );
+}
+
+function AnniversarySection() {
+  const anniversaries = useGame((s) => s.anniversaries);
+  const addAnniversary = useGame((s) => s.addAnniversary);
+  const removeAnniversary = useGame((s) => s.removeAnniversary);
+  const [label, setLabel] = useState("");
+  const [date, setDate] = useState("");
+  const [emoji, setEmoji] = useState("💝");
+  const [recurring, setRecurring] = useState(true);
+
+  return (
+    <div className="card p-5">
+      <h3 className="font-bold mb-3">💎 紀念日</h3>
+      <div className="space-y-2 mb-3">
+        {anniversaries.map((a) => (
+          <div key={a.id} className="flex items-center gap-2 p-2 rounded-lg bg-empire-mist">
+            <div className="text-xl">{a.emoji}</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-sm truncate">{a.label}</div>
+              <div className="text-xs text-empire-mute">{a.date}{a.recurring ? " · 每年" : ""}</div>
+            </div>
+            <button onClick={() => removeAnniversary(a.id)} className="text-empire-mute hover:text-empire-crimson text-sm">🗑️</button>
+          </div>
+        ))}
+        {anniversaries.length === 0 && (
+          <p className="text-xs text-empire-mute text-center py-2">還沒有紀念日，加一個試試</p>
+        )}
+      </div>
+      <div className="grid grid-cols-6 gap-1.5 mb-2">
+        {["💝", "💎", "🎂", "🌸", "💍", "🎆"].map((e) => (
+          <button key={e} onClick={() => setEmoji(e)}
+            className={`p-1.5 rounded-lg text-xl ${emoji === e ? "bg-empire-cloud" : "bg-white"}`}>
+            {e}
+          </button>
+        ))}
+      </div>
+      <input value={label} onChange={(e) => setLabel(e.target.value.slice(0, 30))}
+        placeholder="標題 (e.g. 初次相識)" className="w-full border-2 border-empire-cloud rounded-lg px-2 py-1.5 text-sm mb-2" />
+      <div className="flex gap-2 mb-2">
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+          className="flex-1 border-2 border-empire-cloud rounded-lg px-2 py-1.5 text-sm" />
+        <label className="flex items-center gap-1 text-xs">
+          <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} /> 每年
+        </label>
+      </div>
+      <button
+        onClick={() => {
+          if (!label || !date) return;
+          addAnniversary(label, date, recurring, emoji);
+          setLabel(""); setDate("");
+        }}
+        className="btn-primary w-full py-2 text-sm font-semibold"
+      >
+        + 新增紀念日
+      </button>
     </div>
   );
 }

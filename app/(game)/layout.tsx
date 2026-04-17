@@ -14,6 +14,7 @@ const TABS = [
   { href: "/exchange",    label: "國庫兌換", icon: "💰" },
   { href: "/vault",       label: "我的寶庫", icon: "🎁" },
   { href: "/history",     label: "歷程紀錄", icon: "📖" },
+  { href: "/timeline",    label: "時間軸",   icon: "📅" },
   { href: "/pet",         label: "愛之寵物", icon: "🐣" },
   { href: "/codex",       label: "記憶圖鑑", icon: "🖼️" },
   { href: "/island",      label: "帝國島嶼", icon: "🏝️" },

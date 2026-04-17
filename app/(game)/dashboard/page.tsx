@@ -5,6 +5,7 @@ import { useGame } from "@/lib/store";
 import { titleByLevel, PET_STAGE_EMOJI, PET_STAGE_LABEL } from "@/lib/utils";
 import { PASSIVE_SKILLS, isSpecialDay, SPECIAL_DAY_LABEL, SPECIAL_DAY_MULTIPLIER } from "@/lib/passive";
 import { AttributeRadar } from "@/components/AttributeRadar";
+import { DailyBonusModal } from "@/components/DailyBonusModal";
 import Link from "next/link";
 
 export default function DashboardPage() {
@@ -58,6 +59,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4">
+      <DailyBonusModal />
       {/* 特別日橫幅 */}
       {special && (
         <div className="card p-4 bg-gradient-to-r from-rose-100 via-amber-100 to-rose-100 border-2 border-empire-berry/40 animate-pop">

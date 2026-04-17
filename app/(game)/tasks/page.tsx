@@ -5,6 +5,7 @@ import { useGame } from "@/lib/store";
 import { CATEGORY_LABEL, ATTR_LABEL } from "@/lib/utils";
 import type { Task, TaskDirection } from "@/lib/types";
 import { TaskEditor } from "@/components/TaskEditor";
+import { RejectModal } from "@/components/RejectModal";
 
 const DIRECTION_BADGE: Record<TaskDirection, { label: string; className: string }> = {
   queenToPrince: { label: "阿紅→阿藍", className: "bg-rose-100 text-rose-700" },
@@ -20,13 +21,15 @@ export default function TasksPage() {
   const reviewSubmission = useGame((s) => s.reviewSubmission);
   const removeTask = useGame((s) => s.removeTask);
   const role = useGame((s) => s.role);
-  // 等級提示：哪些任務即將解鎖
-  const nextLockedTask = tasks.find((t) => t.unlockLevel && t.unlockLevel > couple.kingdomLevel);
   const [mode, setMode] = useState<"submit" | "review">("submit");
   const [editor, setEditor] = useState(false);
-  const [just, setJust] = useState<string | null>(null);
+  const [justSent, setJustSent] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
 
-  // 哪些任務「我可以申報」？
+  const nextLockedTask = tasks.find((t) => t.unlockLevel && t.unlockLevel > couple.kingdomLevel);
+  const myNickname = role === "queen" ? couple.queen.nickname : couple.prince.nickname;
+  const partnerNickname = role === "queen" ? couple.prince.nickname : couple.queen.nickname;
+
   const canSubmit = (t: Task) => {
     if (t.unlockLevel && couple.kingdomLevel < t.unlockLevel) return false;
     if (t.direction === "together") return true;
@@ -35,37 +38,50 @@ export default function TasksPage() {
     return false;
   };
 
+  // 每個任務是否「有我剛送出未審」的申報
+  const pendingByTask = useMemo(() => {
+    const m = new Map<string, typeof submissions[number]>();
+    for (const s of submissions) {
+      if (s.status === "pending" && s.submittedBy === role) m.set(s.taskId, s);
+    }
+    return m;
+  }, [submissions, role]);
+
   const grouped = useMemo(() => {
     const m: Record<string, Task[]> = {};
     for (const t of tasks) (m[t.category] ||= []).push(t);
     return m;
   }, [tasks]);
 
-  // 我要審核的申報（對方做的，我是准奏方）
-  const myPending = submissions.filter((s) => {
-    if (s.status !== "pending") return false;
-    const t = tasks.find((x) => x.id === s.taskId);
-    if (!t) return s.submittedBy !== role; // 找不到任務，預設對方送的我來審
-    if (t.direction === "together") return s.submittedBy !== role;
-    if (t.direction === "queenToPrince") return role === "prince";
-    if (t.direction === "princeToQueen") return role === "queen";
-    return false;
-  });
+  // 審核區：在 demo 模式下顯示所有 pending (因為兩人實際上還沒真正分開裝置)
+  const reviewList = submissions.filter((s) => s.status === "pending");
+  const pendingMineCount = submissions.filter((s) => s.status === "pending" && s.submittedBy === role).length;
+  const pendingPartnerCount = submissions.filter((s) => s.status === "pending" && s.submittedBy !== role).length;
 
   const handleSubmit = (id: string) => {
     submitTask(id);
-    setJust(id);
-    setTimeout(() => setJust(null), 1200);
+    setJustSent(id);
+    setTimeout(() => setJustSent(null), 2400);
   };
 
   return (
     <div className="space-y-4">
+      {/* 使用說明橫幅 */}
+      <div className="card p-4 bg-empire-cream/60 border border-empire-gold/30 text-sm">
+        <div className="font-bold text-empire-ink mb-1">🔔 任務流程</div>
+        <div className="text-empire-mute text-xs leading-relaxed">
+          1️⃣ 點任務右側 <b className="text-empire-sky">「送出審核」</b> → 通知對方<br />
+          2️⃣ 對方到「審核」分頁按 <b className="text-emerald-600">准奏</b> 或 <b className="text-rose-500">駁回</b><br />
+          3️⃣ 准奏 → 金幣入帳 + 愛意 +{5}~{15} XP + 有機率掉記憶卡
+        </div>
+      </div>
+
       <div className="card p-2 flex gap-1">
         <TabBtn active={mode === "submit"} onClick={() => setMode("submit")}>
-          申報任務
+          申報任務 {pendingMineCount > 0 && <span className="ml-1 text-xs bg-empire-sky/20 px-1.5 rounded-full">{pendingMineCount} 待審</span>}
         </TabBtn>
         <TabBtn active={mode === "review"} onClick={() => setMode("review")}>
-          審核 ({myPending.length})
+          審核 ({reviewList.length})
         </TabBtn>
       </div>
 
@@ -92,34 +108,61 @@ export default function TasksPage() {
               <div className="space-y-2">
                 {items.map((t) => {
                   const submittable = canSubmit(t);
+                  const alreadyPending = pendingByTask.has(t.id);
                   const badge = DIRECTION_BADGE[t.direction];
+                  const locked = !!(t.unlockLevel && couple.kingdomLevel < t.unlockLevel);
+
                   return (
-                    <div key={t.id} className={`flex items-center gap-3 p-3 rounded-xl bg-white border border-empire-cloud ${
-                      submittable ? "hover:border-empire-sky/50" : "opacity-65"
-                    }`}>
-                      {submittable ? (
-                        <input type="checkbox" className="w-5 h-5 accent-empire-sky shrink-0" onChange={() => handleSubmit(t.id)} />
-                      ) : (
-                        <span className="w-5 h-5 shrink-0 flex items-center justify-center text-xs text-empire-mute">⏳</span>
-                      )}
+                    <div
+                      key={t.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition ${
+                        alreadyPending ? "bg-empire-cream/60 border-empire-gold/40"
+                        : submittable ? "bg-white border-empire-cloud hover:border-empire-sky/50"
+                        : "bg-white border-empire-cloud opacity-55"
+                      }`}
+                    >
                       <div className="flex-1 min-w-0">
                         <div className="font-medium flex items-center gap-1.5 flex-wrap">
                           <span className="truncate">{t.title}</span>
                           {t.custom && <span className="tag bg-empire-cream text-empire-gold text-[10px] border-empire-gold/40">自訂</span>}
-                          {t.unlockLevel && couple.kingdomLevel < t.unlockLevel && (
+                          {locked && (
                             <span className="tag bg-slate-100 text-slate-500 text-[10px] border-slate-300">🔒 Lv.{t.unlockLevel}</span>
                           )}
                         </div>
-                        <div className="text-xs text-empire-mute flex gap-1.5 flex-wrap mt-0.5">
+                        <div className="text-xs text-empire-mute flex gap-1.5 flex-wrap mt-0.5 items-center">
                           <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${badge.className}`}>{badge.label}</span>
                           <span>+{ATTR_LABEL[t.attribute]} · XP {t.systemXp}</span>
+                          <span className="text-empire-gold font-bold">💰 {t.reward}</span>
                         </div>
                       </div>
-                      <div className="text-empire-gold font-semibold text-sm shrink-0">💰 {t.reward}</div>
-                      {t.custom && (
-                        <button onClick={() => removeTask(t.id)} className="text-empire-mute hover:text-empire-crimson text-sm">🗑️</button>
-                      )}
-                      {just === t.id && <span className="text-xs text-emerald-600 font-semibold animate-pulse">✓</span>}
+
+                      <div className="shrink-0 flex items-center gap-2">
+                        {alreadyPending ? (
+                          <span className="text-xs font-semibold text-empire-gold px-3 py-2 rounded-lg bg-white border border-empire-gold/40">
+                            ⏳ 等 {partnerNickname} 審
+                          </span>
+                        ) : justSent === t.id ? (
+                          <span className="text-xs font-semibold text-emerald-700 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 animate-pop">
+                            ✓ 已送出！
+                          </span>
+                        ) : locked ? (
+                          <span className="text-xs text-slate-400 px-3 py-2">尚未解鎖</span>
+                        ) : !submittable ? (
+                          <span className="text-xs text-empire-mute px-3 py-2">
+                            等對方做
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleSubmit(t.id)}
+                            className="btn-primary px-3 py-2 text-xs font-semibold"
+                          >
+                            送出審核
+                          </button>
+                        )}
+                        {t.custom && (
+                          <button onClick={() => removeTask(t.id)} className="text-empire-mute hover:text-empire-crimson text-sm">🗑️</button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -128,48 +171,66 @@ export default function TasksPage() {
           ))}
         </div>
       ) : (
-        <div className="card p-5">
-          <h3 className="font-bold mb-3">待審核申報</h3>
-          {myPending.length === 0 ? (
-            <p className="text-sm text-empire-mute text-center py-8">目前沒有對方送來等你准奏的任務</p>
-          ) : (
-            <div className="space-y-2">
-              {myPending.map((s) => (
-                <div key={s.id} className="p-3 rounded-xl border border-empire-cloud">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium">{s.taskTitle}</div>
-                      <div className="text-xs text-empire-mute mt-0.5">
-                        {s.submittedBy === "queen" ? couple.queen.nickname : couple.prince.nickname} · {s.createdAt}
+        <div className="space-y-3">
+          <div className="card p-4 text-xs text-empire-mute">
+            你是 <b className="text-empire-ink">{myNickname}</b>。
+            {pendingPartnerCount > 0 ? `對方送來 ${pendingPartnerCount} 筆待你准奏；` : ""}
+            {pendingMineCount > 0 ? `你送出 ${pendingMineCount} 筆等對方審核 (demo 模式下你也可以幫對方按)；` : ""}
+            {reviewList.length === 0 && "目前沒有待審的任務。到「申報任務」分頁勾選任務送審。"}
+          </div>
+
+          {reviewList.length > 0 && (
+            <div className="card p-5">
+              <h3 className="font-bold mb-3">待審核 ({reviewList.length})</h3>
+              <div className="space-y-2">
+                {reviewList.map((s) => {
+                  const from = s.submittedBy === "queen" ? couple.queen.nickname : couple.prince.nickname;
+                  const mine = s.submittedBy === role;
+                  return (
+                    <div key={s.id} className={`p-3 rounded-xl border ${mine ? "bg-empire-cream/40 border-empire-gold/30" : "border-empire-cloud"}`}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-medium">{s.taskTitle}</div>
+                          <div className="text-xs text-empire-mute mt-0.5">
+                            <b>{from}</b> 送出 · {s.createdAt}{mine && " (你自己送的)"}
+                          </div>
+                        </div>
+                        <div className="text-empire-gold font-semibold text-sm">💰 {s.reward}</div>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => reviewSubmission(s.id, true)}
+                          className="btn bg-empire-sky text-white px-4 py-1.5 text-sm flex-1"
+                        >
+                          准奏 ✓
+                        </button>
+                        <button
+                          onClick={() => setRejectTarget({ id: s.id, title: s.taskTitle })}
+                          className="btn bg-rose-300 text-white px-4 py-1.5 text-sm flex-1"
+                        >
+                          駁回 ✗
+                        </button>
                       </div>
                     </div>
-                    <div className="text-empire-gold font-semibold text-sm">💰 {s.reward}</div>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => reviewSubmission(s.id, true)}
-                      className="btn bg-empire-sky text-white px-4 py-1.5 text-sm flex-1"
-                    >
-                      准奏 ✓
-                    </button>
-                    <button
-                      onClick={() => reviewSubmission(s.id, false, "審核駁回")}
-                      className="btn bg-rose-300 text-white px-4 py-1.5 text-sm flex-1"
-                    >
-                      駁回 ✗
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
           )}
-          <p className="text-xs text-empire-mute mt-4">
-            你是 <b>{role === "queen" ? couple.queen.nickname : couple.prince.nickname}</b>，負責審核對方送來的申報
-          </p>
         </div>
       )}
 
       {editor && <TaskEditor onClose={() => setEditor(false)} />}
+      {rejectTarget && (
+        <RejectModal
+          taskTitle={rejectTarget.title}
+          onConfirm={(reason) => {
+            reviewSubmission(rejectTarget.id, false, reason);
+            setRejectTarget(null);
+          }}
+          onClose={() => setRejectTarget(null)}
+        />
+      )}
     </div>
   );
 }
