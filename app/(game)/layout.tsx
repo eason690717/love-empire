@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useGame } from "@/lib/store";
 import { titleByLevel, SEASON_LABEL, season } from "@/lib/utils";
 import { InlineRename } from "@/components/InlineRename";
+import { OnboardingModal } from "@/components/OnboardingModal";
 
 const TABS = [
   { href: "/dashboard",   label: "儀表板",   icon: "📊" },
@@ -17,9 +18,11 @@ const TABS = [
   { href: "/codex",       label: "記憶圖鑑", icon: "🖼️" },
   { href: "/island",      label: "帝國島嶼", icon: "🏝️" },
   { href: "/rituals",     label: "每日儀式", icon: "🌅" },
+  { href: "/plaza",       label: "帝國廣場", icon: "🌸" },
   { href: "/leaderboard", label: "情侶排行", icon: "🏆" },
   { href: "/friends",     label: "好友情侶", icon: "👫" },
   { href: "/alliance",    label: "聯盟",     icon: "🤝" },
+  { href: "/pk",          label: "情侶 PK",  icon: "⚔️" },
 ];
 
 export default function GameLayout({ children }: { children: React.ReactNode }) {
@@ -45,6 +48,7 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen pb-24">
+      <OnboardingModal />
       {/* 聖旨公告 */}
       <div className="max-w-3xl mx-auto px-4 pt-5">
         <div className="card bg-empire-cream/80 border-empire-gold/30 p-4">

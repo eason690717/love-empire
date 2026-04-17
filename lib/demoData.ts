@@ -1,20 +1,29 @@
 import type {
   Task, Submission, Reward, Redemption, MemoryCard, Pet,
-  IslandItem, Ritual, Streak, Couple, CoupleSummary, Alliance, Friendship, Gift,
+  IslandItem, Ritual, Streak, Couple, CoupleSummary, Alliance, Friendship, Gift, Moment,
 } from "./types";
 
+// 隨機 6 碼邀請碼
+function genInviteCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let c = "";
+  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  return c;
+}
+
+/** 新使用者 couple：Lv.1，一切歸零。示範資料僅用於其他情侶 (排行榜 / 廣場) */
 export const INITIAL_COUPLE: Couple = {
   id: "me",
-  name: "波波帝國",
-  inviteCode: "LV4817",
-  kingdomLevel: 12,
-  coins: 530,
-  title: "熱戀勇者",
+  name: "新手小窩",
+  inviteCode: genInviteCode(),
+  kingdomLevel: 1,
+  coins: 0,
+  title: "見習情人",
   queen: { nickname: "阿紅" },
   prince: { nickname: "阿藍" },
-  bio: "一起成為神話級靈魂伴侶 💫",
+  bio: "",
   privacy: "public",
-  loveIndex: 2340,
+  loveIndex: 0,
 };
 
 export const INITIAL_TASKS: Task[] = [
@@ -38,16 +47,8 @@ export const INITIAL_TASKS: Task[] = [
   { id: "t14", title: "互相讚美 10 句 💕 (合作)", category: "coop", reward: 100, attribute: "communication", coop: true },
 ];
 
-export const INITIAL_SUBMISSIONS: Submission[] = [
-  { id: "s1", taskId: "t9", taskTitle: "心情不好馬上出現", reward: 200, submittedBy: "prince", status: "approved", createdAt: "2026/4/11 上午 2:33:59", reviewedAt: "2026/4/11 上午 2:40" },
-  { id: "s2", taskId: "t7", taskTitle: "說好話", reward: 10, submittedBy: "prince", status: "approved", createdAt: "2026/4/11 上午 2:32:49" },
-  { id: "s3", taskId: "t1", taskTitle: "丟衣服下去洗", reward: 10, submittedBy: "prince", status: "rejected", createdAt: "2026/4/11 上午 2:32:49", note: "其實是我自己洗的 😂" },
-  { id: "s4", taskId: "t2", taskTitle: "摺被子整理床", reward: 10, submittedBy: "prince", status: "rejected", createdAt: "2026/4/11 上午 2:32:49" },
-  { id: "s5", taskId: "t3", taskTitle: "幫忙整理 & 倒垃圾", reward: 30, submittedBy: "prince", status: "approved", createdAt: "2026/4/11 上午 2:32:49" },
-  { id: "s6", taskId: "t5", taskTitle: "幫忙煮飯/買飯/飲料", reward: 50, submittedBy: "prince", status: "approved", createdAt: "2026/4/11 上午 2:32:49" },
-  { id: "s7", taskId: "t4", taskTitle: "幫忙拿去烘衣服", reward: 30, submittedBy: "prince", status: "approved", createdAt: "2026/4/11 上午 2:32:49" },
-  { id: "s8", taskId: "t6", taskTitle: "載我上下班", reward: 200, submittedBy: "prince", status: "approved", createdAt: "2026/4/11 上午 2:32:49" },
-];
+/** 新使用者的申報紀錄：空的 */
+export const INITIAL_SUBMISSIONS: Submission[] = [];
 
 export const INITIAL_REWARDS: Reward[] = [
   { id: "r1", title: "演唱會一場（含熱舞）", cost: 100, icon: "🎤" },
@@ -60,42 +61,37 @@ export const INITIAL_REWARDS: Reward[] = [
   { id: "r8", title: "按摩 30 分鐘券", cost: 400, icon: "💆" },
 ];
 
-export const INITIAL_REDEMPTIONS: Redemption[] = [
-  { id: "rd1", rewardId: "r2", rewardTitle: "代替洗碗券", cost: 250, redeemedBy: "queen", status: "unused", createdAt: "2026/4/14" },
-];
+/** 新使用者的兌換紀錄：空的 */
+export const INITIAL_REDEMPTIONS: Redemption[] = [];
 
+/** 新使用者的寵物：蛋階段，屬性全 0，等情侶完成任務餵養 */
 export const INITIAL_PET: Pet = {
-  name: "波嚕",
-  stage: 2,
-  attrs: { intimacy: 68, communication: 52, romance: 74, care: 85, surprise: 41 },
+  name: "小小蛋",
+  stage: 0,
+  attrs: { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
   lastFedAt: new Date().toISOString(),
 };
 
+/** 圖鑑清單本身是定義，每個項目 obtainedAt:null 代表未收集。新使用者全部未收集 */
 export const INITIAL_CODEX: MemoryCard[] = [
-  { id: "c1", name: "第一次牽手", rarity: "SSR", theme: "romance", emoji: "🤝", obtainedAt: "2026-02-14" },
-  { id: "c2", name: "週末早午餐", rarity: "N", theme: "daily", emoji: "🥐", obtainedAt: "2026-04-05" },
-  { id: "c3", name: "共撐一把傘", rarity: "R", theme: "daily", emoji: "☂️", obtainedAt: "2026-04-10" },
-  { id: "c4", name: "深夜談心", rarity: "SR", theme: "romance", emoji: "🌙", obtainedAt: "2026-04-11" },
-  { id: "c5", name: "一起煮飯", rarity: "R", theme: "daily", emoji: "🍳", obtainedAt: "2026-04-12" },
+  { id: "c1", name: "第一次牽手", rarity: "SSR", theme: "romance", emoji: "🤝", obtainedAt: null },
+  { id: "c2", name: "週末早午餐", rarity: "N", theme: "daily", emoji: "🥐", obtainedAt: null },
+  { id: "c3", name: "共撐一把傘", rarity: "R", theme: "daily", emoji: "☂️", obtainedAt: null },
+  { id: "c4", name: "深夜談心", rarity: "SR", theme: "romance", emoji: "🌙", obtainedAt: null },
+  { id: "c5", name: "一起煮飯", rarity: "R", theme: "daily", emoji: "🍳", obtainedAt: null },
   { id: "c6", name: "情人節限定", rarity: "SSR", theme: "festival", emoji: "💝", obtainedAt: null },
   { id: "c7", name: "京都旅行", rarity: "SR", theme: "travel", emoji: "🏯", obtainedAt: null },
   { id: "c8", name: "生日蛋糕", rarity: "SR", theme: "festival", emoji: "🎂", obtainedAt: null },
   { id: "c9", name: "第一場雪", rarity: "R", theme: "travel", emoji: "❄️", obtainedAt: null },
-  { id: "c10", name: "午後散步", rarity: "N", theme: "daily", emoji: "🚶", obtainedAt: "2026-04-09" },
-  { id: "c11", name: "貓咪照護日", rarity: "R", theme: "daily", emoji: "🐈", obtainedAt: "2026-04-13" },
+  { id: "c10", name: "午後散步", rarity: "N", theme: "daily", emoji: "🚶", obtainedAt: null },
+  { id: "c11", name: "貓咪照護日", rarity: "R", theme: "daily", emoji: "🐈", obtainedAt: null },
   { id: "c12", name: "神話級告白", rarity: "SSR", theme: "romance", emoji: "💍", obtainedAt: null },
 ];
 
+/** 新使用者的島嶼：只有一座城堡 + 一隻貓咪 (新手禮物)，其他家具要自己買 */
 export const INITIAL_ISLAND: IslandItem[] = [
   { id: "i1", catalogId: "castle", label: "城堡", emoji: "🏰", x: 50, y: 35 },
-  { id: "i2", catalogId: "tree_sakura", label: "櫻花樹", emoji: "🌸", x: 20, y: 55 },
-  { id: "i3", catalogId: "tree_sakura", label: "櫻花樹", emoji: "🌸", x: 78, y: 52 },
-  { id: "i4", catalogId: "fountain", label: "愛心噴泉", emoji: "⛲", x: 50, y: 68 },
-  { id: "i5", catalogId: "bench", label: "長椅", emoji: "🪑", x: 35, y: 78 },
-  { id: "i6", catalogId: "bench", label: "長椅", emoji: "🪑", x: 65, y: 78 },
-  { id: "i7", catalogId: "cat", label: "城堡貓", emoji: "🐈", x: 58, y: 45 },
-  { id: "i8", catalogId: "flower", label: "花圃", emoji: "🌷", x: 15, y: 80 },
-  { id: "i9", catalogId: "flower", label: "花圃", emoji: "🌷", x: 82, y: 80 },
+  { id: "i2", catalogId: "cat", label: "新手貓", emoji: "🐈", x: 58, y: 45 },
 ];
 
 export const ISLAND_SHOP: { id: string; label: string; emoji: string; price: number }[] = [
@@ -115,10 +111,11 @@ export const INITIAL_RITUAL: Ritual = {
   night: false,
 };
 
+/** 新使用者的連擊：從 0 開始 */
 export const INITIAL_STREAK: Streak = {
-  current: 14,
-  longest: 27,
-  lastDate: new Date().toISOString().slice(0, 10),
+  current: 0,
+  longest: 0,
+  lastDate: "",
 };
 
 export const LEADERBOARD: CoupleSummary[] = [
@@ -129,26 +126,27 @@ export const LEADERBOARD: CoupleSummary[] = [
   { id: "c_05", name: "美食帝國", kingdomLevel: 22, loveIndex: 5980, streak: 38, codexCompletion: 61, weeklyTasks: 28, title: "愛的大師", emoji: "🍜" },
   { id: "c_06", name: "咖啡與書", kingdomLevel: 18, loveIndex: 4421, streak: 22, codexCompletion: 54, weeklyTasks: 24, title: "熱戀勇者", emoji: "☕" },
   { id: "c_07", name: "旅行計畫局", kingdomLevel: 15, loveIndex: 3670, streak: 18, codexCompletion: 48, weeklyTasks: 21, title: "熱戀勇者", emoji: "✈️" },
-  { id: "me",   name: "波波帝國",     kingdomLevel: 12, loveIndex: 2340, streak: 14, codexCompletion: 42, weeklyTasks: 18, title: "熱戀勇者", emoji: "👑", isSelf: true },
+  { id: "me",   name: "新手小窩",     kingdomLevel: 1,  loveIndex: 0,    streak: 0,  codexCompletion: 0,  weeklyTasks: 0,  title: "見習情人", emoji: "🌱", isSelf: true },
   { id: "c_09", name: "新手情侶",     kingdomLevel: 8,  loveIndex: 1420, streak: 10, codexCompletion: 30, weeklyTasks: 14, title: "見習情人", emoji: "🌱" },
   { id: "c_10", name: "阿貓阿狗",     kingdomLevel: 5,  loveIndex: 890,  streak: 6,  codexCompletion: 18, weeklyTasks: 9,  title: "見習情人", emoji: "🐾" },
 ];
 
-export const FRIEND_COUPLES: Friendship[] = [
-  { coupleId: "c_03", since: "2026-01-12" },
-  { coupleId: "c_06", since: "2026-02-08" },
-  { coupleId: "c_09", since: "2026-04-02" },
-];
+/** 新使用者沒有好友情侶，要自己加 */
+export const FRIEND_COUPLES: Friendship[] = [];
 
+/** 新使用者還沒加入任何聯盟；每個聯盟都有一隻 BOSS 可以合力攻擊 */
 export const ALLIANCES: Alliance[] = [
   {
     id: "a_01",
     name: "神仙眷侶團",
     description: "每週一起挑戰 200 個任務的溫馨聯盟",
-    members: ["me", "c_03", "c_06", "c_09"],
+    members: ["c_03", "c_06", "c_09"],
     weeklyProgress: 128,
     weeklyTarget: 200,
     questTitle: "本週合力完成 200 個任務",
+    bossHp: 650,
+    bossMaxHp: 1000,
+    bossName: "孤單巨龍",
   },
   {
     id: "a_02",
@@ -158,15 +156,27 @@ export const ALLIANCES: Alliance[] = [
     weeklyProgress: 245,
     weeklyTarget: 250,
     questTitle: "本週連擊維持 7 天以上",
+    bossHp: 920,
+    bossMaxHp: 1500,
+    bossName: "拖延症大魔王",
   },
 ];
 
-export const GIFT_INBOX: Gift[] = [
-  { id: "g1", fromCoupleName: "宅宅小窩", type: "card", content: "🌸 春日散步卡 (R)", message: "送給你們！春天到啦～", receivedAt: "2026-04-16", read: false },
-  { id: "g2", fromCoupleName: "咖啡與書", type: "coins", content: "50 金幣", message: "恭喜你們上新手榜！", receivedAt: "2026-04-14", read: true },
+export const INITIAL_MOMENTS: Moment[] = [
+  { id: "m1", coupleId: "c_01", coupleName: "甜蜜蜜帝國", type: "codex_complete", title: "圖鑑破百！", subtitle: "集滿 120 張記憶卡，解鎖傳說圖鑑室", emoji: "📚", createdAt: "2026-04-17 08:20", likes: 48, likedByMe: false, comments: 9 },
+  { id: "m2", coupleId: "c_02", coupleName: "貓奴聯邦", type: "streak", title: "連擊 120 天！", subtitle: "完全沒斷過的甜蜜馬拉松", emoji: "🔥", createdAt: "2026-04-17 07:10", likes: 91, likedByMe: true, comments: 15 },
+  { id: "m3", coupleId: "c_03", coupleName: "宅宅小窩", type: "ssr_card", title: "抽到 SSR 記憶卡", subtitle: "『京都和服散步』入手", emoji: "🌸", createdAt: "2026-04-16 22:45", likes: 32, likedByMe: false, comments: 4 },
+  { id: "m4", coupleId: "c_04", coupleName: "登山夫婦", type: "anniversary", title: "交往 1000 天！", subtitle: "從初見到現在，已經 1000 個日夜", emoji: "💎", createdAt: "2026-04-16 20:00", likes: 127, likedByMe: true, comments: 28 },
+  { id: "m5", coupleId: "c_05", coupleName: "美食帝國", type: "pet_evolve", title: "寵物進化為「傳說」", subtitle: "波嚕兒進化成不死鳳凰", emoji: "🦄", createdAt: "2026-04-16 14:15", likes: 54, likedByMe: false, comments: 11 },
+  { id: "m6", coupleId: "c_06", coupleName: "咖啡與書", type: "level_up", title: "王國升至 Lv.18", subtitle: "晉升「熱戀勇者」稱號", emoji: "👑", createdAt: "2026-04-15 19:30", likes: 18, likedByMe: false, comments: 2 },
+  { id: "m7", coupleId: "c_07", coupleName: "旅行計畫局", type: "alliance_boss", title: "擊敗聯盟 BOSS！", subtitle: "「孤單巨龍」被 4 對情侶聯手擊倒", emoji: "🐲", createdAt: "2026-04-15 12:00", likes: 73, likedByMe: true, comments: 19 },
 ];
 
+/** 新使用者禮物匣：空的 */
+export const GIFT_INBOX: Gift[] = [];
+
+/** 首頁公告：新手鼓勵 */
 export const NOTICE = {
-  title: "4 月不是我的謊言，是我的生日",
-  body: "請大家傳訊息祝我生日快樂！",
+  title: "歡迎來到愛的帝國",
+  body: "從 Lv.1 見習情人開始，一步步變成神話級靈魂伴侶 ✨",
 };

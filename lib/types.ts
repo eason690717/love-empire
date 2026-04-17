@@ -114,6 +114,9 @@ export interface Alliance {
   weeklyProgress: number;
   weeklyTarget: number;
   questTitle: string;
+  bossHp?: number;
+  bossMaxHp?: number;
+  bossName?: string;
 }
 
 export interface Friendship {
@@ -129,4 +132,31 @@ export interface Gift {
   message: string;
   receivedAt: string;
   read: boolean;
+}
+
+export type MomentType =
+  | "pet_evolve"
+  | "ssr_card"
+  | "sr_card"
+  | "streak"
+  | "level_up"
+  | "title_up"
+  | "anniversary"
+  | "alliance_boss"
+  | "codex_complete"
+  | "custom";
+
+export interface Moment {
+  id: string;
+  coupleId: string;
+  coupleName: string;
+  type: MomentType;
+  title: string;
+  subtitle?: string;
+  emoji: string;
+  createdAt: string;
+  likes: number;
+  likedByMe: boolean;
+  comments: number;
+  isSelf?: boolean;
 }

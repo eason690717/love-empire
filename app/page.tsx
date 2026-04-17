@@ -38,8 +38,15 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-empire-cloud/60 text-xs text-empire-mute flex items-center justify-center gap-2">
-          <span className="sprout-dot" /> v0.1 demo · 全部以示範資料運行
+        <div className="mt-8 pt-6 border-t border-empire-cloud/60 text-xs text-empire-mute">
+          <div className="flex items-center justify-center gap-2">
+            <span className="sprout-dot" /> v0.1 alpha · 資料存於你的瀏覽器
+          </div>
+          <div className="mt-3 flex justify-center gap-4">
+            <Link href="/about" className="hover:underline">關於</Link>
+            <Link href="/privacy" className="hover:underline">隱私</Link>
+            <Link href="/terms" className="hover:underline">條款</Link>
+          </div>
         </div>
       </div>
     </main>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useGame } from "@/lib/store";
 
 export default function FriendsPage() {
@@ -34,9 +35,9 @@ export default function FriendsPage() {
                 </div>
               </div>
               <div className="mt-3 flex gap-2">
-                <button className="btn-ghost flex-1 py-1.5 text-sm">👀 參觀島嶼</button>
+                <Link href={`/couples/${c.id}`} className="btn-ghost flex-1 py-1.5 text-sm text-center">👀 參觀</Link>
                 <button onClick={() => sendGift()} className="btn-ghost flex-1 py-1.5 text-sm">🎁 送禮</button>
-                <button className="btn-ghost flex-1 py-1.5 text-sm">⚔️ PK</button>
+                <Link href="/pk" className="btn-ghost flex-1 py-1.5 text-sm text-center">⚔️ PK</Link>
               </div>
             </div>
           ))}

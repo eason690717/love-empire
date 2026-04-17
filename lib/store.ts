@@ -4,12 +4,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
   Couple, Task, Submission, Reward, Redemption, MemoryCard, Pet, IslandItem,
-  Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift,
+  Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType,
 } from "./types";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
-  LEADERBOARD, ALLIANCES, FRIEND_COUPLES, GIFT_INBOX, NOTICE,
+  LEADERBOARD, ALLIANCES, FRIEND_COUPLES, GIFT_INBOX, NOTICE, INITIAL_MOMENTS,
 } from "./demoData";
 
 type Role = "queen" | "prince";
@@ -17,6 +17,7 @@ type Role = "queen" | "prince";
 interface State {
   loggedIn: boolean;
   role: Role;
+  onboardingStep: number; // 0 = not started, 1..N = current step, -1 = finished/skipped
   couple: Couple;
   tasks: Task[];
   submissions: Submission[];
@@ -31,12 +32,18 @@ interface State {
   alliances: Alliance[];
   friends: Friendship[];
   gifts: Gift[];
+  moments: Moment[];
   notice: typeof NOTICE;
 
   login: (role: Role) => void;
   logout: () => void;
   setNickname: (role: Role, nickname: string) => void;
   setKingdomName: (name: string) => void;
+  addMoment: (m: Omit<Moment, "id" | "createdAt" | "likes" | "likedByMe" | "comments" | "coupleId" | "coupleName" | "isSelf">) => void;
+  likeMoment: (id: string) => void;
+  advanceOnboarding: () => void;
+  skipOnboarding: () => void;
+  resetOnboarding: () => void;
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -48,6 +55,7 @@ interface State {
   removeIslandItem: (id: string) => void;
   sendGift: () => void;
   joinAlliance: (id: string) => void;
+  attackBoss: (allianceId: string, damage: number) => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -58,6 +66,7 @@ export const useGame = create<State>()(
     (set, get) => ({
       loggedIn: false,
       role: "queen",
+      onboardingStep: 0,
       couple: INITIAL_COUPLE,
       tasks: INITIAL_TASKS,
       submissions: INITIAL_SUBMISSIONS,
@@ -72,6 +81,7 @@ export const useGame = create<State>()(
       alliances: ALLIANCES,
       friends: FRIEND_COUPLES,
       gifts: GIFT_INBOX,
+      moments: INITIAL_MOMENTS,
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -94,6 +104,41 @@ export const useGame = create<State>()(
         if (!clean) return;
         set({ couple: { ...get().couple, name: clean } });
       },
+
+      addMoment: (m) => {
+        const couple = get().couple;
+        const moment: Moment = {
+          id: uid(),
+          coupleId: couple.id,
+          coupleName: couple.name,
+          createdAt: nowStr(),
+          likes: 0,
+          likedByMe: false,
+          comments: 0,
+          isSelf: true,
+          ...m,
+        };
+        set({ moments: [moment, ...get().moments] });
+      },
+
+      likeMoment: (id) => {
+        set({
+          moments: get().moments.map((m) =>
+            m.id === id
+              ? { ...m, likedByMe: !m.likedByMe, likes: m.likes + (m.likedByMe ? -1 : 1) }
+              : m,
+          ),
+        });
+      },
+
+      advanceOnboarding: () => {
+        const step = get().onboardingStep;
+        if (step === 0) set({ onboardingStep: 1 });
+        else if (step < 0) set({ onboardingStep: 1 });
+        else set({ onboardingStep: step + 1 });
+      },
+      skipOnboarding: () => set({ onboardingStep: -1 }),
+      resetOnboarding: () => set({ onboardingStep: 0 }),
 
       submitTask: (taskId) => {
         const t = get().tasks.find((x) => x.id === taskId);
@@ -119,15 +164,35 @@ export const useGame = create<State>()(
           const s = subs.find((x) => x.id === id)!;
           const task = get().tasks.find((t) => t.id === s.taskId);
           const attr = task?.attribute ?? "intimacy";
+          const prevLove = get().couple.loveIndex;
+          const prevLevel = get().couple.kingdomLevel;
+          const nextLove = prevLove + s.reward;
+          const nextLevel = Math.max(prevLevel, Math.floor(nextLove / 200) + 1);
           set({
-            couple: { ...get().couple, coins: get().couple.coins + s.reward, loveIndex: get().couple.loveIndex + s.reward },
+            couple: {
+              ...get().couple,
+              coins: get().couple.coins + s.reward,
+              loveIndex: nextLove,
+              kingdomLevel: nextLevel,
+            },
             pet: {
               ...get().pet,
               attrs: { ...get().pet.attrs, [attr]: Math.min(100, get().pet.attrs[attr] + 2) },
               lastFedAt: new Date().toISOString(),
             },
           });
-          // 隨機掉落記憶卡 (未收集中挑一張)
+
+          // 升等自動發動態
+          if (nextLevel > prevLevel) {
+            get().addMoment({
+              type: "level_up",
+              title: `王國升至 Lv.${nextLevel}`,
+              subtitle: `累積愛意指數 ${nextLove} ✨`,
+              emoji: "👑",
+            });
+          }
+
+          // 隨機掉落記憶卡
           const uncollected = get().codex.filter((c) => !c.obtainedAt);
           if (uncollected.length && Math.random() < 0.4) {
             const pick = uncollected[Math.floor(Math.random() * uncollected.length)];
@@ -136,6 +201,15 @@ export const useGame = create<State>()(
                 c.id === pick.id ? { ...c, obtainedAt: new Date().toISOString().slice(0, 10) } : c,
               ),
             });
+            // SR / SSR 掉落自動發動態
+            if (pick.rarity === "SSR" || pick.rarity === "SR") {
+              get().addMoment({
+                type: pick.rarity === "SSR" ? "ssr_card" : "sr_card",
+                title: `抽到 ${pick.rarity} 記憶卡`,
+                subtitle: `「${pick.name}」${pick.emoji} 入手！`,
+                emoji: pick.emoji,
+              });
+            }
           }
         }
       },
@@ -157,6 +231,15 @@ export const useGame = create<State>()(
           redemptions: [redemption, ...get().redemptions],
           couple: { ...get().couple, coins: get().couple.coins - r.cost },
         });
+        // 貴重獎勵 (>= 500 金幣) 自動發動態
+        if (r.cost >= 500) {
+          get().addMoment({
+            type: "custom",
+            title: `兌換大獎：${r.title}`,
+            subtitle: `花了 ${r.cost} 金幣，物超所值 ✨`,
+            emoji: r.icon,
+          });
+        }
       },
 
       useRedemption: (id) =>
@@ -166,22 +249,66 @@ export const useGame = create<State>()(
           ),
         }),
 
-      feedPet: (attr) =>
+      feedPet: (attr) => {
+        const prev = get().pet;
+        const nextAttrVal = Math.min(100, prev.attrs[attr] + 5);
+        const nextAttrs = { ...prev.attrs, [attr]: nextAttrVal };
+        const avg = Object.values(nextAttrs).reduce((a, b) => a + b, 0) / 5;
+        let nextStage: Pet["stage"] = prev.stage;
+        if (avg >= 95) nextStage = 4;
+        else if (avg >= 85) nextStage = 3;
+        else if (avg >= 65) nextStage = 2;
+        else if (avg >= 40) nextStage = 1;
         set({
           pet: {
-            ...get().pet,
-            attrs: { ...get().pet.attrs, [attr]: Math.min(100, get().pet.attrs[attr] + 5) },
+            ...prev,
+            attrs: nextAttrs,
+            stage: nextStage,
             lastFedAt: new Date().toISOString(),
           },
-        }),
+        });
+        // 進化自動發動態
+        if (nextStage > prev.stage) {
+          const stageName = ["蛋", "幼體", "成型", "傳說", "神話"][nextStage];
+          get().addMoment({
+            type: "pet_evolve",
+            title: `寵物進化為「${stageName}」`,
+            subtitle: `${prev.name} 蛻變中 ✨`,
+            emoji: ["🥚", "🐣", "🐥", "🦄", "🌟"][nextStage],
+          });
+        }
+      },
 
       toggleRitual: (kind) => {
         const today = new Date().toISOString().slice(0, 10);
         const r = get().ritual.date === today ? get().ritual : { date: today, morning: false, night: false };
-        set({ ritual: { ...r, [kind]: !r[kind] } });
         const next = { ...r, [kind]: !r[kind] };
+        set({ ritual: next });
         if (next.morning || next.night) {
           set({ couple: { ...get().couple, coins: get().couple.coins + 5 } });
+        }
+        // 早晚儀式都達成 + 今天第一次完成 → 連擊 +1 + 里程碑檢查
+        if (next.morning && next.night) {
+          const s = get().streak;
+          if (s.lastDate !== today) {
+            const prev = s.current;
+            const nextCurrent = prev + 1;
+            set({
+              streak: {
+                current: nextCurrent,
+                longest: Math.max(s.longest, nextCurrent),
+                lastDate: today,
+              },
+            });
+            if ([7, 14, 30, 60, 100, 200, 365].includes(nextCurrent)) {
+              get().addMoment({
+                type: "streak",
+                title: `連擊達 ${nextCurrent} 天！`,
+                subtitle: `不間斷的每日甜蜜 🔥`,
+                emoji: "🔥",
+              });
+            }
+          }
         }
       },
 
@@ -228,7 +355,29 @@ export const useGame = create<State>()(
               : a,
           ),
         }),
+
+      attackBoss: (allianceId: string, damage: number) => {
+        const alliance = get().alliances.find((a) => a.id === allianceId);
+        if (!alliance || alliance.bossHp == null) return;
+        if (!alliance.members.includes("me")) return;
+        if (get().couple.loveIndex < 10) return; // 貧血者無法戰鬥
+        const nextHp = Math.max(0, alliance.bossHp - damage);
+        set({
+          alliances: get().alliances.map((a) =>
+            a.id === allianceId ? { ...a, bossHp: nextHp } : a,
+          ),
+          couple: { ...get().couple, loveIndex: get().couple.loveIndex - 10 },
+        });
+        if (nextHp === 0 && (alliance.bossHp ?? 0) > 0) {
+          get().addMoment({
+            type: "alliance_boss",
+            title: `擊敗聯盟 BOSS！「${alliance.bossName}」`,
+            subtitle: `${alliance.name} 合力擊倒巨敵 🐲`,
+            emoji: "⚔️",
+          });
+        }
+      },
     }),
-    { name: "star-tied-empire-demo-v2" },
+    { name: "love-empire-v3" },
   ),
 );

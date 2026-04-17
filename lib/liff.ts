@@ -217,6 +217,75 @@ export async function shareInvite(inviteCode: string, appUrl: string): Promise<b
   }
 }
 
+/** 分享「時刻 / 成就」到社群 — LIFF → Web Share → Clipboard */
+export async function shareMoment(
+  args: { title: string; subtitle?: string; emoji: string; coupleName: string; appUrl: string },
+): Promise<"liff" | "webshare" | "clipboard" | "failed"> {
+  const { title, subtitle, emoji, coupleName, appUrl } = args;
+  const text = `${emoji} ${title}\n${subtitle ?? ""}\n— 愛的帝國 · ${coupleName} —\n${appUrl}/plaza`;
+  const liff = await loadLiff();
+
+  let liffShareOk = false;
+  try {
+    liffShareOk = liffInitialized(liff) && liff!.isApiAvailable("shareTargetPicker");
+  } catch { liffShareOk = false; }
+
+  if (liffShareOk && liff) {
+    try {
+      await liff.shareTargetPicker([{
+        type: "flex",
+        altText: `${emoji} ${title}`,
+        contents: {
+          type: "bubble",
+          hero: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              { type: "text", text: emoji, size: "4xl", align: "center" },
+              { type: "text", text: title, size: "xl", weight: "bold", align: "center", color: "#2d4f6a", wrap: true },
+              ...(subtitle ? [{ type: "text" as const, text: subtitle, size: "sm", align: "center" as const, color: "#6b8ca7", wrap: true }] : []),
+            ],
+            backgroundColor: "#fff5e0",
+            paddingAll: "24px",
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              { type: "text", text: `— 愛的帝國 · ${coupleName} —`, size: "xs", color: "#6b8ca7", align: "center" },
+            ],
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              { type: "button", style: "primary", color: "#ff5f8d",
+                action: { type: "uri", label: "看看廣場", uri: `${appUrl}/plaza` } },
+            ],
+          },
+        },
+      }]);
+      return "liff";
+    } catch { /* fall through */ }
+  }
+
+  if (typeof navigator !== "undefined" && (navigator as any).share) {
+    try {
+      await (navigator as any).share({ title: `${emoji} ${title}`, text, url: `${appUrl}/plaza` });
+      return "webshare";
+    } catch (e: any) {
+      if (e?.name !== "AbortError") console.warn("[shareMoment] webshare failed", e);
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    return "clipboard";
+  } catch {
+    return "failed";
+  }
+}
+
 /** 在 LIFF 環境內關閉視窗 */
 export async function closeLiffWindow() {
   const liff = await loadLiff();
