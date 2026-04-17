@@ -2,19 +2,34 @@
 
 import { useGame } from "@/lib/store";
 import { useState } from "react";
+import { ISLAND_SHOP } from "@/lib/demoData";
+import { ALLIANCE_TIERS, allianceTitleFor } from "@/lib/types";
 
 export default function AlliancePage() {
   const alliances = useGame((s) => s.alliances);
   const leaderboard = useGame((s) => s.leaderboard);
   const joinAlliance = useGame((s) => s.joinAlliance);
   const attackBoss = useGame((s) => s.attackBoss);
+  const contributeAllianceItem = useGame((s) => s.contributeAllianceItem);
   const couple = useGame((s) => s.couple);
   const [flash, setFlash] = useState<string | null>(null);
+  const [shopOpen, setShopOpen] = useState(false);
 
   const myAlliance = alliances.find((a) => a.members.includes("me"));
   const otherAlliances = alliances.filter((a) => !a.members.includes("me"));
 
   const getMember = (id: string) => leaderboard.find((c) => c.id === id);
+
+  // 聯盟稱號：取成員總等級 (含自己)
+  const myAllianceTitle = myAlliance
+    ? allianceTitleFor(
+        myAlliance.members.reduce((sum, id) => {
+          if (id === "me") return sum + couple.kingdomLevel;
+          const m = getMember(id);
+          return sum + (m?.kingdomLevel ?? 0);
+        }, 0),
+      )
+    : null;
 
   const handleAttack = (allianceId: string) => {
     if (couple.loveIndex < 10) { setFlash("愛意指數不足 10，先去完成任務回血"); setTimeout(() => setFlash(null), 2000); return; }
@@ -37,9 +52,14 @@ export default function AlliancePage() {
         <>
           <div className="card p-5 bg-gradient-to-br from-empire-cream/60 to-white">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <div className="text-xs text-empire-mute">我的聯盟</div>
-                <h3 className="text-xl font-bold mt-0.5">{myAlliance.name}</h3>
+                <h3 className="text-xl font-bold mt-0.5 truncate">{myAlliance.name}</h3>
+                {myAllianceTitle && (
+                  <span className="mt-1 inline-block tag bg-empire-sunshine/30 border-empire-sunshine/60 text-empire-ink">
+                    {myAllianceTitle.emoji} {myAllianceTitle.title}
+                  </span>
+                )}
                 <p className="text-sm text-empire-mute mt-1">{myAlliance.description}</p>
               </div>
               <div className="text-4xl">🏛️</div>
@@ -106,6 +126,58 @@ export default function AlliancePage() {
               </div>
             </div>
           )}
+
+          {/* 聯盟共同島嶼 */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold">🏝️ 聯盟共同島嶼</h3>
+              <button onClick={() => setShopOpen((v) => !v)} className="btn-ghost px-3 py-1.5 text-xs">
+                {shopOpen ? "關閉" : "🏗️ 捐家具"}
+              </button>
+            </div>
+            <div
+              className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-white"
+              style={{ background: "linear-gradient(180deg, #c9e6f8 0%, #e8f5ce 55%, #a6d18a 100%)" }}
+            >
+              <div className="absolute top-3 right-4 text-2xl">☀️</div>
+              <div className="absolute top-4 left-4 text-xl opacity-80">☁️</div>
+              {(myAlliance.sharedIsland ?? []).map((item) => (
+                <div
+                  key={item.id}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 text-3xl"
+                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                  title={item.label}
+                >
+                  {item.emoji}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-empire-mute mt-2 text-center">
+              所有聯盟成員可貢獻家具（自己的金幣、全員共同欣賞）
+            </p>
+
+            {shopOpen && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {ISLAND_SHOP.slice(0, 9).map((item) => {
+                  const afford = couple.coins >= item.price;
+                  return (
+                    <button
+                      key={item.id}
+                      disabled={!afford}
+                      onClick={() => contributeAllianceItem(myAlliance.id, item.id, item.label, item.emoji, item.price)}
+                      className={`p-2 rounded-xl border text-center ${
+                        afford ? "border-empire-sky hover:bg-empire-cloud" : "border-slate-200 opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      <div className="text-2xl">{item.emoji}</div>
+                      <div className="text-[10px] font-medium mt-0.5 truncate">{item.label}</div>
+                      <div className="text-[10px] text-empire-gold">{item.price} 金</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <div className="card p-5">
             <h3 className="font-bold mb-3">聯盟成員 ({myAlliance.members.length})</h3>

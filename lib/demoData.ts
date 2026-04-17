@@ -178,7 +178,7 @@ export const LEADERBOARD: CoupleSummary[] = [
 /** 新使用者沒有好友情侶，要自己加 */
 export const FRIEND_COUPLES: Friendship[] = [];
 
-/** 新使用者還沒加入任何聯盟；每個聯盟都有一隻 BOSS 可以合力攻擊 */
+/** 新使用者還沒加入任何聯盟；每個聯盟都有一隻 BOSS 可以合力攻擊 + 共同島嶼 */
 export const ALLIANCES: Alliance[] = [
   {
     id: "a_01",
@@ -191,6 +191,12 @@ export const ALLIANCES: Alliance[] = [
     bossHp: 650,
     bossMaxHp: 1000,
     bossName: "孤單巨龍",
+    sharedIsland: [
+      { id: "sh1", catalogId: "castle_tower", label: "聯盟塔", emoji: "🗼", x: 50, y: 30 },
+      { id: "sh2", catalogId: "fountain", label: "愛心噴泉", emoji: "⛲", x: 50, y: 55 },
+      { id: "sh3", catalogId: "tree_sakura", label: "櫻花樹", emoji: "🌸", x: 20, y: 70 },
+      { id: "sh4", catalogId: "tree_sakura", label: "櫻花樹", emoji: "🌸", x: 80, y: 70 },
+    ],
   },
   {
     id: "a_02",
@@ -203,6 +209,11 @@ export const ALLIANCES: Alliance[] = [
     bossHp: 920,
     bossMaxHp: 1500,
     bossName: "拖延症大魔王",
+    sharedIsland: [
+      { id: "sh5", catalogId: "rainbow", label: "彩虹", emoji: "🌈", x: 50, y: 35 },
+      { id: "sh6", catalogId: "swan", label: "天鵝", emoji: "🦢", x: 40, y: 65 },
+      { id: "sh7", catalogId: "swan", label: "天鵝", emoji: "🦢", x: 60, y: 65 },
+    ],
   },
 ];
 

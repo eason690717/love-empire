@@ -74,6 +74,7 @@ interface State {
   sendCardGift: (cardId: string, toCoupleId: string, toCoupleName: string, message: string) => void;
   joinAlliance: (id: string) => void;
   attackBoss: (allianceId: string, damage: number) => void;
+  contributeAllianceItem: (allianceId: string, catalogId: string, label: string, emoji: string, price: number) => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -613,6 +614,35 @@ export const useGame = create<State>()(
               : a,
           ),
         }),
+
+      contributeAllianceItem: (allianceId, catalogId, label, emoji, price) => {
+        const alliance = get().alliances.find((a) => a.id === allianceId);
+        if (!alliance || !alliance.members.includes("me")) return;
+        if (get().couple.coins < price) return;
+        const newItem: IslandItem = {
+          id: uid(),
+          catalogId,
+          label,
+          emoji,
+          x: 20 + Math.random() * 60,
+          y: 20 + Math.random() * 60,
+        };
+        set({
+          couple: { ...get().couple, coins: get().couple.coins - price },
+          alliances: get().alliances.map((a) =>
+            a.id === allianceId
+              ? { ...a, sharedIsland: [...(a.sharedIsland ?? []), newItem] }
+              : a,
+          ),
+        });
+        get().addNotification({
+          type: "system",
+          title: "🏛️ 聯盟島嶼有新裝飾",
+          body: `「${alliance.name}」的共同空間多了 ${emoji} ${label}`,
+          emoji: "🏛️",
+          link: "/alliance",
+        });
+      },
 
       attackBoss: (allianceId: string, damage: number) => {
         const alliance = get().alliances.find((a) => a.id === allianceId);

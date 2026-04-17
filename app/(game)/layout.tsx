@@ -38,6 +38,9 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   const notice = useGame((s) => s.notice);
   const streak = useGame((s) => s.streak);
   const setNickname = useGame((s) => s.setNickname);
+  const notifications = useGame((s) => s.notifications);
+  const gifts = useGame((s) => s.gifts);
+  const unreadCount = notifications.filter((n) => !n.read).length + gifts.filter((g) => !g.read).length;
 
   useEffect(() => {
     if (!loggedIn) router.push("/login");
@@ -104,10 +107,15 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`tab-btn ${active ? "tab-btn-active" : "tab-btn-idle"}`}
+                className={`tab-btn ${active ? "tab-btn-active" : "tab-btn-idle"} relative`}
               >
                 <span className="mr-1">{tab.icon}</span>
                 {tab.label}
+                {tab.href === "/inbox" && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-empire-berry text-white text-[10px] font-bold flex items-center justify-center">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}

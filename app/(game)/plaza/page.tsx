@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { ShareMomentButton } from "@/components/ShareMomentButton";
 import type { MomentType } from "@/lib/types";
@@ -33,6 +34,7 @@ export default function PlazaPage() {
   const moments = useGame((s) => s.moments);
   const likeMoment = useGame((s) => s.likeMoment);
   const couple = useGame((s) => s.couple);
+  const leaderboard = useGame((s) => s.leaderboard);
   const [filter, setFilter] = useState<string>("all");
 
   const filtered = moments.filter((m) => {
@@ -57,13 +59,43 @@ export default function PlazaPage() {
           <span className="text-[10px] text-empire-mute">每週一結算 · 獎勵 SSR 卡</span>
         </div>
         <div className="flex gap-2 overflow-x-auto">
-          {useGame.getState().leaderboard.slice(0, 3).map((c, i) => (
-            <div key={c.id} className="shrink-0 w-32 p-2.5 rounded-xl bg-white border-2 border-empire-cloud text-center">
+          {leaderboard.slice(0, 3).map((c, i) => (
+            <Link key={c.id} href={`/couples/${c.id}`} className="shrink-0 w-32 p-2.5 rounded-xl bg-white border-2 border-empire-cloud text-center hover:border-empire-sunshine transition">
               <div className="text-2xl">{["🥇", "🥈", "🥉"][i]}</div>
               <div className="text-xl mt-1">{c.emoji}</div>
               <div className="text-xs font-bold truncate mt-0.5">{c.name}</div>
               <div className="text-[10px] text-empire-mute">Lv.{c.kingdomLevel}</div>
-            </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* 公開島嶼精選輪播 */}
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-sm">🏝️ 本週精選島嶼</h3>
+          <span className="text-[10px] text-empire-mute">點選參觀</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto">
+          {leaderboard.filter((c) => !c.isSelf).slice(0, 5).map((c) => (
+            <Link
+              key={c.id}
+              href={`/couples/${c.id}`}
+              className="shrink-0 w-48 rounded-xl overflow-hidden border-2 border-empire-cloud hover:border-empire-sky transition"
+            >
+              <div
+                className="h-24 relative"
+                style={{ background: "linear-gradient(180deg, #c9e6f8 0%, #e8f5ce 55%, #a6d18a 100%)" }}
+              >
+                <div className="absolute inset-0 flex items-center justify-center text-3xl">{c.emoji}</div>
+                <div className="absolute bottom-1 left-2 text-base">🏰</div>
+                <div className="absolute bottom-1 right-2 text-base">🌸</div>
+              </div>
+              <div className="p-2 bg-white">
+                <div className="text-xs font-bold truncate">{c.name}</div>
+                <div className="text-[10px] text-empire-mute">Lv.{c.kingdomLevel} · {c.title}</div>
+              </div>
+            </Link>
           ))}
         </div>
       </div>

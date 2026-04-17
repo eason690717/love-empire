@@ -153,6 +153,25 @@ export interface Alliance {
   bossHp?: number;
   bossMaxHp?: number;
   bossName?: string;
+  sharedIsland?: IslandItem[];
+}
+
+export interface AllianceTier {
+  minLevel: number;
+  title: string;
+  emoji: string;
+}
+
+export const ALLIANCE_TIERS: AllianceTier[] = [
+  { minLevel: 0,   title: "初聚聯盟",       emoji: "🌱" },
+  { minLevel: 20,  title: "熱戀聯盟",       emoji: "💞" },
+  { minLevel: 50,  title: "神仙眷侶團",     emoji: "✨" },
+  { minLevel: 100, title: "天命聯盟",       emoji: "🌟" },
+  { minLevel: 200, title: "神話級情緣公會", emoji: "👑" },
+];
+
+export function allianceTitleFor(totalLevels: number): AllianceTier {
+  return [...ALLIANCE_TIERS].reverse().find((t) => totalLevels >= t.minLevel) ?? ALLIANCE_TIERS[0];
 }
 
 export interface Friendship {
