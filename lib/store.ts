@@ -35,6 +35,8 @@ interface State {
 
   login: (role: Role) => void;
   logout: () => void;
+  setNickname: (role: Role, nickname: string) => void;
+  setKingdomName: (name: string) => void;
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -74,6 +76,24 @@ export const useGame = create<State>()(
 
       login: (role) => set({ loggedIn: true, role }),
       logout: () => set({ loggedIn: false }),
+
+      setNickname: (role, nickname) => {
+        const clean = nickname.trim().slice(0, 20);
+        if (!clean) return;
+        const couple = get().couple;
+        set({
+          couple: {
+            ...couple,
+            [role]: { ...couple[role], nickname: clean },
+          },
+        });
+      },
+
+      setKingdomName: (name) => {
+        const clean = name.trim().slice(0, 20);
+        if (!clean) return;
+        set({ couple: { ...get().couple, name: clean } });
+      },
 
       submitTask: (taskId) => {
         const t = get().tasks.find((x) => x.id === taskId);

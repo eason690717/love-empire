@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useGame } from "@/lib/store";
 import { titleByLevel, SEASON_LABEL, season } from "@/lib/utils";
+import { InlineRename } from "@/components/InlineRename";
 
 const TABS = [
   { href: "/dashboard",   label: "儀表板",   icon: "📊" },
@@ -30,6 +31,7 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   const logout = useGame((s) => s.logout);
   const notice = useGame((s) => s.notice);
   const streak = useGame((s) => s.streak);
+  const setNickname = useGame((s) => s.setNickname);
 
   useEffect(() => {
     if (!loggedIn) router.push("/login");
@@ -64,7 +66,9 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
             👑
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold truncate text-empire-ink">{nickname}</div>
+            <div className="font-bold truncate text-empire-ink">
+              <InlineRename value={nickname} onSave={(v) => setNickname(role, v)} />
+            </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="emblem text-xs px-2 py-0.5">Lv.{couple.kingdomLevel}</span>
               <span className="text-xs font-semibold text-empire-ink">{title}</span>
