@@ -189,6 +189,17 @@ export interface Gift {
   read: boolean;
 }
 
+export interface QuestionAnswer {
+  id: string;
+  questionId: string;
+  answeredBy: "queen" | "prince";
+  text: string;
+  createdAt: string;
+  rating?: number;        // partner 評分 1-5
+  ratingComment?: string; // partner 回饋
+  ratedAt?: string;
+}
+
 export interface NotificationItem {
   id: string;
   type: "submission" | "review" | "gift" | "visitor" | "level" | "streak" | "pet" | "card" | "system";

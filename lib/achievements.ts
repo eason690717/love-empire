@@ -25,6 +25,8 @@ export interface Achievement {
     pkWins: number;
     momentsSelf: number;
     pikminsTotal: number;
+    questionsAnswered: number;
+    questionsFiveStar: number;
   }) => boolean;
 }
 
@@ -98,4 +100,18 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: "愛意指數 1000+", check: (s) => s.couple.loveIndex >= 1000 },
   { id: "a_allAttrs", category: "special", emoji: "⭐", title: "全能情侶",
     description: "所有屬性達 80+", check: () => false /* placeholder; check in store with pet.attrs */ },
+
+  // 深度問答 (2026-04-17 新增)
+  { id: "a_firstQuestion", category: "social", emoji: "💬", title: "敞開心扉",
+    description: "完成第一題深度問答", check: (s) => s.questionsAnswered >= 1 },
+  { id: "a_tenQuestions", category: "social", emoji: "📝", title: "我懂你",
+    description: "回答 10 題深度問答", check: (s) => s.questionsAnswered >= 10 },
+  { id: "a_fiftyQuestions", category: "social", emoji: "📖", title: "你的書",
+    description: "回答 50 題深度問答", check: (s) => s.questionsAnswered >= 50 },
+  { id: "a_hundredQuestions", category: "social", emoji: "🌌", title: "靈魂伴侶",
+    description: "回答 100 題深度問答", check: (s) => s.questionsAnswered >= 100 },
+  { id: "a_fiveStarAnswer", category: "special", emoji: "⭐", title: "完美答卷",
+    description: "拿到第一個 5 星評分", check: (s) => s.questionsFiveStar >= 1 },
+  { id: "a_tenFiveStars", category: "special", emoji: "🌟", title: "默契滿分",
+    description: "累積 10 個 5 星評分", check: (s) => s.questionsFiveStar >= 10 },
 ];

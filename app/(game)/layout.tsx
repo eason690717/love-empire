@@ -22,6 +22,7 @@ const TABS = [
   { href: "/inbox",       label: "通知",     icon: "🔔" },
   { href: "/achievements", label: "獎盃陳列", icon: "🏅" },
   { href: "/recap",       label: "年度回顧", icon: "✨" },
+  { href: "/questions",   label: "深度問答", icon: "💬" },
   { href: "/plaza",       label: "帝國廣場", icon: "🌸" },
   { href: "/leaderboard", label: "情侶排行", icon: "🏆" },
   { href: "/friends",     label: "好友情侶", icon: "👫" },

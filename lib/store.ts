@@ -5,8 +5,9 @@ import { persist } from "zustand/middleware";
 import type {
   Couple, Task, Submission, Reward, Redemption, MemoryCard, Pet, IslandItem,
   Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType, PikminHelper,
-  NotificationItem,
+  NotificationItem, QuestionAnswer,
 } from "./types";
+import { getQuestionById, DEPTH_LABELS } from "./questions";
 import { CATEGORY_META } from "./types";
 import { QUEEN_COIN_BONUS, isSpecialDay, SPECIAL_DAY_MULTIPLIER } from "./passive";
 import { inFestivalWindow, PIKMIN_BY_CATEGORY, getTodayVisitor } from "./festival";
@@ -47,6 +48,7 @@ interface State {
   dailyLoginDay: number;
   lastLoginDate: string;
   anniversaries: Array<{ id: string; label: string; date: string; recurring: boolean; emoji: string }>;
+  questionAnswers: QuestionAnswer[];
   notice: typeof NOTICE;
 
   login: (role: Role) => void;
@@ -74,6 +76,8 @@ interface State {
   claimDailyBonus: () => { claimed: boolean; day?: number; reward?: string };
   addAnniversary: (label: string, date: string, recurring: boolean, emoji: string) => void;
   removeAnniversary: (id: string) => void;
+  submitQuestionAnswer: (questionId: string, text: string) => void;
+  rateQuestionAnswer: (answerId: string, rating: number, comment?: string) => void;
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -131,6 +135,7 @@ export const useGame = create<State>()(
       dailyLoginDay: 0,
       lastLoginDate: "",
       anniversaries: [],
+      questionAnswers: [],
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -292,6 +297,8 @@ export const useGame = create<State>()(
           pkWins: s.pkWins,
           momentsSelf: s.moments.filter((m) => m.isSelf).length,
           pikminsTotal: s.pikmins.reduce((a, p) => a + p.count, 0),
+          questionsAnswered: s.questionAnswers.length,
+          questionsFiveStar: s.questionAnswers.filter((q) => q.rating === 5).length,
         };
         const unlocked = [...s.achievements];
         const newly: typeof ACHIEVEMENTS = [];
@@ -387,6 +394,71 @@ export const useGame = create<State>()(
 
       removeAnniversary: (id) => {
         set({ anniversaries: get().anniversaries.filter((a) => a.id !== id) });
+      },
+
+      submitQuestionAnswer: (questionId, text) => {
+        const clean = text.trim();
+        if (!clean) return;
+        const q = getQuestionById(questionId);
+        if (!q) return;
+        const answer: QuestionAnswer = {
+          id: uid(),
+          questionId,
+          answeredBy: get().role,
+          text: clean.slice(0, 500),
+          createdAt: nowStr(),
+        };
+        set({ questionAnswers: [answer, ...get().questionAnswers] });
+        // 回答即獲得基礎 XP (分深度)
+        const xp = DEPTH_LABELS[q.depth].xp;
+        const nextLove = get().couple.loveIndex + xp;
+        const nextLevel = Math.max(get().couple.kingdomLevel, Math.floor(nextLove / 50) + 1);
+        set({ couple: { ...get().couple, loveIndex: nextLove, kingdomLevel: nextLevel } });
+        get().addNotification({
+          type: "system",
+          title: "💬 對方有新的回答",
+          body: `${q.text}`,
+          emoji: "💬",
+          link: "/questions",
+        });
+        get().checkAchievements();
+      },
+
+      rateQuestionAnswer: (answerId, rating, comment) => {
+        const clamped = Math.max(1, Math.min(5, Math.floor(rating)));
+        set({
+          questionAnswers: get().questionAnswers.map((a) =>
+            a.id === answerId
+              ? { ...a, rating: clamped, ratingComment: comment?.slice(0, 200), ratedAt: nowStr() }
+              : a,
+          ),
+        });
+        // 高分 (>=4) 額外獎勵 XP + 有機會掉卡
+        if (clamped >= 4) {
+          const bonus = clamped === 5 ? 15 : 8;
+          const nextLove = get().couple.loveIndex + bonus;
+          const nextLevel = Math.max(get().couple.kingdomLevel, Math.floor(nextLove / 50) + 1);
+          set({ couple: { ...get().couple, loveIndex: nextLove, kingdomLevel: nextLevel } });
+          // 5 星 → 有機會掉記憶卡
+          if (clamped === 5 && Math.random() < 0.3) {
+            const uncollected = get().codex.filter((c) => !c.obtainedAt);
+            if (uncollected.length) {
+              const pick = uncollected[Math.floor(Math.random() * uncollected.length)];
+              set({
+                codex: get().codex.map((c) =>
+                  c.id === pick.id ? { ...c, obtainedAt: new Date().toISOString().slice(0, 10) } : c,
+                ),
+              });
+              get().addMoment({
+                type: pick.rarity === "SSR" ? "ssr_card" : pick.rarity === "SR" ? "sr_card" : "custom",
+                title: `深度問答 5 星 → ${pick.rarity} 卡掉落`,
+                subtitle: `「${pick.name}」${pick.emoji}`,
+                emoji: pick.emoji,
+              });
+            }
+          }
+        }
+        get().checkAchievements();
       },
 
       resetAllData: () => {
