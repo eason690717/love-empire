@@ -26,25 +26,31 @@ export const INITIAL_COUPLE: Couple = {
   loveIndex: 0,
 };
 
+/**
+ * 預設 14 任務。direction 全部預設 "together" (兩人都可申報)，使用者新增自訂任務時可選 queen/prince 指向。
+ * systemXp 由分類決定 (公平指標，跨情侶用這個比)
+ * reward 由情侶自訂 (內部貨幣，不跨情侶比)
+ */
 export const INITIAL_TASKS: Task[] = [
-  // 生活雜事類
-  { id: "t1", title: "丟衣服下去洗", category: "chore", reward: 10, attribute: "care" },
-  { id: "t2", title: "摺被子整理床", category: "chore", reward: 10, attribute: "care" },
-  { id: "t3", title: "幫忙整理 & 倒垃圾", category: "chore", reward: 30, attribute: "care" },
-  { id: "t4", title: "幫忙拿去烘衣服", category: "chore", reward: 30, attribute: "care" },
-  { id: "t5", title: "幫忙煮飯/買飯/飲料", category: "chore", reward: 50, attribute: "care" },
-  { id: "t6", title: "載我上下班", category: "chore", reward: 200, attribute: "care" },
-  // 浪漫時刻
-  { id: "t7", title: "說好話 / 情話一句", category: "romance", reward: 10, attribute: "communication" },
-  { id: "t8", title: "主動擁抱一次", category: "romance", reward: 20, attribute: "intimacy" },
-  { id: "t9", title: "心情不好馬上出現", category: "romance", reward: 200, attribute: "intimacy" },
-  { id: "t10", title: "驚喜小禮物", category: "surprise", reward: 150, attribute: "surprise" },
-  // 健康管理
-  { id: "t11", title: "陪伴運動 30 分鐘", category: "wellness", reward: 60, attribute: "care" },
-  { id: "t12", title: "一起睡前閱讀", category: "wellness", reward: 30, attribute: "communication" },
-  // 合作任務
-  { id: "t13", title: "一起看一部電影 🎬 (合作)", category: "coop", reward: 80, attribute: "intimacy", coop: true },
-  { id: "t14", title: "互相讚美 10 句 💕 (合作)", category: "coop", reward: 100, attribute: "communication", coop: true },
+  // 生活雜事類 (systemXp: 5, rewardCap: 300)
+  { id: "t1", title: "丟衣服下去洗", category: "chore", reward: 10, systemXp: 5, attribute: "care", direction: "together" },
+  { id: "t2", title: "摺被子整理床", category: "chore", reward: 10, systemXp: 5, attribute: "care", direction: "together" },
+  { id: "t3", title: "幫忙整理 & 倒垃圾", category: "chore", reward: 30, systemXp: 5, attribute: "care", direction: "together" },
+  { id: "t4", title: "幫忙拿去烘衣服", category: "chore", reward: 30, systemXp: 5, attribute: "care", direction: "together" },
+  { id: "t5", title: "幫忙煮飯/買飯/飲料", category: "chore", reward: 50, systemXp: 5, attribute: "care", direction: "together" },
+  { id: "t6", title: "載我上下班", category: "chore", reward: 200, systemXp: 5, attribute: "care", direction: "together" },
+  // 浪漫時刻 (systemXp: 10, rewardCap: 500)
+  { id: "t7", title: "說好話 / 情話一句", category: "romance", reward: 10, systemXp: 10, attribute: "communication", direction: "together" },
+  { id: "t8", title: "主動擁抱一次", category: "romance", reward: 20, systemXp: 10, attribute: "intimacy", direction: "together" },
+  { id: "t9", title: "心情不好馬上出現", category: "romance", reward: 200, systemXp: 10, attribute: "intimacy", direction: "together" },
+  // 驚喜 (systemXp: 15, rewardCap: 500)
+  { id: "t10", title: "驚喜小禮物", category: "surprise", reward: 150, systemXp: 15, attribute: "surprise", direction: "together" },
+  // 健康管理 (systemXp: 8, rewardCap: 200)
+  { id: "t11", title: "陪伴運動 30 分鐘", category: "wellness", reward: 60, systemXp: 8, attribute: "care", direction: "together" },
+  { id: "t12", title: "一起睡前閱讀", category: "wellness", reward: 30, systemXp: 8, attribute: "communication", direction: "together" },
+  // 合作任務 (systemXp: 12, rewardCap: 300)
+  { id: "t13", title: "一起看一部電影 🎬", category: "coop", reward: 80, systemXp: 12, attribute: "intimacy", direction: "together", coop: true },
+  { id: "t14", title: "互相讚美 10 句 💕", category: "coop", reward: 100, systemXp: 12, attribute: "communication", direction: "together", coop: true },
 ];
 
 /** 新使用者的申報紀錄：空的 */

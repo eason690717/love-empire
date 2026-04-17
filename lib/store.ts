@@ -6,6 +6,7 @@ import type {
   Couple, Task, Submission, Reward, Redemption, MemoryCard, Pet, IslandItem,
   Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType,
 } from "./types";
+import { CATEGORY_META } from "./types";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
@@ -39,6 +40,8 @@ interface State {
   logout: () => void;
   setNickname: (role: Role, nickname: string) => void;
   setKingdomName: (name: string) => void;
+  addCustomTask: (t: Omit<Task, "id" | "systemXp" | "custom">) => void;
+  removeTask: (id: string) => void;
   addMoment: (m: Omit<Moment, "id" | "createdAt" | "likes" | "likedByMe" | "comments" | "coupleId" | "coupleName" | "isSelf">) => void;
   likeMoment: (id: string) => void;
   advanceOnboarding: () => void;
@@ -105,6 +108,29 @@ export const useGame = create<State>()(
         set({ couple: { ...get().couple, name: clean } });
       },
 
+      addCustomTask: (t) => {
+        const meta = CATEGORY_META[t.category];
+        const cappedReward = Math.max(0, Math.min(meta.rewardCap, Math.floor(t.reward)));
+        const newTask: Task = {
+          id: `custom_${uid()}`,
+          title: t.title.trim().slice(0, 40),
+          category: t.category,
+          reward: cappedReward,
+          systemXp: meta.xp,           // 系統決定，無法自訂
+          attribute: t.attribute,
+          direction: t.direction,
+          custom: true,
+        };
+        if (!newTask.title) return;
+        set({ tasks: [...get().tasks, newTask] });
+      },
+
+      removeTask: (id) => {
+        const t = get().tasks.find((x) => x.id === id);
+        if (!t?.custom) return; // 系統預設任務不可刪除
+        set({ tasks: get().tasks.filter((x) => x.id !== id) });
+      },
+
       addMoment: (m) => {
         const couple = get().couple;
         const moment: Moment = {
@@ -164,14 +190,15 @@ export const useGame = create<State>()(
           const s = subs.find((x) => x.id === id)!;
           const task = get().tasks.find((t) => t.id === s.taskId);
           const attr = task?.attribute ?? "intimacy";
+          const systemXp = task?.systemXp ?? 5; // 公平指標：系統 XP
           const prevLove = get().couple.loveIndex;
           const prevLevel = get().couple.kingdomLevel;
-          const nextLove = prevLove + s.reward;
-          const nextLevel = Math.max(prevLevel, Math.floor(nextLove / 200) + 1);
+          const nextLove = prevLove + systemXp;         // 愛意指數用 systemXp (公平)
+          const nextLevel = Math.max(prevLevel, Math.floor(nextLove / 50) + 1);
           set({
             couple: {
               ...get().couple,
-              coins: get().couple.coins + s.reward,
+              coins: get().couple.coins + s.reward,      // 金幣用 reward (自訂)
               loveIndex: nextLove,
               kingdomLevel: nextLevel,
             },
@@ -378,6 +405,16 @@ export const useGame = create<State>()(
         }
       },
     }),
-    { name: "love-empire-v3" },
+    {
+      name: "love-empire-v3",
+      onRehydrateStorage: () => () => {
+        // 清掉舊版本的 persist key，避免使用者看到過期資料
+        if (typeof window === "undefined") return;
+        try {
+          const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2"];
+          OLD_KEYS.forEach((k) => localStorage.removeItem(k));
+        } catch { /* ignore */ }
+      },
+    },
   ),
 );
