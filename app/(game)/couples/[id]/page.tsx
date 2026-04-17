@@ -14,6 +14,16 @@ export default function CoupleDetailPage() {
   const leaderboard = useGame((s) => s.leaderboard);
   const moments = useGame((s) => s.moments);
   const sendGift = useGame((s) => s.sendGift);
+  const recordVisit = useGame((s) => s.recordVisit);
+  const checkAchievements = useGame((s) => s.checkAchievements);
+
+  // 記錄訪問 + 檢查成就
+  if (typeof window !== "undefined") {
+    setTimeout(() => {
+      recordVisit();
+      checkAchievements();
+    }, 0);
+  }
 
   const id = params?.id as string;
   const couple = leaderboard.find((c) => c.id === id);

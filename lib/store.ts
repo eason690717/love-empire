@@ -10,6 +10,7 @@ import type {
 import { CATEGORY_META } from "./types";
 import { QUEEN_COIN_BONUS, isSpecialDay, SPECIAL_DAY_MULTIPLIER } from "./passive";
 import { inFestivalWindow, PIKMIN_BY_CATEGORY, getTodayVisitor } from "./festival";
+import { ACHIEVEMENTS } from "./achievements";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
@@ -40,6 +41,9 @@ interface State {
   pikmins: PikminHelper[];
   lastVisitorGreetDate: string;
   notifications: NotificationItem[];
+  achievements: string[];
+  pkWins: number;
+  visitsSent: number;
   notice: typeof NOTICE;
 
   login: (role: Role) => void;
@@ -61,6 +65,9 @@ interface State {
   addNotification: (n: Omit<NotificationItem, "id" | "createdAt" | "read">) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  checkAchievements: () => void;
+  recordPkWin: () => void;
+  recordVisit: () => void;
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -112,6 +119,9 @@ export const useGame = create<State>()(
       pikmins: [],
       lastVisitorGreetDate: "",
       notifications: [],
+      achievements: [],
+      pkWins: 0,
+      visitsSent: 0,
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -257,6 +267,54 @@ export const useGame = create<State>()(
       markAllNotificationsRead: () => {
         set({ notifications: get().notifications.map((n) => ({ ...n, read: true })) });
       },
+
+      checkAchievements: () => {
+        const s = get();
+        const snap = {
+          couple: { kingdomLevel: s.couple.kingdomLevel, coins: s.couple.coins, loveIndex: s.couple.loveIndex },
+          streak: { current: s.streak.current, longest: s.streak.longest },
+          pet: { stage: s.pet.stage },
+          submissionsApproved: s.submissions.filter((x) => x.status === "approved").length,
+          cardsOwned: s.codex.filter((c) => c.obtainedAt).length,
+          cardsSSR: s.codex.filter((c) => c.obtainedAt && c.rarity === "SSR").length,
+          alliancesJoined: s.alliances.filter((a) => a.members.includes("me")).length,
+          friendsCount: s.friends.length,
+          visitsSent: s.visitsSent,
+          pkWins: s.pkWins,
+          momentsSelf: s.moments.filter((m) => m.isSelf).length,
+          pikminsTotal: s.pikmins.reduce((a, p) => a + p.count, 0),
+        };
+        const unlocked = [...s.achievements];
+        const newly: typeof ACHIEVEMENTS = [];
+        for (const ach of ACHIEVEMENTS) {
+          if (unlocked.includes(ach.id)) continue;
+          let passes = false;
+          try { passes = ach.check(snap); } catch { passes = false; }
+          // 特例：全屬性 80+
+          if (ach.id === "a_allAttrs") {
+            passes = Object.values(s.pet.attrs).every((v) => v >= 80);
+          }
+          if (passes) {
+            unlocked.push(ach.id);
+            newly.push(ach);
+          }
+        }
+        if (newly.length) {
+          set({ achievements: unlocked });
+          newly.forEach((ach) => {
+            get().addNotification({
+              type: "system",
+              title: `🏅 成就解鎖：${ach.title}`,
+              body: ach.description,
+              emoji: ach.emoji,
+              link: "/achievements",
+            });
+          });
+        }
+      },
+
+      recordPkWin: () => set({ pkWins: get().pkWins + 1 }),
+      recordVisit: () => set({ visitsSent: get().visitsSent + 1 }),
 
       resetAllData: () => {
         // 清掉所有 persist 並重新 hydrate → 等同首次使用
@@ -432,6 +490,8 @@ export const useGame = create<State>()(
               set({ pikmins: [...get().pikmins, { ...pik, count: 1 }] });
             }
           }
+          // 檢查成就
+          get().checkAchievements();
         }
       },
 
@@ -498,6 +558,7 @@ export const useGame = create<State>()(
             emoji: ["🥚", "🐣", "🐥", "🦄", "🌟"][nextStage],
           });
         }
+        get().checkAchievements();
       },
 
       toggleRitual: (kind) => {

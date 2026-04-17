@@ -7,6 +7,8 @@ export default function PkPage() {
   const couple = useGame((s) => s.couple);
   const leaderboard = useGame((s) => s.leaderboard);
   const addMoment = useGame((s) => s.addMoment);
+  const recordPkWin = useGame((s) => s.recordPkWin);
+  const checkAchievements = useGame((s) => s.checkAchievements);
   const [opponent, setOpponent] = useState<string>("");
   const [result, setResult] = useState<{ winner: "me" | "them" | "draw"; myScore: number; theirScore: number } | null>(null);
 
@@ -21,6 +23,7 @@ export default function PkPage() {
     const winner = myScore > theirScore ? "me" : theirScore > myScore ? "them" : "draw";
     setResult({ winner, myScore, theirScore });
     if (winner === "me") {
+      recordPkWin();
       addMoment({
         type: "custom",
         title: `PK 贏了 ${opp.name}！`,
@@ -28,6 +31,7 @@ export default function PkPage() {
         emoji: "🏆",
       });
     }
+    checkAchievements();
   };
 
   return (
