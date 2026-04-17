@@ -117,3 +117,68 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
     </button>
   );
 }
+
+function AddFriendTab() {
+  const leaderboard = useGame((s) => s.leaderboard);
+  const friends = useGame((s) => s.friends);
+  const [q, setQ] = useState("");
+  const [found, setFound] = useState<string | null>(null);
+
+  const results = q.trim()
+    ? leaderboard.filter((c) => !c.isSelf && (
+        c.name.toLowerCase().includes(q.toLowerCase()) || c.id.toLowerCase().includes(q.toLowerCase())
+      ))
+    : [];
+
+  return (
+    <div className="card p-5 space-y-4">
+      <div>
+        <h3 className="font-bold mb-2">🔍 搜尋情侶</h3>
+        <div className="flex gap-2">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="輸入名稱或配對碼"
+            className="flex-1 border border-empire-cloud rounded-xl px-3 py-2 focus:outline-none focus:border-empire-sky"
+          />
+          <button className="btn-primary px-4" onClick={() => setFound(q)}>搜尋</button>
+        </div>
+      </div>
+
+      {q.trim() && (
+        <div>
+          <div className="text-xs text-empire-mute mb-2">結果：{results.length} 筆</div>
+          <div className="space-y-2">
+            {results.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-empire-mist">
+                <div className="text-2xl">{c.emoji}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm truncate">{c.name}</div>
+                  <div className="text-xs text-empire-mute">Lv.{c.kingdomLevel} · {c.title}</div>
+                </div>
+                <button className="btn-ghost px-3 py-1 text-xs">加好友</button>
+              </div>
+            ))}
+            {results.length === 0 && <p className="text-xs text-empire-mute text-center py-4">找不到相符的情侶</p>}
+          </div>
+        </div>
+      )}
+
+      <div className="pt-4 border-t border-empire-cloud">
+        <h3 className="font-bold mb-2">✨ 系統推薦情侶</h3>
+        <div className="space-y-2">
+          {leaderboard.filter((c) => !c.isSelf && !friends.find((f) => f.coupleId === c.id)).slice(0, 4).map((c) => (
+            <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-empire-mist">
+              <div className="text-2xl">{c.emoji}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm truncate">{c.name}</div>
+                <div className="text-xs text-empire-mute">Lv.{c.kingdomLevel}</div>
+              </div>
+              <button className="btn-ghost px-3 py-1 text-xs">加好友</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

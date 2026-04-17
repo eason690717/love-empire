@@ -170,6 +170,17 @@ export interface Gift {
   read: boolean;
 }
 
+export interface NotificationItem {
+  id: string;
+  type: "submission" | "review" | "gift" | "visitor" | "level" | "streak" | "pet" | "card" | "system";
+  title: string;
+  body?: string;
+  emoji: string;
+  createdAt: string;
+  read: boolean;
+  link?: string;
+}
+
 export type MomentType =
   | "pet_evolve"
   | "ssr_card"

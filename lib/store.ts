@@ -5,6 +5,7 @@ import { persist } from "zustand/middleware";
 import type {
   Couple, Task, Submission, Reward, Redemption, MemoryCard, Pet, IslandItem,
   Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType, PikminHelper,
+  NotificationItem,
 } from "./types";
 import { CATEGORY_META } from "./types";
 import { QUEEN_COIN_BONUS, isSpecialDay, SPECIAL_DAY_MULTIPLIER } from "./passive";
@@ -38,6 +39,7 @@ interface State {
   moments: Moment[];
   pikmins: PikminHelper[];
   lastVisitorGreetDate: string;
+  notifications: NotificationItem[];
   notice: typeof NOTICE;
 
   login: (role: Role) => void;
@@ -56,6 +58,9 @@ interface State {
   setPrivacy: (p: "public" | "friends" | "private") => void;
   checkKnightShield: () => void;
   resetAllData: () => void;
+  addNotification: (n: Omit<NotificationItem, "id" | "createdAt" | "read">) => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -105,6 +110,7 @@ export const useGame = create<State>()(
       moments: INITIAL_MOMENTS,
       pikmins: [],
       lastVisitorGreetDate: "",
+      notifications: [],
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -231,6 +237,26 @@ export const useGame = create<State>()(
         }
       },
 
+      addNotification: (n) => {
+        const notif: NotificationItem = {
+          id: uid(),
+          createdAt: nowStr(),
+          read: false,
+          ...n,
+        };
+        set({ notifications: [notif, ...get().notifications].slice(0, 100) });
+      },
+
+      markNotificationRead: (id) => {
+        set({
+          notifications: get().notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+        });
+      },
+
+      markAllNotificationsRead: () => {
+        set({ notifications: get().notifications.map((n) => ({ ...n, read: true })) });
+      },
+
       resetAllData: () => {
         // 清掉所有 persist 並重新 hydrate → 等同首次使用
         if (typeof window !== "undefined") {
@@ -282,13 +308,31 @@ export const useGame = create<State>()(
           createdAt: nowStr(),
         };
         set({ submissions: [sub, ...get().submissions] });
+        // 通知另一半要審
+        get().addNotification({
+          type: "submission",
+          title: "📜 有新申報要審核",
+          body: `${t.title} · ${t.reward} 金幣`,
+          emoji: "📜",
+          link: "/tasks",
+        });
       },
 
       reviewSubmission: (id, approve, note) => {
+        const sOrig = get().submissions.find((x) => x.id === id);
         const subs = get().submissions.map((s) =>
           s.id === id ? { ...s, status: approve ? ("approved" as const) : ("rejected" as const), reviewedAt: nowStr(), note } : s,
         );
         set({ submissions: subs });
+        if (sOrig) {
+          get().addNotification({
+            type: "review",
+            title: approve ? "✅ 申報被准奏" : "❌ 申報被駁回",
+            body: `${sOrig.taskTitle}${note ? ` · ${note}` : ""}`,
+            emoji: approve ? "✅" : "❌",
+            link: "/history",
+          });
+        }
         if (approve) {
           const s = subs.find((x) => x.id === id)!;
           const task = get().tasks.find((t) => t.id === s.taskId);

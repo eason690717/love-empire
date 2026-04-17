@@ -50,6 +50,24 @@ export default function PlazaPage() {
         </p>
       </div>
 
+      {/* 本週榜首 top 3 */}
+      <div className="card p-4 bg-gradient-to-br from-empire-sunshine/15 to-empire-berry/10 border-2 border-empire-sunshine/30">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-sm">🏆 本週 top 3</h3>
+          <span className="text-[10px] text-empire-mute">每週一結算 · 獎勵 SSR 卡</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto">
+          {useGame.getState().leaderboard.slice(0, 3).map((c, i) => (
+            <div key={c.id} className="shrink-0 w-32 p-2.5 rounded-xl bg-white border-2 border-empire-cloud text-center">
+              <div className="text-2xl">{["🥇", "🥈", "🥉"][i]}</div>
+              <div className="text-xl mt-1">{c.emoji}</div>
+              <div className="text-xs font-bold truncate mt-0.5">{c.name}</div>
+              <div className="text-[10px] text-empire-mute">Lv.{c.kingdomLevel}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="card p-2 flex gap-1 overflow-x-auto">
         {FILTERS.map((f) => (
           <button

@@ -3,10 +3,12 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/store";
 import { ATTR_LABEL, ATTR_COLOR, PET_STAGE_EMOJI, PET_STAGE_LABEL } from "@/lib/utils";
+import { InlineRename } from "@/components/InlineRename";
 
 export default function PetPage() {
   const pet = useGame((s) => s.pet);
   const feedPet = useGame((s) => s.feedPet);
+  const setPetName = useGame((s) => s.setPetName);
 
   const avg = Object.values(pet.attrs).reduce((a, b) => a + b, 0) / 5;
   const hoursSinceFed = (Date.now() - new Date(pet.lastFedAt).getTime()) / 36e5;
@@ -36,7 +38,9 @@ export default function PetPage() {
             {PET_STAGE_EMOJI[pet.stage]}
           </motion.div>
         </div>
-        <div className="mt-4 font-display text-2xl font-black text-empire-ink text-shadow-soft">{pet.name}</div>
+        <div className="mt-4 font-display text-2xl font-black text-empire-ink text-shadow-soft">
+          <InlineRename value={pet.name} onSave={setPetName} />
+        </div>
         <div className="text-sm text-empire-mute mt-1">
           <span className="tag rarity-sr">{PET_STAGE_LABEL[pet.stage]}</span>
           <span className="ml-2">平均屬性 <b className="text-empire-ink">{avg.toFixed(0)}</b> / 100</span>
