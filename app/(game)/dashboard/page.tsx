@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useGame } from "@/lib/store";
 import { titleByLevel, PET_STAGE_EMOJI, PET_STAGE_LABEL } from "@/lib/utils";
 import { PASSIVE_SKILLS, isSpecialDay, SPECIAL_DAY_LABEL, SPECIAL_DAY_MULTIPLIER } from "@/lib/passive";
@@ -16,6 +17,12 @@ export default function DashboardPage() {
   const redemptions = useGame((s) => s.redemptions);
   const moments = useGame((s) => s.moments);
   const leaderboard = useGame((s) => s.leaderboard);
+  const checkKnightShield = useGame((s) => s.checkKnightShield);
+
+  // 首次進 dashboard 觸發騎士盾檢查（對應連擊中斷保護）
+  useEffect(() => {
+    checkKnightShield();
+  }, [checkKnightShield]);
 
   const pending = submissions.filter((s) => s.status === "pending").length;
   const collected = codex.filter((c) => c.obtainedAt).length;

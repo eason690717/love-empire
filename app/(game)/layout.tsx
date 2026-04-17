@@ -24,6 +24,7 @@ const TABS = [
   { href: "/friends",     label: "好友情侶", icon: "👫" },
   { href: "/alliance",    label: "聯盟",     icon: "🤝" },
   { href: "/pk",          label: "情侶 PK",  icon: "⚔️" },
+  { href: "/settings",    label: "設定",     icon: "⚙️" },
 ];
 
 export default function GameLayout({ children }: { children: React.ReactNode }) {

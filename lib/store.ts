@@ -52,6 +52,10 @@ interface State {
   skipOnboarding: () => void;
   resetOnboarding: () => void;
   greetVisitor: () => { success: boolean; reward?: string };
+  setPetName: (name: string) => void;
+  setPrivacy: (p: "public" | "friends" | "private") => void;
+  checkKnightShield: () => void;
+  resetAllData: () => void;
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -181,6 +185,63 @@ export const useGame = create<State>()(
       },
       skipOnboarding: () => set({ onboardingStep: -1 }),
       resetOnboarding: () => set({ onboardingStep: 0 }),
+
+      setPetName: (name) => {
+        const clean = name.trim().slice(0, 20);
+        if (!clean) return;
+        set({ pet: { ...get().pet, name: clean } });
+      },
+
+      setPrivacy: (p) => {
+        set({ couple: { ...get().couple, privacy: p } });
+      },
+
+      /** 檢查是否有缺席日、是否需要消耗騎士盾 */
+      checkKnightShield: () => {
+        const s = get().streak;
+        if (!s.lastDate || s.current === 0) return;
+        const last = new Date(s.lastDate);
+        const now = new Date();
+        const daysSinceLast = Math.floor((now.getTime() - last.getTime()) / 86400000);
+        if (daysSinceLast <= 1) return; // 昨天或今天打過 → 安全
+
+        // 有缺席日。盾牌啟動？
+        const shields = s.knightShields ?? 0;
+        if (shields > 0 && daysSinceLast === 2) {
+          // 用一個盾牌保護，視為昨天有簽到
+          const yesterday = new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
+          set({
+            streak: {
+              ...s,
+              lastDate: yesterday,
+              knightShields: shields - 1,
+            },
+          });
+          get().addMoment({
+            type: "custom",
+            title: "🛡️ 騎士盾啟動",
+            subtitle: "昨天沒簽到，但連擊仍保留",
+            emoji: "🛡️",
+          });
+        } else if (daysSinceLast >= 2) {
+          // 連擊中斷
+          set({
+            streak: { ...s, current: 0 },
+          });
+        }
+      },
+
+      resetAllData: () => {
+        // 清掉所有 persist 並重新 hydrate → 等同首次使用
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("love-empire-v3");
+            localStorage.removeItem("star-tied-empire-demo-v2");
+            localStorage.removeItem("love-empire-demo-v1");
+          } catch {}
+          window.location.href = "/";
+        }
+      },
 
       greetVisitor: () => {
         const today = new Date().toISOString().slice(0, 10);

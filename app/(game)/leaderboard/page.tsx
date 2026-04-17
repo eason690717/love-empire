@@ -22,11 +22,14 @@ const GROUPS = [
 
 export default function LeaderboardPage() {
   const leaderboard = useGame((s) => s.leaderboard);
+  const couple = useGame((s) => s.couple);
   const [metric, setMetric] = useState<Metric>("loveIndex");
   const [group, setGroup] = useState("all");
 
   const filtered = leaderboard
     .filter((c) => {
+      // 私人情侶不上榜；自己如果設為 private 則顯示「你選擇不上榜」
+      if (c.isSelf && couple.privacy === "private") return false;
       if (group === "novice") return c.kingdomLevel < 10;
       if (group === "mid") return c.kingdomLevel >= 10 && c.kingdomLevel < 30;
       if (group === "master") return c.kingdomLevel >= 30;
@@ -71,6 +74,12 @@ export default function LeaderboardPage() {
           ))}
         </div>
       </div>
+
+      {couple.privacy === "private" && (
+        <div className="card p-3 bg-empire-cream/60 text-xs text-empire-ink flex items-center gap-2">
+          🔒 <span>你在設定中選了「完全不公開」，不會出現在排行榜。可到 <a className="text-empire-sky underline" href="/settings">設定</a> 改</span>
+        </div>
+      )}
 
       <div className="space-y-2">
         {filtered.map((c, i) => (
