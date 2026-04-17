@@ -69,6 +69,19 @@ export interface MemoryCard {
   theme: "daily" | "romance" | "travel" | "festival";
   emoji: string;
   obtainedAt: string | null; // null = 尚未收集
+  festival?: {
+    month: number;    // 1-12
+    day: number;      // 1-31
+    window: number;   // 前後各 N 天可掉落
+    label: string;    // "情人節" / "聖誕節"
+  };
+}
+
+export interface PikminHelper {
+  color: "red" | "blue" | "yellow" | "green" | "purple";
+  emoji: string;
+  count: number;
+  label: string;
 }
 
 export interface Pet {

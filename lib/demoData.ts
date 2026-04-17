@@ -78,20 +78,33 @@ export const INITIAL_PET: Pet = {
   lastFedAt: new Date().toISOString(),
 };
 
-/** 圖鑑清單本身是定義，每個項目 obtainedAt:null 代表未收集。新使用者全部未收集 */
+/** 圖鑑清單。festival 欄位的卡只在節日前後 N 天掉落率大幅提升 */
 export const INITIAL_CODEX: MemoryCard[] = [
   { id: "c1", name: "第一次牽手", rarity: "SSR", theme: "romance", emoji: "🤝", obtainedAt: null },
   { id: "c2", name: "週末早午餐", rarity: "N", theme: "daily", emoji: "🥐", obtainedAt: null },
   { id: "c3", name: "共撐一把傘", rarity: "R", theme: "daily", emoji: "☂️", obtainedAt: null },
   { id: "c4", name: "深夜談心", rarity: "SR", theme: "romance", emoji: "🌙", obtainedAt: null },
   { id: "c5", name: "一起煮飯", rarity: "R", theme: "daily", emoji: "🍳", obtainedAt: null },
-  { id: "c6", name: "情人節限定", rarity: "SSR", theme: "festival", emoji: "💝", obtainedAt: null },
+  { id: "c6", name: "情人節限定", rarity: "SSR", theme: "festival", emoji: "💝", obtainedAt: null,
+    festival: { month: 2, day: 14, window: 7, label: "情人節" } },
   { id: "c7", name: "京都旅行", rarity: "SR", theme: "travel", emoji: "🏯", obtainedAt: null },
-  { id: "c8", name: "生日蛋糕", rarity: "SR", theme: "festival", emoji: "🎂", obtainedAt: null },
+  { id: "c8", name: "生日蛋糕", rarity: "SR", theme: "festival", emoji: "🎂", obtainedAt: null,
+    festival: { month: 4, day: 17, window: 3, label: "生日" } },
   { id: "c9", name: "第一場雪", rarity: "R", theme: "travel", emoji: "❄️", obtainedAt: null },
   { id: "c10", name: "午後散步", rarity: "N", theme: "daily", emoji: "🚶", obtainedAt: null },
   { id: "c11", name: "貓咪照護日", rarity: "R", theme: "daily", emoji: "🐈", obtainedAt: null },
   { id: "c12", name: "神話級告白", rarity: "SSR", theme: "romance", emoji: "💍", obtainedAt: null },
+  // 新增節日限定卡
+  { id: "c13", name: "聖誕夜擁抱", rarity: "SSR", theme: "festival", emoji: "🎄", obtainedAt: null,
+    festival: { month: 12, day: 25, window: 7, label: "聖誕節" } },
+  { id: "c14", name: "元旦初心願", rarity: "SR", theme: "festival", emoji: "🎆", obtainedAt: null,
+    festival: { month: 1, day: 1, window: 3, label: "元旦" } },
+  { id: "c15", name: "中秋月餅夜", rarity: "SR", theme: "festival", emoji: "🥮", obtainedAt: null,
+    festival: { month: 9, day: 17, window: 5, label: "中秋節" } },
+  { id: "c16", name: "春節紅包", rarity: "R", theme: "festival", emoji: "🧧", obtainedAt: null,
+    festival: { month: 2, day: 1, window: 7, label: "春節" } },
+  { id: "c17", name: "週年紀念日", rarity: "SSR", theme: "festival", emoji: "💎", obtainedAt: null,
+    festival: { month: 4, day: 17, window: 3, label: "週年" } },
 ];
 
 /** 新使用者的島嶼：只有一座城堡 + 一隻貓咪 (新手禮物)，其他家具要自己買 */

@@ -18,6 +18,7 @@ const TABS = [
   { href: "/codex",       label: "記憶圖鑑", icon: "🖼️" },
   { href: "/island",      label: "帝國島嶼", icon: "🏝️" },
   { href: "/rituals",     label: "每日儀式", icon: "🌅" },
+  { href: "/recap",       label: "年度回顧", icon: "✨" },
   { href: "/plaza",       label: "帝國廣場", icon: "🌸" },
   { href: "/leaderboard", label: "情侶排行", icon: "🏆" },
   { href: "/friends",     label: "好友情侶", icon: "👫" },

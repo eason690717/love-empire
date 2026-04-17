@@ -4,10 +4,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
   Couple, Task, Submission, Reward, Redemption, MemoryCard, Pet, IslandItem,
-  Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType,
+  Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType, PikminHelper,
 } from "./types";
 import { CATEGORY_META } from "./types";
 import { QUEEN_COIN_BONUS, isSpecialDay, SPECIAL_DAY_MULTIPLIER } from "./passive";
+import { inFestivalWindow, PIKMIN_BY_CATEGORY, getTodayVisitor } from "./festival";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
@@ -35,6 +36,8 @@ interface State {
   friends: Friendship[];
   gifts: Gift[];
   moments: Moment[];
+  pikmins: PikminHelper[];
+  lastVisitorGreetDate: string;
   notice: typeof NOTICE;
 
   login: (role: Role) => void;
@@ -48,6 +51,7 @@ interface State {
   advanceOnboarding: () => void;
   skipOnboarding: () => void;
   resetOnboarding: () => void;
+  greetVisitor: () => { success: boolean; reward?: string };
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
@@ -95,6 +99,8 @@ export const useGame = create<State>()(
       friends: FRIEND_COUPLES,
       gifts: GIFT_INBOX,
       moments: INITIAL_MOMENTS,
+      pikmins: [],
+      lastVisitorGreetDate: "",
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -176,6 +182,32 @@ export const useGame = create<State>()(
       skipOnboarding: () => set({ onboardingStep: -1 }),
       resetOnboarding: () => set({ onboardingStep: 0 }),
 
+      greetVisitor: () => {
+        const today = new Date().toISOString().slice(0, 10);
+        if (get().lastVisitorGreetDate === today) {
+          return { success: false };
+        }
+        const v = getTodayVisitor();
+        if (v.gift.type === "coins") {
+          set({ couple: { ...get().couple, coins: get().couple.coins + v.gift.amount } });
+        } else if (v.gift.type === "xp") {
+          const nextLove = get().couple.loveIndex + v.gift.amount;
+          const nextLevel = Math.max(get().couple.kingdomLevel, Math.floor(nextLove / 50) + 1);
+          set({ couple: { ...get().couple, loveIndex: nextLove, kingdomLevel: nextLevel } });
+        } else if (v.gift.type === "card") {
+          const locked = get().codex.find((c) => c.festival && !c.obtainedAt && inFestivalWindow(c));
+          if (locked) {
+            set({
+              codex: get().codex.map((c) =>
+                c.id === locked.id ? { ...c, obtainedAt: new Date().toISOString().slice(0, 10) } : c,
+              ),
+            });
+          }
+        }
+        set({ lastVisitorGreetDate: today });
+        return { success: true, reward: v.gift.label };
+      },
+
       submitTask: (taskId) => {
         const t = get().tasks.find((x) => x.id === taskId);
         if (!t) return;
@@ -238,16 +270,22 @@ export const useGame = create<State>()(
             });
           }
 
-          // 隨機掉落記憶卡
-          const uncollected = get().codex.filter((c) => !c.obtainedAt);
-          if (uncollected.length && Math.random() < 0.4) {
-            const pick = uncollected[Math.floor(Math.random() * uncollected.length)];
+          // 隨機掉落記憶卡（節日卡僅在節日窗口內才能掉）
+          const uncollected = get().codex.filter(
+            (c) => !c.obtainedAt && inFestivalWindow(c),
+          );
+          // 節日窗口內節日卡掉落率 +50%
+          const festivalBoost = uncollected.some((c) => c.festival) ? 0.6 : 0.4;
+          if (uncollected.length && Math.random() < festivalBoost) {
+            // 節日窗口內，節日卡優先挑
+            const festivalCards = uncollected.filter((c) => c.festival);
+            const pool = festivalCards.length && Math.random() < 0.5 ? festivalCards : uncollected;
+            const pick = pool[Math.floor(Math.random() * pool.length)];
             set({
               codex: get().codex.map((c) =>
                 c.id === pick.id ? { ...c, obtainedAt: new Date().toISOString().slice(0, 10) } : c,
               ),
             });
-            // SR / SSR 掉落自動發動態
             if (pick.rarity === "SSR" || pick.rarity === "SR") {
               get().addMoment({
                 type: pick.rarity === "SSR" ? "ssr_card" : "sr_card",
@@ -255,6 +293,21 @@ export const useGame = create<State>()(
                 subtitle: `「${pick.name}」${pick.emoji} 入手！`,
                 emoji: pick.emoji,
               });
+            }
+          }
+
+          // 產生 Pikmin 助手（任務類別 → 對應顏色，每 5 個任務生成 1 個）
+          const pik = PIKMIN_BY_CATEGORY[task?.category ?? "chore"];
+          if (pik) {
+            const existing = get().pikmins.find((p) => p.color === pik.color);
+            if (existing) {
+              set({
+                pikmins: get().pikmins.map((p) =>
+                  p.color === pik.color ? { ...p, count: p.count + 1 } : p,
+                ),
+              });
+            } else {
+              set({ pikmins: [...get().pikmins, { ...pik, count: 1 }] });
             }
           }
         }

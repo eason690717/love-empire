@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { RARITY_CLASS } from "@/lib/utils";
 import type { Rarity } from "@/lib/types";
+import { inFestivalWindow, daysToFestival } from "@/lib/festival";
 
 const THEMES = [
   { id: "all", label: "全部" },
@@ -25,6 +26,13 @@ export default function CodexPage() {
   const byRarity: Record<Rarity, typeof codex> = { N: [], R: [], SR: [], SSR: [] };
   for (const c of filtered) byRarity[c.rarity].push(c);
 
+  // 即將到期的節日
+  const upcomingFestivals = codex
+    .filter((c) => c.festival && !c.obtainedAt)
+    .map((c) => ({ card: c, days: daysToFestival(c) ?? 999 }))
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 3);
+
   return (
     <div className="space-y-4">
       <div className="card p-5">
@@ -37,10 +45,34 @@ export default function CodexPage() {
           </div>
           <div className="text-3xl">📚</div>
         </div>
-        <div className="mt-3 h-2 bg-empire-cloud rounded-full overflow-hidden">
-          <div className="h-full bg-empire-pink rounded-full transition-all" style={{ width: `${collected / codex.length * 100}%` }} />
+        <div className="mt-3 bar-bg">
+          <div className="bar-fill" style={{ width: `${collected / codex.length * 100}%` }} />
         </div>
       </div>
+
+      {upcomingFestivals.length > 0 && (
+        <div className="card p-4 bg-gradient-to-br from-empire-cream/60 to-white">
+          <h3 className="font-bold text-sm mb-2">⏰ 即將到來的節日限定</h3>
+          <div className="flex gap-2 overflow-x-auto">
+            {upcomingFestivals.map(({ card, days }) => {
+              const inWindow = inFestivalWindow(card);
+              return (
+                <div key={card.id} className="shrink-0 w-36 p-3 rounded-xl bg-white border border-empire-cloud">
+                  <div className="text-3xl text-center">{card.emoji}</div>
+                  <div className="text-xs font-bold mt-1 text-center truncate">{card.name}</div>
+                  <div className="text-[10px] text-center text-empire-mute mt-0.5">
+                    {inWindow ? (
+                      <span className="text-empire-berry font-bold">✨ 開放中</span>
+                    ) : (
+                      `距離開放 ${days} 天`
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="card p-2 flex gap-1 overflow-x-auto">
         {THEMES.map((t) => (
@@ -66,18 +98,28 @@ export default function CodexPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {byRarity[r].map((c) => {
                 const owned = !!c.obtainedAt;
+                const inWindow = inFestivalWindow(c);
+                const locked = !owned && c.festival && !inWindow;
                 const shineClass = owned
                   ? c.rarity === "SSR" ? "shine-ssr" : c.rarity === "SR" ? "shine-sr" : ""
                   : "";
                 return (
                   <div key={c.id} className={`card p-4 text-center transition hover:-translate-y-0.5 ${shineClass} ${
                     owned ? "" : "opacity-55 grayscale"
-                  }`}>
+                  } ${locked ? "relative" : ""}`}>
+                    {locked && (
+                      <div className="absolute top-2 right-2 text-xs">🔒</div>
+                    )}
                     <div className={`text-5xl ${owned ? "" : "blur-[1.5px]"} ${owned && c.rarity === "SSR" ? "animate-float-slow" : ""}`}>
                       {owned ? c.emoji : "❓"}
                     </div>
                     <div className="mt-2 font-bold text-sm">{owned ? c.name : "？？？"}</div>
                     <div className={`inline-block mt-1 tag ${RARITY_CLASS[c.rarity]}`}>{c.rarity}</div>
+                    {c.festival && (
+                      <div className="text-[10px] text-empire-mute mt-1">
+                        🎊 {c.festival.label}
+                      </div>
+                    )}
                     {owned && <div className="text-xs text-empire-mute mt-1">{c.obtainedAt}</div>}
                   </div>
                 );
@@ -87,8 +129,8 @@ export default function CodexPage() {
         )
       ))}
 
-      <p className="text-xs text-slate-400 text-center mt-6">
-        完成任務有機率掉落記憶卡 · 節日限定卡過期不補
+      <p className="text-xs text-empire-mute text-center mt-6">
+        完成任務有機率掉落記憶卡 · 節日限定卡只在節日前後開放
       </p>
     </div>
   );
