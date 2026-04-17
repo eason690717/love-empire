@@ -97,6 +97,8 @@ export interface Streak {
   current: number;
   longest: number;
   lastDate: string;
+  knightShields?: number;       // 王子「騎士精神」剩餘保護次數（每週重置為 1）
+  knightShieldsResetWeek?: string; // 紀錄本週 ISO (e.g. 2026-W16)
 }
 
 export interface Couple {

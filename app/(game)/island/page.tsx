@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useGame } from "@/lib/store";
-import { ISLAND_SHOP } from "@/lib/demoData";
+import { ISLAND_SHOP, getDailyFeatured } from "@/lib/demoData";
 import { season, SEASON_LABEL } from "@/lib/utils";
 
 export default function IslandPage() {
@@ -54,28 +54,57 @@ export default function IslandPage() {
       </div>
 
       {shop && (
-        <div className="card p-5">
-          <h3 className="font-bold mb-3">🛒 家具商店 (Nook)</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {ISLAND_SHOP.map((item) => {
-              const afford = couple.coins >= item.price;
-              return (
-                <button
-                  key={item.id}
-                  disabled={!afford}
-                  onClick={() => buyIslandItem(item.id, item.label, item.emoji, item.price)}
-                  className={`p-4 rounded-xl border text-center ${
-                    afford ? "border-empire-sky hover:bg-empire-cloud" : "border-slate-200 opacity-50 cursor-not-allowed"
-                  }`}
-                >
-                  <div className="text-4xl">{item.emoji}</div>
-                  <div className="text-sm font-medium mt-1">{item.label}</div>
-                  <div className="text-xs text-empire-gold mt-0.5">{item.price} 金幣</div>
-                </button>
-              );
-            })}
+        <>
+          {/* 每日限定 Nook */}
+          <div className="card p-5 bg-gradient-to-br from-empire-cream/80 to-white border-2 border-empire-gold/30">
+            <h3 className="font-bold mb-1 flex items-center gap-2">
+              ⭐ 今日限定特惠
+              <span className="text-xs font-normal text-empire-mute">(7 折、每日 rotate)</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              {getDailyFeatured().map((item) => {
+                const afford = couple.coins >= item.price;
+                return (
+                  <button
+                    key={item.id}
+                    disabled={!afford}
+                    onClick={() => buyIslandItem(item.id, item.label, item.emoji, item.price)}
+                    className={`p-4 rounded-xl border-2 text-center ${
+                      afford ? "border-empire-gold hover:bg-empire-cream" : "border-slate-200 opacity-50 cursor-not-allowed"
+                    }`}
+                  >
+                    <div className="text-4xl">{item.emoji}</div>
+                    <div className="text-sm font-medium mt-1">{item.label}</div>
+                    <div className="text-xs text-empire-gold mt-0.5 font-semibold">{item.price} 金幣</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+
+          <div className="card p-5">
+            <h3 className="font-bold mb-3">🛒 家具商店</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {ISLAND_SHOP.map((item) => {
+                const afford = couple.coins >= item.price;
+                return (
+                  <button
+                    key={item.id}
+                    disabled={!afford}
+                    onClick={() => buyIslandItem(item.id, item.label, item.emoji, item.price)}
+                    className={`p-4 rounded-xl border text-center ${
+                      afford ? "border-empire-sky hover:bg-empire-cloud" : "border-slate-200 opacity-50 cursor-not-allowed"
+                    }`}
+                  >
+                    <div className="text-4xl">{item.emoji}</div>
+                    <div className="text-sm font-medium mt-1">{item.label}</div>
+                    <div className="text-xs text-empire-gold mt-0.5">{item.price} 金幣</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

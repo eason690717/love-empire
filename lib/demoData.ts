@@ -100,7 +100,9 @@ export const INITIAL_ISLAND: IslandItem[] = [
   { id: "i2", catalogId: "cat", label: "新手貓", emoji: "🐈", x: 58, y: 45 },
 ];
 
-export const ISLAND_SHOP: { id: string; label: string; emoji: string; price: number }[] = [
+export interface ShopItem { id: string; label: string; emoji: string; price: number }
+
+export const ISLAND_SHOP: ShopItem[] = [
   { id: "tree_sakura", label: "櫻花樹", emoji: "🌸", price: 50 },
   { id: "tree_pine", label: "松樹", emoji: "🌲", price: 40 },
   { id: "fountain", label: "愛心噴泉", emoji: "⛲", price: 200 },
@@ -109,7 +111,20 @@ export const ISLAND_SHOP: { id: string; label: string; emoji: string; price: num
   { id: "flower", label: "花圃", emoji: "🌷", price: 20 },
   { id: "castle_tower", label: "城堡塔", emoji: "🗼", price: 500 },
   { id: "lantern", label: "燈籠", emoji: "🏮", price: 35 },
+  { id: "gazebo", label: "涼亭", emoji: "⛩️", price: 280 },
+  { id: "pond", label: "荷花池", emoji: "🪷", price: 150 },
+  { id: "swan", label: "天鵝", emoji: "🦢", price: 220 },
+  { id: "rainbow", label: "彩虹", emoji: "🌈", price: 800 },
 ];
+
+/** 動森 Nook 每日特惠：依日期 rotate 出 2 件 7 折 */
+export function getDailyFeatured(date = new Date()): ShopItem[] {
+  const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000);
+  const a = ISLAND_SHOP[dayOfYear % ISLAND_SHOP.length];
+  const b = ISLAND_SHOP[(dayOfYear + 5) % ISLAND_SHOP.length];
+  const uniq = a.id === b.id ? [a, ISLAND_SHOP[(dayOfYear + 3) % ISLAND_SHOP.length]] : [a, b];
+  return uniq.map((i) => ({ ...i, price: Math.round(i.price * 0.7) }));
+}
 
 export const INITIAL_RITUAL: Ritual = {
   date: new Date().toISOString().slice(0, 10),
@@ -117,11 +132,13 @@ export const INITIAL_RITUAL: Ritual = {
   night: false,
 };
 
-/** 新使用者的連擊：從 0 開始 */
+/** 新使用者的連擊：從 0 開始，騎士盾牌 1 個 */
 export const INITIAL_STREAK: Streak = {
   current: 0,
   longest: 0,
   lastDate: "",
+  knightShields: 1,
+  knightShieldsResetWeek: "",
 };
 
 export const LEADERBOARD: CoupleSummary[] = [

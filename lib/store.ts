@@ -7,6 +7,7 @@ import type {
   Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType,
 } from "./types";
 import { CATEGORY_META } from "./types";
+import { QUEEN_COIN_BONUS, isSpecialDay, SPECIAL_DAY_MULTIPLIER } from "./passive";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
@@ -56,13 +57,22 @@ interface State {
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
   removeIslandItem: (id: string) => void;
-  sendGift: () => void;
+  sendGift: (toCoupleName?: string, message?: string) => void;
+  sendCardGift: (cardId: string, toCoupleId: string, toCoupleName: string, message: string) => void;
   joinAlliance: (id: string) => void;
   attackBoss: (allianceId: string, damage: number) => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 const nowStr = () => new Date().toLocaleString("zh-TW");
+
+function getIsoWeek(d: Date): string {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((+date - +yearStart) / 86400000 + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
 
 export const useGame = create<State>()(
   persist(
@@ -190,15 +200,24 @@ export const useGame = create<State>()(
           const s = subs.find((x) => x.id === id)!;
           const task = get().tasks.find((t) => t.id === s.taskId);
           const attr = task?.attribute ?? "intimacy";
-          const systemXp = task?.systemXp ?? 5; // 公平指標：系統 XP
+          const baseXp = task?.systemXp ?? 5;
+
+          // 皮克敏 DNA：特別日雙倍 XP
+          const xpMultiplier = isSpecialDay() ? SPECIAL_DAY_MULTIPLIER : 1;
+          const systemXp = baseXp * xpMultiplier;
+
+          // 王妃被動：溫柔光環 — 金幣 +10% (只在申報者是王妃時)
+          const queenBonus = s.submittedBy === "queen" ? QUEEN_COIN_BONUS : 0;
+          const finalCoins = Math.round(s.reward * (1 + queenBonus));
+
           const prevLove = get().couple.loveIndex;
           const prevLevel = get().couple.kingdomLevel;
-          const nextLove = prevLove + systemXp;         // 愛意指數用 systemXp (公平)
+          const nextLove = prevLove + systemXp;
           const nextLevel = Math.max(prevLevel, Math.floor(nextLove / 50) + 1);
           set({
             couple: {
               ...get().couple,
-              coins: get().couple.coins + s.reward,      // 金幣用 reward (自訂)
+              coins: get().couple.coins + finalCoins,
               loveIndex: nextLove,
               kingdomLevel: nextLevel,
             },
@@ -317,14 +336,22 @@ export const useGame = create<State>()(
         // 早晚儀式都達成 + 今天第一次完成 → 連擊 +1 + 里程碑檢查
         if (next.morning && next.night) {
           const s = get().streak;
+          // 騎士盾牌週重置
+          const isoWeek = getIsoWeek(new Date());
+          const shieldsReset = s.knightShieldsResetWeek !== isoWeek;
+          const baseShields = shieldsReset ? 1 : (s.knightShields ?? 0);
+
           if (s.lastDate !== today) {
             const prev = s.current;
             const nextCurrent = prev + 1;
             set({
               streak: {
+                ...s,
                 current: nextCurrent,
                 longest: Math.max(s.longest, nextCurrent),
                 lastDate: today,
+                knightShields: baseShields,
+                knightShieldsResetWeek: isoWeek,
               },
             });
             if ([7, 14, 30, 60, 100, 200, 365].includes(nextCurrent)) {
@@ -358,21 +385,51 @@ export const useGame = create<State>()(
       removeIslandItem: (id) =>
         set({ island: get().island.filter((it) => it.id !== id) }),
 
-      sendGift: () =>
+      sendGift: (toCoupleName, message) =>
         set({
           gifts: [
             {
               id: uid(),
-              fromCoupleName: get().couple.name,
+              fromCoupleName: toCoupleName ?? get().couple.name,
               type: "card",
-              content: "✨ 送出一張記憶卡",
-              message: "謝謝你陪我",
+              content: "✨ 送出一張心意",
+              message: message ?? "謝謝你陪我",
               receivedAt: new Date().toLocaleDateString("zh-TW"),
               read: false,
             },
             ...get().gifts,
           ],
         }),
+
+      sendCardGift: (cardId, toCoupleId, toCoupleName, message) => {
+        const card = get().codex.find((c) => c.id === cardId && c.obtainedAt);
+        if (!card) return;
+        // 送出卡片 = 從自己圖鑑移除 (送禮有代價)
+        set({
+          codex: get().codex.map((c) => (c.id === cardId ? { ...c, obtainedAt: null } : c)),
+          gifts: [
+            {
+              id: uid(),
+              fromCoupleName: get().couple.name,
+              type: "card",
+              content: `${card.emoji} ${card.name} (${card.rarity})`,
+              message: `送給「${toCoupleName}」：${message || "祝你們幸福"}`,
+              receivedAt: new Date().toLocaleDateString("zh-TW"),
+              read: false,
+            },
+            ...get().gifts,
+          ],
+        });
+        // 送 SR/SSR 卡自動發動態
+        if (card.rarity === "SR" || card.rarity === "SSR") {
+          get().addMoment({
+            type: "custom",
+            title: `送出 ${card.rarity} 卡給朋友`,
+            subtitle: `「${card.name}」→ ${toCoupleName}`,
+            emoji: card.emoji,
+          });
+        }
+      },
 
       joinAlliance: (id) =>
         set({

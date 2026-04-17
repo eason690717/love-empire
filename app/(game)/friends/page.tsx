@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useGame } from "@/lib/store";
+import { CardGiftModal } from "@/components/CardGiftModal";
 
 export default function FriendsPage() {
   const friends = useGame((s) => s.friends);
   const leaderboard = useGame((s) => s.leaderboard);
   const gifts = useGame((s) => s.gifts);
-  const sendGift = useGame((s) => s.sendGift);
   const [tab, setTab] = useState<"list" | "gifts" | "add">("list");
+  const [giftTarget, setGiftTarget] = useState<{ id: string; name: string } | null>(null);
 
   const friendCouples = friends
     .map((f) => leaderboard.find((c) => c.id === f.coupleId))
@@ -36,7 +37,7 @@ export default function FriendsPage() {
               </div>
               <div className="mt-3 flex gap-2">
                 <Link href={`/couples/${c.id}`} className="btn-ghost flex-1 py-1.5 text-sm text-center">👀 參觀</Link>
-                <button onClick={() => sendGift()} className="btn-ghost flex-1 py-1.5 text-sm">🎁 送禮</button>
+                <button onClick={() => setGiftTarget({ id: c.id, name: c.name })} className="btn-ghost flex-1 py-1.5 text-sm">🎴 送卡</button>
                 <Link href="/pk" className="btn-ghost flex-1 py-1.5 text-sm text-center">⚔️ PK</Link>
               </div>
             </div>
@@ -64,6 +65,14 @@ export default function FriendsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {giftTarget && (
+        <CardGiftModal
+          toCoupleId={giftTarget.id}
+          toCoupleName={giftTarget.name}
+          onClose={() => setGiftTarget(null)}
+        />
       )}
 
       {tab === "add" && (
