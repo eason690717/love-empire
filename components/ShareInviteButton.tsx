@@ -4,18 +4,22 @@ import { useState } from "react";
 import { canShare, shareInvite } from "@/lib/liff";
 
 export function ShareInviteButton({ inviteCode }: { inviteCode: string }) {
-  const [status, setStatus] = useState<"idle" | "sending" | "done" | "fallback">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "fallback" | "error">("idle");
 
   const handleClick = async () => {
     setStatus("sending");
-    const appUrl = typeof window !== "undefined" ? window.location.origin : "https://loveempire.app";
-    const ok = await shareInvite(inviteCode, appUrl);
-    if (ok) {
-      // 若 LIFF shareTargetPicker 可用 → 直接送出；否則 clipboard fallback
-      const canLineShare = await canShare();
-      setStatus(canLineShare ? "done" : "fallback");
-    } else {
-      setStatus("idle");
+    try {
+      const appUrl = typeof window !== "undefined" ? window.location.origin : "https://loveempire.app";
+      const ok = await shareInvite(inviteCode, appUrl);
+      if (ok) {
+        const liffShare = await canShare().catch(() => false);
+        setStatus(liffShare ? "done" : "fallback");
+      } else {
+        setStatus("error");
+      }
+    } catch (e) {
+      console.error("[share] failed", e);
+      setStatus("error");
     }
     setTimeout(() => setStatus("idle"), 3000);
   };
@@ -23,8 +27,9 @@ export function ShareInviteButton({ inviteCode }: { inviteCode: string }) {
   const label =
     status === "sending" ? "分享中…"
     : status === "done" ? "已送到 LINE ✓"
-    : status === "fallback" ? "已複製邀請文案 ✓"
-    : "💚 分享到 LINE";
+    : status === "fallback" ? "已複製邀請 ✓ 貼到 LINE 傳送"
+    : status === "error" ? "分享失敗，已複製到剪貼簿"
+    : "💚 分享到 LINE / 複製邀請";
 
   return (
     <button

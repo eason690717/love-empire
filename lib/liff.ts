@@ -84,36 +84,80 @@ export async function logoutLiff() {
   if (liff.isLoggedIn()) liff.logout();
 }
 
-/** 是否可以使用 shareTargetPicker (分享到朋友/群組) */
-export async function canShare(): Promise<boolean> {
-  const liff = await loadLiff();
+/** liff 是否已完成 init（避免 isApiAvailable 未 init 直接 throw） */
+function liffInitialized(liff: Liff | null): boolean {
   if (!liff) return false;
   try {
-    return liff.isApiAvailable("shareTargetPicker");
+    return typeof liff.getOS === "function" && !!liff.getOS();
   } catch {
     return false;
   }
 }
 
-/** 分享配對邀請碼到 LINE 朋友 / 群組 */
+/** 是否可以使用 shareTargetPicker (分享到朋友/群組) */
+export async function canShare(): Promise<boolean> {
+  const liff = await loadLiff();
+  if (!liffInitialized(liff)) return false;
+  try {
+    return liff!.isApiAvailable("shareTargetPicker");
+  } catch {
+    return false;
+  }
+}
+
+/** 分享配對邀請碼 — LIFF 可用則走 shareTargetPicker，否則 Web Share / Clipboard fallback */
 export async function shareInvite(inviteCode: string, appUrl: string): Promise<boolean> {
   const liff = await loadLiff();
-  if (!liff || !liff.isApiAvailable("shareTargetPicker")) {
-    // fallback：複製連結 + Web Share API
-    const text = `💞 加入我的愛的帝國！\n配對碼：${inviteCode}\n${appUrl}/pair`;
-    if (typeof navigator !== "undefined" && "share" in navigator) {
+
+  let liffShareOk = false;
+  try {
+    liffShareOk = liffInitialized(liff) && liff!.isApiAvailable("shareTargetPicker");
+  } catch {
+    liffShareOk = false;
+  }
+
+  const text = `💞 加入我的愛的帝國！\n配對碼：${inviteCode}\n${appUrl}/pair?code=${inviteCode}`;
+
+  if (!liffShareOk) {
+    // 非 LIFF 環境：Web Share API > Clipboard
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
       try {
-        await (navigator as any).share({ title: "愛的帝國 · 配對邀請", text, url: `${appUrl}/pair` });
+        await (navigator as any).share({
+          title: "愛的帝國 · 配對邀請",
+          text,
+          url: `${appUrl}/pair?code=${inviteCode}`,
+        });
         return true;
-      } catch { /* cancelled */ }
+      } catch (e: any) {
+        // 使用者取消不算失敗 → 繼續 clipboard
+        if (e?.name !== "AbortError") console.warn("[share] web share failed", e);
+      }
     }
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        console.warn("[share] clipboard failed", e);
+      }
+    }
+    // 最後防線：製造一個 textarea 強制複製（舊瀏覽器 / 非 HTTPS）
     try {
-      await navigator.clipboard.writeText(text);
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
       return true;
     } catch {
       return false;
     }
   }
+
+  if (!liff) return false; // 不可能發生，但幫 TS 收斂型別
 
   try {
     await liff.shareTargetPicker([
