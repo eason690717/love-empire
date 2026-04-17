@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGame } from "@/lib/store";
 import { titleByLevel, SEASON_LABEL, season } from "@/lib/utils";
 import { InlineRename } from "@/components/InlineRename";
@@ -44,10 +44,23 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   const gifts = useGame((s) => s.gifts);
   const unreadCount = notifications.filter((n) => !n.read).length + gifts.filter((g) => !g.read).length;
 
+  // 等 Zustand persist 完成 rehydration 再做登入判斷，避免 SSR→client 閃爍回 /login
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    if (!loggedIn) router.push("/login");
-  }, [loggedIn, router]);
+    setHydrated(true);
+  }, []);
 
+  useEffect(() => {
+    if (hydrated && !loggedIn) router.push("/login");
+  }, [hydrated, loggedIn, router]);
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-empire-mute text-sm">
+        載入中…
+      </div>
+    );
+  }
   if (!loggedIn) return null;
 
   const nickname = role === "queen" ? couple.queen.nickname : couple.prince.nickname;
