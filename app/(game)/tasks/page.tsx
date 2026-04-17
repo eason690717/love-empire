@@ -20,12 +20,15 @@ export default function TasksPage() {
   const reviewSubmission = useGame((s) => s.reviewSubmission);
   const removeTask = useGame((s) => s.removeTask);
   const role = useGame((s) => s.role);
+  // 等級提示：哪些任務即將解鎖
+  const nextLockedTask = tasks.find((t) => t.unlockLevel && t.unlockLevel > couple.kingdomLevel);
   const [mode, setMode] = useState<"submit" | "review">("submit");
   const [editor, setEditor] = useState(false);
   const [just, setJust] = useState<string | null>(null);
 
   // 哪些任務「我可以申報」？
   const canSubmit = (t: Task) => {
+    if (t.unlockLevel && couple.kingdomLevel < t.unlockLevel) return false;
     if (t.direction === "together") return true;
     if (role === "queen" && t.direction === "queenToPrince") return true;
     if (role === "prince" && t.direction === "princeToQueen") return true;
@@ -75,6 +78,12 @@ export default function TasksPage() {
             ✨ + 新增自訂任務
           </button>
 
+          {nextLockedTask && (
+            <div className="card p-3 bg-empire-cream/60 border border-empire-gold/30 text-xs text-empire-ink flex items-center gap-2">
+              🔒 <span>Lv.{nextLockedTask.unlockLevel} 將解鎖「{nextLockedTask.title}」— 現在 Lv.{couple.kingdomLevel}，還差 {nextLockedTask.unlockLevel! - couple.kingdomLevel} 級</span>
+            </div>
+          )}
+
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat} className="card p-5">
               <h3 className="font-bold text-empire-sky border-l-4 border-empire-sky pl-2 mb-3">
@@ -97,6 +106,9 @@ export default function TasksPage() {
                         <div className="font-medium flex items-center gap-1.5 flex-wrap">
                           <span className="truncate">{t.title}</span>
                           {t.custom && <span className="tag bg-empire-cream text-empire-gold text-[10px] border-empire-gold/40">自訂</span>}
+                          {t.unlockLevel && couple.kingdomLevel < t.unlockLevel && (
+                            <span className="tag bg-slate-100 text-slate-500 text-[10px] border-slate-300">🔒 Lv.{t.unlockLevel}</span>
+                          )}
                         </div>
                         <div className="text-xs text-empire-mute flex gap-1.5 flex-wrap mt-0.5">
                           <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${badge.className}`}>{badge.label}</span>

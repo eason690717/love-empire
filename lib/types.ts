@@ -20,6 +20,7 @@ export interface Task {
   direction: TaskDirection;
   custom?: boolean;         // true = 使用者自訂，false/undefined = 系統預設
   coop?: boolean;           // legacy 欄位，新用 direction === 'together'
+  unlockLevel?: number;     // 解鎖所需王國等級（未達等級無法申報）
 }
 
 /** 每個分類的系統預設 XP 與 reward 上限（公平性護欄） */

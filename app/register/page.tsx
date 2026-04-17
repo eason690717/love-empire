@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { ShareInviteButton } from "@/components/ShareInviteButton";
+import { signUp, isSupabaseEnabled } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -16,10 +17,21 @@ export default function RegisterPage() {
   const [kingdom, setKingdom] = useState("");
   const [nickname, setNick] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState<string | null>(null);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+    setErr(null);
     if (kingdom.trim()) setKingdomName(kingdom);
     if (nickname.trim()) setNickname("queen", nickname);
+    // 若 Supabase 已啟用，嘗試真實註冊
+    if (isSupabaseEnabled() && email.trim() && password.trim()) {
+      const { error } = await signUp(email.trim(), password);
+      if (error && !error.includes("demo")) {
+        setErr(error);
+        return;
+      }
+    }
     setStep("done");
   };
 
@@ -49,7 +61,19 @@ export default function RegisterPage() {
                 value={email}
                 onChange={setEmail}
               />
-              <Field label="密碼" placeholder="至少 8 碼" type="password" />
+              <Field
+                label="密碼"
+                placeholder="至少 8 碼"
+                type="password"
+                value={password}
+                onChange={setPassword}
+              />
+              {!isSupabaseEnabled() && (
+                <div className="text-[11px] text-empire-mute bg-empire-mist rounded-lg p-2">
+                  ℹ️ 目前為本地 demo 模式（資料存瀏覽器）。接入 Supabase 後才啟用真實跨裝置帳號。
+                </div>
+              )}
+              {err && <div className="text-xs text-rose-600">{err}</div>}
               <button
                 onClick={handleCreate}
                 className="btn-primary w-full py-3.5 font-semibold"

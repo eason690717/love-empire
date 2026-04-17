@@ -51,6 +51,14 @@ export const INITIAL_TASKS: Task[] = [
   // 合作任務 (systemXp: 12, rewardCap: 300)
   { id: "t13", title: "一起看一部電影 🎬", category: "coop", reward: 80, systemXp: 12, attribute: "intimacy", direction: "together", coop: true },
   { id: "t14", title: "互相讚美 10 句 💕", category: "coop", reward: 100, systemXp: 12, attribute: "communication", direction: "together", coop: true },
+  // 等級解鎖任務 (Lv.5+)
+  { id: "t15", title: "深度談心 1 小時", category: "romance", reward: 150, systemXp: 10, attribute: "communication", direction: "together", unlockLevel: 5 },
+  { id: "t16", title: "手寫信一封", category: "romance", reward: 200, systemXp: 10, attribute: "communication", direction: "together", unlockLevel: 5 },
+  // 等級解鎖任務 (Lv.15+)
+  { id: "t17", title: "週末小旅行", category: "coop", reward: 300, systemXp: 12, attribute: "intimacy", direction: "together", coop: true, unlockLevel: 15 },
+  { id: "t18", title: "一起做早餐", category: "coop", reward: 120, systemXp: 12, attribute: "care", direction: "together", coop: true, unlockLevel: 15 },
+  // 等級解鎖任務 (Lv.30+)
+  { id: "t19", title: "年度浪漫計畫", category: "surprise", reward: 500, systemXp: 15, attribute: "surprise", direction: "together", unlockLevel: 30 },
 ];
 
 /** 新使用者的申報紀錄：空的 */

@@ -236,11 +236,27 @@ export const useGame = create<State>()(
 
           // 皮克敏 DNA：特別日雙倍 XP
           const xpMultiplier = isSpecialDay() ? SPECIAL_DAY_MULTIPLIER : 1;
-          const systemXp = baseXp * xpMultiplier;
+
+          // 合作任務 dual-submission bonus：若雙方今日都申報過同一合作任務 → 1.5x
+          let coopBonus = 1;
+          if (task?.direction === "together" && task?.coop) {
+            const today = new Date().toISOString().slice(0, 10);
+            const bothSubmitted = ["queen", "prince"].every((r) =>
+              get().submissions.some((x) =>
+                x.taskId === task.id &&
+                x.status === "approved" &&
+                x.submittedBy === r &&
+                (x.reviewedAt ?? x.createdAt).includes(today.replace(/-/g, "/").slice(5)) // 粗略日期匹配
+              )
+            );
+            if (bothSubmitted) coopBonus = 1.5;
+          }
+
+          const systemXp = Math.round(baseXp * xpMultiplier * coopBonus);
 
           // 王妃被動：溫柔光環 — 金幣 +10% (只在申報者是王妃時)
           const queenBonus = s.submittedBy === "queen" ? QUEEN_COIN_BONUS : 0;
-          const finalCoins = Math.round(s.reward * (1 + queenBonus));
+          const finalCoins = Math.round(s.reward * (1 + queenBonus) * coopBonus);
 
           const prevLove = get().couple.loveIndex;
           const prevLevel = get().couple.kingdomLevel;
