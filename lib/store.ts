@@ -177,6 +177,10 @@ export const useGame = create<State>()(
           import("./auth").then(({ signOut, isSupabaseEnabled }) => {
             if (isSupabaseEnabled()) signOut();
           }).catch(() => null);
+          // 清裝置綁定：允許重新綁定角色
+          import("./deviceBinding").then(({ clearDeviceBinding }) => {
+            clearDeviceBinding();
+          }).catch(() => null);
         }
       },
 

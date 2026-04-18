@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ShareInviteButton } from "@/components/ShareInviteButton";
 import { signInAnon, isSupabaseEnabled } from "@/lib/auth";
 import { ensureCoupleForUser } from "@/lib/supabaseAdapter";
+import { writeDeviceBinding } from "@/lib/deviceBinding";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,8 +42,21 @@ export default function RegisterPage() {
         return;
       }
       if (result.inviteCode) setInviteCode(result.inviteCode);
+      // 建國者 = queen；寫裝置綁定
+      if (result.inviteCode) {
+        writeDeviceBinding({
+          role: "queen",
+          kingdomKey: result.inviteCode,
+          nickname: nickname.trim(),
+        });
+      }
     } else {
       setInviteCode(couple.inviteCode);
+      writeDeviceBinding({
+        role: "queen",
+        kingdomKey: couple.inviteCode,
+        nickname: nickname.trim() || "阿紅",
+      });
     }
     setStep("done");
   };

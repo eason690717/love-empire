@@ -8,6 +8,7 @@ import { useLiff } from "@/components/LiffProvider";
 import { loginLiff } from "@/lib/liff";
 import { signInAnon, isSupabaseEnabled } from "@/lib/auth";
 import { joinCoupleByCode } from "@/lib/supabaseAdapter";
+import { readDeviceBinding, writeDeviceBinding, clearDeviceBinding } from "@/lib/deviceBinding";
 
 function LoginInner() {
   const router = useRouter();
@@ -21,8 +22,20 @@ function LoginInner() {
   const [nickname, setNick] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [locked, setLocked] = useState(false);  // 此裝置是否已綁定角色
 
-  // URL 帶 ?code=XXXXXX（分享連結）時自動填入
+  // 讀裝置綁定 → 預填 + 鎖定角色
+  useEffect(() => {
+    const b = readDeviceBinding();
+    if (b) {
+      setRole(b.role);
+      setCode(b.kingdomKey);
+      setNick(b.nickname);
+      setLocked(true);
+    }
+  }, []);
+
+  // URL 帶 ?code=XXXXXX（分享連結）→ 仍可以覆蓋 code 欄位
   useEffect(() => {
     const q = search?.get("code");
     if (q) setCode(q.toUpperCase().slice(0, 6));
@@ -55,14 +68,24 @@ function LoginInner() {
       setLoading(false);
       if (!coupleId) { setErr("找不到這組王國鑰匙。請確認對方分享的鑰匙正確。"); return; }
       setNickname(role, nickname);
+      writeDeviceBinding({ role, kingdomKey: code.trim().toUpperCase(), nickname: nickname.trim() });
       login(role);
       router.push("/dashboard");
       return;
     }
     // Demo 模式
     if (nickname.trim()) setNickname(role, nickname);
+    writeDeviceBinding({ role, kingdomKey: code.trim().toUpperCase() || "DEMO", nickname: nickname.trim() || "玩家" });
     login(role);
     router.push("/dashboard");
+  };
+
+  const handleUnbind = () => {
+    clearDeviceBinding();
+    setLocked(false);
+    setRole("prince");
+    setCode("");
+    setNick("");
   };
 
   const handleLineLogin = async () => {
@@ -110,6 +133,16 @@ function LoginInner() {
           </div>
         )}
 
+        {locked && (
+          <div className="mt-4 p-3 rounded-xl bg-empire-mist border border-empire-cloud text-xs text-empire-mute">
+            🔒 此裝置已綁定為 <b className="text-empire-ink">{role === "queen" ? "🌸 阿紅" : "💎 阿藍"}</b>。
+            角色已鎖定，下次開啟 app 會自動登入。
+            <button onClick={handleUnbind} className="ml-1 underline decoration-dotted hover:text-empire-berry">
+              換角色
+            </button>
+          </div>
+        )}
+
         <div className="mt-4 space-y-5">
           <div>
             <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 王國鑰匙</label>
@@ -134,12 +167,15 @@ function LoginInner() {
 
           {isSupabaseEnabled() && (
             <div>
-              <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 你在這段關係的角色</label>
+              <label className="text-sm text-empire-mute flex items-center gap-2">
+                <span className="sprout-dot" /> 你在這段關係的角色
+                {locked && <span className="text-[11px] text-empire-mute/70">（此裝置已鎖定）</span>}
+              </label>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <RoleBtn active={role === "queen"} onClick={() => setRole("queen")}>
+                <RoleBtn active={role === "queen"} disabled={locked} onClick={() => setRole("queen")}>
                   <span className="text-xl">🌸</span> 我是阿紅
                 </RoleBtn>
-                <RoleBtn active={role === "prince"} onClick={() => setRole("prince")}>
+                <RoleBtn active={role === "prince"} disabled={locked} onClick={() => setRole("prince")}>
                   <span className="text-xl">💎</span> 我是阿藍
                 </RoleBtn>
               </div>
@@ -163,15 +199,20 @@ function LoginInner() {
   );
 }
 
-function RoleBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function RoleBtn({ active, disabled, onClick, children }: { active: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={`p-3 rounded-xl border-2 text-sm font-medium transition ${
-        active
-          ? "border-empire-sky bg-empire-cloud text-empire-ink"
-          : "border-empire-cloud bg-white text-empire-mute hover:border-empire-sky/50"
+        disabled
+          ? active
+            ? "border-empire-sky/60 bg-empire-cloud/60 text-empire-ink/80 cursor-not-allowed"
+            : "border-empire-cloud/60 bg-white/60 text-empire-mute/50 cursor-not-allowed opacity-50"
+          : active
+            ? "border-empire-sky bg-empire-cloud text-empire-ink"
+            : "border-empire-cloud bg-white text-empire-mute hover:border-empire-sky/50"
       }`}
     >
       {children}
