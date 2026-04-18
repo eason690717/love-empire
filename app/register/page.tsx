@@ -30,11 +30,18 @@ export default function RegisterPage() {
       if (password.length < 6) { setErr("密碼至少 6 碼"); return; }
       const { user, error } = await signUp(email.trim(), password);
       if (error && !error.includes("demo")) {
-        // 若使用者已存在，嘗試登入
+        // signUp 失敗 → 可能是已註冊。轉 signIn
         const signed = await signIn(email.trim(), password);
-        if (signed.error) { setErr(signed.error); return; }
+        if (signed.error) {
+          // signIn 也失敗 → 最可能是密碼對不上既有帳號
+          setErr(
+            error.includes("已經註冊過") || error.includes("already")
+              ? "這個 email 已註冊過。若是你本人，到登入頁用原密碼；或換一個 email 建新王國。"
+              : signed.error,
+          );
+          return;
+        }
       }
-      // 確保有 couple row
       const { getCurrentUser } = await import("@/lib/supabaseAdapter");
       const u = await getCurrentUser();
       if (u?.id) {
