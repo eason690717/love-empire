@@ -696,11 +696,12 @@ export const useGame = create<State>()(
         // 進化自動發動態
         if (nextStage > prev.stage) {
           const stageName = ["蛋", "幼體", "成型", "傳說", "神話"][nextStage];
+          const stageEmoji = ["🥚", "🐣", "🐥", "🦄", "🌟"][nextStage];
           get().addMoment({
             type: "pet_evolve",
             title: `寵物進化為「${stageName}」`,
             subtitle: `${prev.name} 蛻變中 ✨`,
-            emoji: ["🥚", "🐣", "🐥", "🦄", "🌟"][nextStage],
+            emoji: stageEmoji,
           });
         }
         get().checkAchievements();

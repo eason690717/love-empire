@@ -5,6 +5,7 @@ import { useGame } from "@/lib/store";
 import { RARITY_CLASS } from "@/lib/utils";
 import type { Rarity } from "@/lib/types";
 import { inFestivalWindow, daysToFestival } from "@/lib/festival";
+import { CardFrame } from "@/components/art/CardFrame";
 
 const THEMES = [
   { id: "all", label: "全部" },
@@ -100,28 +101,22 @@ export default function CodexPage() {
                 const owned = !!c.obtainedAt;
                 const inWindow = inFestivalWindow(c);
                 const locked = !owned && c.festival && !inWindow;
-                const shineClass = owned
-                  ? c.rarity === "SSR" ? "shine-ssr" : c.rarity === "SR" ? "shine-sr" : ""
-                  : "";
                 return (
-                  <div key={c.id} className={`card p-4 text-center transition hover:-translate-y-0.5 ${shineClass} ${
-                    owned ? "" : "opacity-55 grayscale"
-                  } ${locked ? "relative" : ""}`}>
+                  <CardFrame key={c.id} rarity={c.rarity} owned={owned} className="text-center transition hover:-translate-y-0.5">
                     {locked && (
-                      <div className="absolute top-2 right-2 text-xs">🔒</div>
+                      <div className="absolute top-2 left-2 text-xs">🔒</div>
                     )}
                     <div className={`text-5xl ${owned ? "" : "blur-[1.5px]"} ${owned && c.rarity === "SSR" ? "animate-float-slow" : ""}`}>
                       {owned ? c.emoji : "❓"}
                     </div>
                     <div className="mt-2 font-bold text-sm">{owned ? c.name : "？？？"}</div>
-                    <div className={`inline-block mt-1 tag ${RARITY_CLASS[c.rarity]}`}>{c.rarity}</div>
                     {c.festival && (
                       <div className="text-[10px] text-empire-mute mt-1">
                         🎊 {c.festival.label}
                       </div>
                     )}
                     {owned && <div className="text-xs text-empire-mute mt-1">{c.obtainedAt}</div>}
-                  </div>
+                  </CardFrame>
                 );
               })}
             </div>

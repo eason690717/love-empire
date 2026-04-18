@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/store";
-import { ATTR_LABEL, ATTR_COLOR, PET_STAGE_EMOJI, PET_STAGE_LABEL } from "@/lib/utils";
+import { ATTR_LABEL, ATTR_COLOR, PET_STAGE_LABEL } from "@/lib/utils";
 import { InlineRename } from "@/components/InlineRename";
+import { PetAvatar } from "@/components/art/PetAvatar";
 
 export default function PetPage() {
   const pet = useGame((s) => s.pet);
@@ -25,18 +26,9 @@ export default function PetPage() {
         <div className="absolute bottom-2 right-8 text-3xl opacity-60 select-none">🍄</div>
 
         <div className="relative inline-block">
-          {/* 地面陰影 */}
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-28 h-4 rounded-full bg-black/15 blur-sm" />
-          {/* 圓形光暈 */}
           <div className="absolute inset-0 -m-6 rounded-full animate-sparkle"
                style={{ background: "radial-gradient(circle, rgba(255,212,71,0.5) 0%, transparent 65%)" }} />
-          <motion.div
-            className="relative text-[7rem] inline-block"
-            animate={{ y: [0, -14, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            {PET_STAGE_EMOJI[pet.stage]}
-          </motion.div>
+          <PetAvatar stage={pet.stage} size={180} />
         </div>
         <div className="mt-4 font-display text-2xl font-black text-empire-ink text-shadow-soft">
           <InlineRename value={pet.name} onSave={setPetName} />
@@ -80,22 +72,22 @@ export default function PetPage() {
 
       <div className="card p-5">
         <h3 className="font-bold mb-3">進化階段</h3>
-        <div className="flex items-center justify-between">
-          {PET_STAGE_EMOJI.map((e, i) => {
+        <div className="flex items-center justify-between gap-1">
+          {([0, 1, 2, 3, 4] as const).map((i) => {
             const active = i <= pet.stage;
             return (
               <div key={i} className="flex flex-col items-center gap-1">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                  active ? "bg-empire-pink/30" : "bg-empire-cloud opacity-40"
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden ${
+                  active ? "bg-empire-pink/20" : "bg-empire-cloud opacity-35 grayscale"
                 }`}>
-                  {e}
+                  <PetAvatar stage={i} size={48} animate={false} />
                 </div>
-                <div className="text-xs text-slate-500">{PET_STAGE_LABEL[i]}</div>
+                <div className="text-xs text-empire-mute">{PET_STAGE_LABEL[i]}</div>
               </div>
             );
           })}
         </div>
-        <p className="text-xs text-slate-400 mt-4 text-center">
+        <p className="text-xs text-empire-mute mt-4 text-center">
           所有屬性達 80 → 進化「傳說」· 達 100 → 進化「神話」
         </p>
       </div>

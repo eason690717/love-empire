@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+  <defs>
+    <radialGradient id="hero-bg" cx="50%" cy="35%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#ffe8f0"/>
+      <stop offset="100%" stop-color="#ffc1d6"/>
+    </radialGradient>
+    <linearGradient id="hero-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bfe3f9"/>
+      <stop offset="60%" stop-color="#d8eefd"/>
+      <stop offset="100%" stop-color="#e7f4d5"/>
+    </linearGradient>
+    <radialGradient id="hero-aura" cx="50%" cy="55%">
+      <stop offset="0%" stop-color="#ffd447" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ffd447" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="hero-shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#1a3a56" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- background circle -->
+  <circle cx="160" cy="160" r="150" fill="url(#hero-sky)" stroke="#ffc1d6" stroke-width="4"/>
+  <!-- aura -->
+  <circle cx="160" cy="170" r="120" fill="url(#hero-aura)"/>
+
+  <!-- distant castle -->
+  <g opacity="0.55">
+    <rect x="130" y="100" width="60" height="60" fill="#b8d8ff" stroke="#5aa4ff" stroke-width="2"/>
+    <polygon points="130,100 160,70 190,100" fill="#ff8eae" stroke="#d04878" stroke-width="2"/>
+    <rect x="125" y="90" width="10" height="16" fill="#ff8eae" stroke="#d04878" stroke-width="1.5"/>
+    <rect x="185" y="90" width="10" height="16" fill="#ff8eae" stroke="#d04878" stroke-width="1.5"/>
+    <rect x="148" y="135" width="14" height="25" fill="#fff5e0" stroke="#c98522" stroke-width="1.5"/>
+  </g>
+
+  <!-- ground -->
+  <path d="M10 230 Q160 210 310 230 L310 320 L10 320 Z" fill="#a6d18a"/>
+  <path d="M10 238 Q160 218 310 238" fill="none" stroke="#8ed172" stroke-width="2"/>
+
+  <!-- tiny flowers -->
+  <g>
+    <circle cx="50" cy="250" r="4" fill="#ff8eae"/>
+    <circle cx="50" cy="248" r="1.5" fill="#ffd447"/>
+    <circle cx="80" cy="260" r="4" fill="#b8d8ff"/>
+    <circle cx="80" cy="258" r="1.5" fill="#ffd447"/>
+    <circle cx="240" cy="255" r="4" fill="#d280ff"/>
+    <circle cx="240" cy="253" r="1.5" fill="#ffd447"/>
+    <circle cx="270" cy="248" r="4" fill="#ff8eae"/>
+    <circle cx="270" cy="246" r="1.5" fill="#ffd447"/>
+  </g>
+
+  <!-- couple — character A (left, warm tone) -->
+  <g filter="url(#hero-shadow)">
+    <!-- body -->
+    <ellipse cx="115" cy="225" rx="30" ry="38" fill="#ff8eae" stroke="#d04878" stroke-width="2.5"/>
+    <!-- head -->
+    <circle cx="115" cy="175" r="28" fill="#fff5e0" stroke="#d04878" stroke-width="2.5"/>
+    <!-- hair tuft -->
+    <path d="M90 158 Q110 148 140 155 Q135 170 115 168 Q100 170 90 158 Z" fill="#d04878"/>
+    <!-- cheeks -->
+    <circle cx="102" cy="182" r="4" fill="#ff8eae" opacity="0.6"/>
+    <circle cx="128" cy="182" r="4" fill="#ff8eae" opacity="0.6"/>
+    <!-- eyes -->
+    <circle cx="106" cy="175" r="2.5" fill="#2d4f6a"/>
+    <circle cx="124" cy="175" r="2.5" fill="#2d4f6a"/>
+    <!-- smile -->
+    <path d="M108 188 Q115 192 122 188" stroke="#d04878" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- crown -->
+    <path d="M100 148 L105 138 L110 145 L115 135 L120 145 L125 138 L130 148 Z"
+          fill="#ffd447" stroke="#c98522" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="115" cy="138" r="2" fill="#ff8eae"/>
+  </g>
+
+  <!-- character B (right, cool tone) -->
+  <g filter="url(#hero-shadow)">
+    <ellipse cx="205" cy="225" rx="30" ry="38" fill="#8fcff5" stroke="#3680e0" stroke-width="2.5"/>
+    <circle cx="205" cy="175" r="28" fill="#fff5e0" stroke="#3680e0" stroke-width="2.5"/>
+    <path d="M180 158 Q200 148 230 155 Q225 170 205 168 Q190 170 180 158 Z" fill="#3680e0"/>
+    <circle cx="192" cy="182" r="4" fill="#ff8eae" opacity="0.6"/>
+    <circle cx="218" cy="182" r="4" fill="#ff8eae" opacity="0.6"/>
+    <circle cx="196" cy="175" r="2.5" fill="#2d4f6a"/>
+    <circle cx="214" cy="175" r="2.5" fill="#2d4f6a"/>
+    <path d="M198 188 Q205 192 212 188" stroke="#3680e0" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- crown -->
+    <path d="M190 148 L195 138 L200 145 L205 135 L210 145 L215 138 L220 148 Z"
+          fill="#ffd447" stroke="#c98522" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="205" cy="138" r="2" fill="#8fcff5"/>
+  </g>
+
+  <!-- holding hands (red line + small heart) -->
+  <line x1="140" y1="238" x2="182" y2="238" stroke="#ff5f8d" stroke-width="3" stroke-linecap="round" stroke-dasharray="0"/>
+  <g transform="translate(155, 210)">
+    <path d="M8 14 Q-2 6 4 0 Q8 2 8 6 Q8 2 12 0 Q18 6 8 14 Z" fill="#ff5f8d" stroke="#d04878" stroke-width="1"/>
+  </g>
+
+  <!-- floating hearts/sparkles -->
+  <text x="45" y="80" font-size="22" fill="#ff8eae" opacity="0.8">♥</text>
+  <text x="255" y="70" font-size="18" fill="#ffd447" opacity="0.9">✦</text>
+  <text x="280" y="125" font-size="16" fill="#ff8eae" opacity="0.8">♥</text>
+  <text x="35" y="130" font-size="16" fill="#8fcff5" opacity="0.85">✦</text>
+
+  <!-- Pikmin-esque flower -->
+  <g transform="translate(70, 190)">
+    <line x1="4" y1="12" x2="4" y2="2" stroke="#4a8128" stroke-width="1.5"/>
+    <circle cx="4" cy="0" r="3" fill="#ffb8de"/>
+  </g>
+  <g transform="translate(258, 200)">
+    <line x1="4" y1="12" x2="4" y2="2" stroke="#4a8128" stroke-width="1.5"/>
+    <circle cx="4" cy="0" r="3" fill="#ffd447"/>
+  </g>
+</svg>

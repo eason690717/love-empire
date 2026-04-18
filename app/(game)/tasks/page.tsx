@@ -53,10 +53,10 @@ export default function TasksPage() {
     return m;
   }, [tasks]);
 
-  // 審核區：在 demo 模式下顯示所有 pending (因為兩人實際上還沒真正分開裝置)
-  const reviewList = submissions.filter((s) => s.status === "pending");
+  // 審核區：只顯示「對方送來」的 (自己送的不能自己審，必須由伴侶審)
+  const reviewList = submissions.filter((s) => s.status === "pending" && s.submittedBy !== role);
   const pendingMineCount = submissions.filter((s) => s.status === "pending" && s.submittedBy === role).length;
-  const pendingPartnerCount = submissions.filter((s) => s.status === "pending" && s.submittedBy !== role).length;
+  const pendingPartnerCount = reviewList.length;
 
   const handleSubmit = (id: string) => {
     submitTask(id);
@@ -173,10 +173,10 @@ export default function TasksPage() {
       ) : (
         <div className="space-y-3">
           <div className="card p-4 text-xs text-empire-mute">
-            你是 <b className="text-empire-ink">{myNickname}</b>。
-            {pendingPartnerCount > 0 ? `對方送來 ${pendingPartnerCount} 筆待你准奏；` : ""}
-            {pendingMineCount > 0 ? `你送出 ${pendingMineCount} 筆等對方審核 (demo 模式下你也可以幫對方按)；` : ""}
-            {reviewList.length === 0 && "目前沒有待審的任務。到「申報任務」分頁勾選任務送審。"}
+            你是 <b className="text-empire-ink">{myNickname}</b>，負責審核 <b>{partnerNickname}</b> 送來的申報。
+            {pendingPartnerCount > 0 ? ` 目前 ${pendingPartnerCount} 筆待你准奏。` : ""}
+            {pendingMineCount > 0 ? ` 你自己送出的 ${pendingMineCount} 筆由對方審核 (請用對方身份登入處理)。` : ""}
+            {reviewList.length === 0 && pendingMineCount === 0 && " 目前沒有待審任務。到「申報任務」送出幾個試試。"}
           </div>
 
           {reviewList.length > 0 && (
@@ -185,14 +185,13 @@ export default function TasksPage() {
               <div className="space-y-2">
                 {reviewList.map((s) => {
                   const from = s.submittedBy === "queen" ? couple.queen.nickname : couple.prince.nickname;
-                  const mine = s.submittedBy === role;
                   return (
-                    <div key={s.id} className={`p-3 rounded-xl border ${mine ? "bg-empire-cream/40 border-empire-gold/30" : "border-empire-cloud"}`}>
+                    <div key={s.id} className="p-3 rounded-xl border border-empire-cloud">
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-medium">{s.taskTitle}</div>
                           <div className="text-xs text-empire-mute mt-0.5">
-                            <b>{from}</b> 送出 · {s.createdAt}{mine && " (你自己送的)"}
+                            <b>{from}</b> 送出 · {s.createdAt}
                           </div>
                         </div>
                         <div className="text-empire-gold font-semibold text-sm">💰 {s.reward}</div>

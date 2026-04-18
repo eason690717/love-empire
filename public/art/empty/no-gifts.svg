@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
+  <defs>
+    <linearGradient id="eg-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe8f0"/>
+      <stop offset="100%" stop-color="#e6f3fc"/>
+    </linearGradient>
+    <linearGradient id="eg-box" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffc1d6"/>
+      <stop offset="100%" stop-color="#ff8eae"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="160" rx="20" fill="url(#eg-bg)"/>
+  <!-- gift box -->
+  <rect x="70" y="75" width="60" height="55" rx="4" fill="url(#eg-box)" stroke="#d04878" stroke-width="2"/>
+  <rect x="65" y="65" width="70" height="18" rx="4" fill="#ffd447" stroke="#c98522" stroke-width="2"/>
+  <!-- ribbon -->
+  <rect x="96" y="65" width="8" height="65" fill="#c98522"/>
+  <rect x="96" y="65" width="8" height="65" fill="#ffd447" opacity="0.5"/>
+  <!-- bow -->
+  <g transform="translate(100, 60)">
+    <path d="M-12 0 Q-18 -12 -4 -8 Q0 -2 0 2 Q0 -2 4 -8 Q18 -12 12 0 Q6 6 0 2 Q-6 6 -12 0 Z"
+          fill="#ff5f8d" stroke="#d04878" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="0" cy="0" r="3" fill="#ffd447" stroke="#c98522" stroke-width="1"/>
+  </g>
+  <!-- empty hint mark -->
+  <text x="100" y="110" font-size="20" text-anchor="middle" fill="#ffffff" font-weight="900">?</text>
+  <!-- sparkles -->
+  <text x="35" y="45" font-size="18" fill="#ffd447" opacity="0.85">✦</text>
+  <text x="160" y="50" font-size="16" fill="#ff8eae" opacity="0.8">♥</text>
+  <text x="30" y="130" font-size="14" fill="#8fcff5" opacity="0.75">✧</text>
+  <text x="165" y="135" font-size="14" fill="#d280ff" opacity="0.75">✧</text>
+</svg>

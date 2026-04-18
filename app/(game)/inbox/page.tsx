@@ -25,9 +25,12 @@ export default function InboxPage() {
       </div>
 
       {notifications.length === 0 && gifts.length === 0 && (
-        <p className="card p-8 text-center text-empire-mute">
-          還沒有通知。完成任務、收到禮物、伴侶准奏都會出現在這裡
-        </p>
+        <div className="card p-6 text-center">
+          <img src="/art/empty/no-gifts.svg" alt="無通知" className="mx-auto" width={200} height={160} />
+          <p className="text-empire-mute text-sm mt-3">
+            還沒有通知。完成任務、收到禮物、伴侶准奏都會出現在這裡
+          </p>
+        </div>
       )}
 
       {notifications.length > 0 && (

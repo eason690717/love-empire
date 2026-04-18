@@ -7,6 +7,7 @@ import { useGame } from "@/lib/store";
 import { titleByLevel, SEASON_LABEL, season } from "@/lib/utils";
 import { InlineRename } from "@/components/InlineRename";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { CoupleAvatar } from "@/components/art/CoupleAvatar";
 
 const TABS = [
   { href: "/dashboard",   label: "儀表板",   icon: "📊" },
@@ -86,11 +87,7 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
       <header className="max-w-3xl mx-auto px-4 mt-4">
         <div className="card p-4 flex items-center gap-3 relative overflow-hidden">
           <div className="absolute -left-2 -top-2 text-2xl opacity-40 select-none">🍃</div>
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
-               style={{ background: "radial-gradient(circle at 30% 30%, #fff, #ffd8e6 60%, #ffb4cf 100%)",
-                        boxShadow: "0 4px 0 #d04878, inset 0 2px 0 rgba(255,255,255,0.6)" }}>
-            👑
-          </div>
+          <CoupleAvatar name={nickname} size={56} />
           <div className="flex-1 min-w-0">
             <div className="font-bold truncate text-empire-ink">
               <InlineRename value={nickname} onSave={(v) => setNickname(role, v)} />

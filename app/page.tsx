@@ -9,12 +9,9 @@ export default function HomePage() {
         <div className="absolute -right-3 top-6 text-3xl opacity-70 select-none animate-float-slow">🌼</div>
         <div className="absolute -right-6 -bottom-4 text-4xl opacity-60 select-none">🌿</div>
 
-        <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center text-7xl"
-             style={{
-               background: "radial-gradient(circle at 30% 30%, #ffffff, #ffe8f0 60%, #ffc1d6 100%)",
-               boxShadow: "0 0 0 6px #ffffff, 0 0 0 8px #ffc1d6, 0 18px 40px rgba(255,127,161,0.25)",
-             }}>
-          <span className="animate-bob">🥚</span>
+        <div className="w-48 h-48 mx-auto animate-bob">
+          <img src="/art/hero-couple.svg" alt="愛的帝國" width={192} height={192}
+               style={{ filter: "drop-shadow(0 8px 16px rgba(255,127,161,0.3))" }} />
         </div>
 
         <h1 className="mt-6 font-display text-4xl font-black text-empire-ink text-shadow-soft tracking-wider">

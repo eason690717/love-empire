@@ -5,6 +5,8 @@ import { useGame } from "@/lib/store";
 import { ISLAND_SHOP, getDailyFeatured } from "@/lib/demoData";
 import { season, SEASON_LABEL } from "@/lib/utils";
 import { getTodayVisitor, todaysFestival } from "@/lib/festival";
+import { PikminSprite } from "@/components/art/PikminSprite";
+import { ItemIcon } from "@/components/art/ItemIcon";
 
 export default function IslandPage() {
   const island = useGame((s) => s.island);
@@ -149,10 +151,11 @@ export default function IslandPage() {
         {pikmins.map((p, idx) => (
           Array.from({ length: Math.min(5, p.count) }).map((_, i) => {
             const offset = (idx * 5 + i) * 37 % 90 + 5;
+            const sprout = i === 0 ? "flower" : i === 1 ? "bud" : "leaf";
             return (
               <div
                 key={`${p.color}-${i}`}
-                className="absolute text-base animate-bob"
+                className="absolute animate-bob"
                 style={{
                   left: `${offset}%`,
                   bottom: `${8 + (i % 3) * 6}%`,
@@ -160,7 +163,7 @@ export default function IslandPage() {
                 }}
                 title={`${p.label} x${p.count}`}
               >
-                {p.emoji}
+                <PikminSprite color={p.color} size={28} sprouting={sprout as "leaf" | "bud" | "flower"} />
               </div>
             );
           })
@@ -177,10 +180,10 @@ export default function IslandPage() {
       {pikmins.length > 0 && (
         <div className="card p-3">
           <h3 className="font-bold text-sm mb-2">🌱 Pikmin 助手隊</h3>
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap items-center">
             {pikmins.map((p) => (
               <div key={p.color} className="flex items-center gap-1.5 text-sm">
-                <span className="text-lg">{p.emoji}</span>
+                <PikminSprite color={p.color} size={20} />
                 <span className="text-empire-mute">{p.label}</span>
                 <span className="font-bold">×{p.count}</span>
               </div>
@@ -248,7 +251,7 @@ export default function IslandPage() {
 function DraggableItem({
   item, onMove, onRemove,
 }: {
-  item: { id: string; emoji: string; label: string; x: number; y: number };
+  item: { id: string; emoji: string; label: string; x: number; y: number; catalogId?: string };
   onMove: (x: number, y: number) => void;
   onRemove: () => void;
 }) {
@@ -270,13 +273,13 @@ function DraggableItem({
 
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none text-4xl hover:scale-110 transition"
+      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none hover:scale-110 transition"
       style={{ left: `${item.x}%`, top: `${item.y}%` }}
       onPointerDown={handlePointerDown}
       onDoubleClick={onRemove}
       title={`${item.label} (雙擊移除)`}
     >
-      {item.emoji}
+      <ItemIcon emoji={item.emoji} size={40} glow={item.catalogId === "fountain" || item.catalogId === "rainbow"} />
     </div>
   );
 }

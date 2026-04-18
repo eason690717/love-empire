@@ -41,13 +41,9 @@ export default function LoginPage() {
         <div className="absolute -left-3 top-4 text-4xl opacity-60 animate-float-slow">🌸</div>
         <div className="absolute right-2 top-10 text-3xl opacity-70 animate-bob">🦋</div>
 
-        <div className="w-32 h-32 mx-auto rounded-full flex items-center justify-center text-7xl relative"
-             style={{
-               background: "radial-gradient(circle at 30% 30%, #fff, #ffe8f0 60%, #ffc1d6 100%)",
-               boxShadow: "0 0 0 6px #fff, 0 0 0 8px #ffc1d6, 0 18px 40px rgba(255,127,161,0.25)",
-             }}>
-          <span>🐈</span>
-          <span className="absolute text-3xl -mt-16 ml-10">👑</span>
+        <div className="w-40 h-40 mx-auto animate-bob">
+          <img src="/art/hero-couple.svg" alt="愛的帝國" width={160} height={160}
+               style={{ filter: "drop-shadow(0 6px 14px rgba(255,127,161,0.25))" }} />
         </div>
         <h1 className="mt-5 text-center font-display text-4xl font-black text-empire-ink tracking-wider text-shadow-soft">
           愛的帝國

@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useGame } from "@/lib/store";
-import { titleByLevel, PET_STAGE_EMOJI, PET_STAGE_LABEL } from "@/lib/utils";
+import { titleByLevel, PET_STAGE_LABEL } from "@/lib/utils";
+import { PetAvatar } from "@/components/art/PetAvatar";
 import { PASSIVE_SKILLS, isSpecialDay, SPECIAL_DAY_LABEL, SPECIAL_DAY_MULTIPLIER } from "@/lib/passive";
 import { AttributeRadar } from "@/components/AttributeRadar";
 import { DailyBonusModal } from "@/components/DailyBonusModal";
@@ -101,7 +102,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <QuickCard href="/pet" label="愛之寵物" sub={`${PET_STAGE_LABEL[pet.stage]} 階段`} emoji={PET_STAGE_EMOJI[pet.stage]} />
+        <QuickPet stage={pet.stage} />
         <QuickCard href="/codex" label="記憶圖鑑" sub={`${collected} / ${codex.length}`} emoji="🖼️" />
         <QuickCard href="/tasks" label="待審申報" sub={`${pending} 筆`} emoji="📜" />
         <QuickCard href="/leaderboard" label="全球排行" sub={`第 ${rank} 名`} emoji="🏆" />
@@ -178,6 +179,20 @@ function QuickCard({ href, label, sub, emoji }: { href: string; label: string; s
       <div className="min-w-0">
         <div className="font-bold text-empire-ink truncate">{label}</div>
         <div className="text-xs text-empire-mute truncate">{sub}</div>
+      </div>
+    </Link>
+  );
+}
+
+function QuickPet({ stage }: { stage: 0 | 1 | 2 | 3 | 4 }) {
+  return (
+    <Link href="/pet" className="card p-4 hover:shadow-lift hover:-translate-y-0.5 transition flex items-center gap-3">
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-empire-cloud to-empire-leaf shadow-sm overflow-hidden">
+        <PetAvatar stage={stage} size={44} animate={false} />
+      </div>
+      <div className="min-w-0">
+        <div className="font-bold text-empire-ink truncate">愛之寵物</div>
+        <div className="text-xs text-empire-mute truncate">{PET_STAGE_LABEL[stage]} 階段</div>
       </div>
     </Link>
   );

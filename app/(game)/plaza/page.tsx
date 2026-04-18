@@ -163,7 +163,10 @@ export default function PlazaPage() {
         ))}
 
         {filtered.length === 0 && (
-          <p className="card p-8 text-center text-empire-mute">這個分類還沒有動態～</p>
+          <div className="card p-6 text-center">
+            <img src="/art/empty/no-moments.svg" alt="無動態" className="mx-auto" width={200} height={160} />
+            <p className="text-empire-mute text-sm mt-3">這個分類還沒有動態～</p>
+          </div>
         )}
       </div>
 

@@ -43,7 +43,10 @@ export default function FriendsPage() {
             </div>
           ))}
           {friendCouples.length === 0 && (
-            <p className="card p-8 text-center text-slate-500">還沒有好友情侶，去「加好友」分頁看看吧</p>
+            <div className="card p-6 text-center">
+              <img src="/art/empty/no-friends.svg" alt="無好友" className="mx-auto" width={200} height={160} />
+              <p className="text-empire-mute text-sm mt-3">還沒有好友情侶，去「加好友」分頁找找吧</p>
+            </div>
           )}
         </div>
       )}

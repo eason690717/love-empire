@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { ACHIEVEMENTS, type AchievementCategory } from "@/lib/achievements";
+import { TrophyMedal, tierForAchievement } from "@/components/art/TrophyMedal";
 
 const CATEGORIES: { id: "all" | AchievementCategory; label: string }[] = [
   { id: "all", label: "全部" },
@@ -63,9 +64,11 @@ export default function AchievementsPage() {
           <h3 className="text-sm font-bold text-empire-ink">✅ 已解鎖 ({unlocked.length})</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {unlocked.map((a) => (
-              <div key={a.id} className="card p-4 text-center shine-sr">
-                <div className="text-4xl animate-bob">{a.emoji}</div>
-                <div className="font-bold text-sm mt-1">{a.title}</div>
+              <div key={a.id} className="card p-4 text-center">
+                <div className="flex justify-center animate-bob">
+                  <TrophyMedal tier={tierForAchievement(a.category, a.id)} emoji={a.emoji} size={64} />
+                </div>
+                <div className="font-bold text-sm mt-2">{a.title}</div>
                 <div className="text-xs text-empire-mute mt-0.5">{a.description}</div>
               </div>
             ))}
@@ -79,8 +82,10 @@ export default function AchievementsPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {locked.map((a) => (
               <div key={a.id} className="card p-4 text-center opacity-50 grayscale">
-                <div className="text-4xl blur-[1.5px]">{a.emoji}</div>
-                <div className="font-bold text-sm mt-1">{a.title}</div>
+                <div className="flex justify-center blur-[1.5px]">
+                  <TrophyMedal tier="bronze" emoji="❓" size={64} />
+                </div>
+                <div className="font-bold text-sm mt-2">{a.title}</div>
                 <div className="text-xs text-empire-mute mt-0.5">{a.description}</div>
               </div>
             ))}
