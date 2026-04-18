@@ -6,13 +6,14 @@ import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { useLiff } from "@/components/LiffProvider";
 import { loginLiff } from "@/lib/liff";
-import { signInAnon, getSession, isSupabaseEnabled } from "@/lib/auth";
+import { signInAnon, isSupabaseEnabled } from "@/lib/auth";
 import { joinCoupleByCode } from "@/lib/supabaseAdapter";
 
 function LoginInner() {
   const router = useRouter();
   const search = useSearchParams();
   const login = useGame((s) => s.login);
+  const loggedIn = useGame((s) => s.loggedIn);
   const setNickname = useGame((s) => s.setNickname);
   const liff = useLiff();
   const [role, setRole] = useState<"queen" | "prince">("prince");
@@ -37,14 +38,10 @@ function LoginInner() {
     }
   }, [liff, login, router]);
 
-  // 已有 session？直接進城堡（anonymous session 被 persistSession 存在 localStorage）
+  // Zustand loggedIn 為 true（AuthResume 或手動登入完成）→ 直接進城堡
   useEffect(() => {
-    if (!isSupabaseEnabled()) return;
-    (async () => {
-      const u = await getSession();
-      if (u) router.push("/dashboard");
-    })();
-  }, [router]);
+    if (loggedIn) router.push("/dashboard");
+  }, [loggedIn, router]);
 
   const handleEnter = async () => {
     setErr(null);

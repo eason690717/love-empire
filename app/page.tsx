@@ -1,30 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getSession, isSupabaseEnabled } from "@/lib/auth";
+import { useGame } from "@/lib/store";
+import { isSupabaseEnabled } from "@/lib/auth";
 
 export default function HomePage() {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
+  const loggedIn = useGame((s) => s.loggedIn);
 
   useEffect(() => {
-    if (!isSupabaseEnabled()) { setChecking(false); return; }
-    (async () => {
-      const u = await getSession();
-      if (u) { router.replace("/dashboard"); return; }
-      setChecking(false);
-    })();
-  }, [router]);
-
-  if (checking) {
-    return (
-      <main className="min-h-screen flex items-center justify-center text-empire-mute">
-        載入中…
-      </main>
-    );
-  }
+    if (loggedIn) router.replace("/dashboard");
+  }, [loggedIn, router]);
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-12">

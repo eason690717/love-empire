@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LiffProvider } from "@/components/LiffProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { AuthResume } from "@/components/AuthResume";
 
 export const metadata: Metadata = {
   title: "愛的帝國 · Love Empire",
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-TW">
       <body className="font-sans antialiased bg-gradient-to-br from-empire-cloud via-empire-mist to-empire-cloud min-h-screen text-empire-ink">
         <LiffProvider>{children}</LiffProvider>
+        <AuthResume />
         <ServiceWorkerRegister />
       </body>
     </html>
