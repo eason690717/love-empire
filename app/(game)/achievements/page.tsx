@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { ACHIEVEMENTS, type AchievementCategory } from "@/lib/achievements";
 import { TrophyMedal, tierForAchievement } from "@/components/art/TrophyMedal";
+import { PageBanner } from "@/components/PageBanner";
 
 const CATEGORIES: { id: "all" | AchievementCategory; label: string }[] = [
   { id: "all", label: "全部" },
@@ -30,17 +31,23 @@ export default function AchievementsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5 bg-gradient-to-br from-empire-sunshine/15 to-white">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="font-bold">🏅 獎盃陳列室</h2>
-            <p className="text-xs text-empire-mute mt-1">
-              解鎖 {achievements.length} / {ACHIEVEMENTS.length} · {Math.round(achievements.length / ACHIEVEMENTS.length * 100)}%
-            </p>
-          </div>
-          <div className="text-4xl">🏆</div>
+      <PageBanner
+        title="獎盃陳列"
+        subtitle={`解鎖 ${Math.round(achievements.length / ACHIEVEMENTS.length * 100)}% · 收集所有徽章`}
+        emoji="🏅"
+        gradient="sunshine"
+        stats={[
+          { label: "已解鎖", value: `${achievements.length}/${ACHIEVEMENTS.length}` },
+          { label: "彩虹級", value: ACHIEVEMENTS.filter((a) => achievements.includes(a.id) && a.category === "special").length },
+        ]}
+      />
+
+      <div className="card p-3">
+        <div className="flex justify-between items-center text-xs text-empire-mute mb-1">
+          <span>🏆 收藏進度</span>
+          <span className="font-bold">{achievements.length} / {ACHIEVEMENTS.length}</span>
         </div>
-        <div className="mt-3 bar-bg">
+        <div className="bar-bg">
           <div className="bar-fill" style={{ width: `${achievements.length / ACHIEVEMENTS.length * 100}%` }} />
         </div>
       </div>

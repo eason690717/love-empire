@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useGame } from "@/lib/store";
+import { PageBanner } from "@/components/PageBanner";
 
 type Metric = "loveIndex" | "kingdomLevel" | "streak" | "codexCompletion" | "weeklyTasks";
 
@@ -40,13 +41,23 @@ export default function LeaderboardPage() {
 
   const m = METRICS.find((x) => x.id === metric)!;
 
+  const myRank = leaderboard.findIndex((c) => c.isSelf) + 1;
+
   return (
     <div className="space-y-4">
-      <div className="card p-5 bg-gradient-to-br from-empire-cream/80 to-white">
-        <h2 className="font-bold text-lg">🏆 情侶排行榜</h2>
-        <p className="text-xs text-slate-500 mt-1">週榜每週一結算 · 前三名獎勵 SSR 限定記憶卡</p>
+      <PageBanner
+        title="情侶排行榜"
+        subtitle="每週一結算 · 前三名獎勵 SSR 限定記憶卡"
+        emoji="🏆"
+        gradient="sunshine"
+        stats={[
+          { label: "我的名次", value: myRank > 0 ? `第 ${myRank} 名` : "未上榜" },
+          { label: "愛意", value: couple.loveIndex.toLocaleString() },
+        ]}
+      />
 
-        <div className="mt-4 flex gap-1 overflow-x-auto">
+      <div className="card p-4 bg-gradient-to-br from-empire-cream/80 to-white">
+        <div className="flex gap-1 overflow-x-auto">
           {METRICS.map((x) => (
             <button
               key={x.id}

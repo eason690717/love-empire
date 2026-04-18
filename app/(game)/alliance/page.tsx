@@ -4,6 +4,7 @@ import { useGame } from "@/lib/store";
 import { useState } from "react";
 import { ISLAND_SHOP } from "@/lib/demoData";
 import { ALLIANCE_TIERS, allianceTitleFor } from "@/lib/types";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function AlliancePage() {
   const alliances = useGame((s) => s.alliances);
@@ -41,12 +42,16 @@ export default function AlliancePage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5">
-        <h2 className="font-bold">🤝 情侶聯盟</h2>
-        <p className="text-xs text-empire-mute mt-1">
-          2-5 對情侶組成聯盟，一起完成週任務、挑戰聯盟 BOSS、裝飾共同空間
-        </p>
-      </div>
+      <PageBanner
+        title="情侶聯盟"
+        subtitle="2-5 對情侶組隊 · 週任務 · BOSS 戰 · 共同島嶼"
+        emoji="🤝"
+        gradient="amber"
+        stats={[
+          { label: "所屬", value: myAlliance?.name ?? "—" },
+          { label: "稱號", value: myAllianceTitle?.title ?? "—" },
+        ]}
+      />
 
       {myAlliance ? (
         <>

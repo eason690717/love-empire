@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useGame } from "@/lib/store";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function InboxPage() {
   const notifications = useGame((s) => s.notifications);
@@ -14,15 +15,17 @@ export default function InboxPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5 flex items-center justify-between">
-        <div>
-          <h2 className="font-bold">🔔 通知中心</h2>
-          <p className="text-xs text-empire-mute mt-0.5">{unreadN + unreadG} 則未讀</p>
-        </div>
-        {unreadN > 0 && (
-          <button onClick={markAll} className="btn-ghost px-3 py-1.5 text-xs">全部已讀</button>
-        )}
-      </div>
+      <PageBanner
+        title="通知中心"
+        subtitle="申報 · 准奏 · 禮物 · 成就 · 全部動態"
+        emoji="🔔"
+        gradient="sky"
+        stats={[
+          { label: "未讀通知", value: unreadN },
+          { label: "未拆禮物", value: unreadG },
+        ]}
+        cta={unreadN > 0 ? { label: "全部已讀", onClick: markAll } : undefined}
+      />
 
       {notifications.length === 0 && gifts.length === 0 && (
         <div className="card p-6 text-center">

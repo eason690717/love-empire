@@ -3,6 +3,7 @@
 import { useGame } from "@/lib/store";
 import { ShareMomentButton } from "@/components/ShareMomentButton";
 import { ATTR_LABEL } from "@/lib/utils";
+import { PageBanner } from "@/components/PageBanner";
 
 /**
  * Spotify Wrapped 風格年度回顧
@@ -44,14 +45,24 @@ export default function RecapPage() {
 
   return (
     <div className="space-y-4">
+      <PageBanner
+        title={`${year} 年度回顧`}
+        subtitle={`${couple.name} · 一年的甜蜜，濃縮成這一頁`}
+        emoji="✨"
+        gradient="violet"
+        stats={[
+          { label: "任務", value: approvedYear.length },
+          { label: "卡片", value: cardsThisYear.length },
+          { label: "SSR", value: ssrCount },
+        ]}
+      />
       <div
         className="card p-6 text-center relative overflow-hidden"
         style={{ background: "linear-gradient(135deg, #ffe3b3 0%, #ffbfd2 50%, #b8d8ff 100%)" }}
       >
         <div className="absolute top-3 left-4 text-2xl animate-float-slow">✨</div>
         <div className="absolute top-5 right-6 text-2xl animate-sparkle">💫</div>
-        <div className="text-xs text-empire-ink font-semibold">{year} 年度回顧</div>
-        <h2 className="mt-1 font-display text-3xl font-black text-empire-ink text-shadow-soft">{couple.name}</h2>
+        <h2 className="font-display text-3xl font-black text-empire-ink text-shadow-soft">{couple.name}</h2>
         <p className="text-sm text-empire-ink/80 mt-1">一年的甜蜜，濃縮成這一頁</p>
       </div>
 

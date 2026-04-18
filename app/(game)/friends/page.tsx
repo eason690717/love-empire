@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { CardGiftModal } from "@/components/CardGiftModal";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function FriendsPage() {
   const friends = useGame((s) => s.friends);
@@ -18,6 +19,17 @@ export default function FriendsPage() {
 
   return (
     <div className="space-y-4">
+      <PageBanner
+        title="好友情侶"
+        subtitle="加好友、送卡、參觀島嶼、PK 對戰"
+        emoji="👫"
+        gradient="rose"
+        stats={[
+          { label: "好友", value: friends.length },
+          { label: "未讀禮物", value: gifts.filter((g) => !g.read).length },
+        ]}
+      />
+
       <div className="card p-2 flex gap-1">
         <TabBtn active={tab === "list"} onClick={() => setTab("list")}>好友情侶 ({friends.length})</TabBtn>
         <TabBtn active={tab === "gifts"} onClick={() => setTab("gifts")}>禮物匣 ({gifts.filter((g) => !g.read).length})</TabBtn>

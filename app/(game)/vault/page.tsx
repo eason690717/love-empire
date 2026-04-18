@@ -1,6 +1,7 @@
 "use client";
 
 import { useGame } from "@/lib/store";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function VaultPage() {
   const redemptions = useGame((s) => s.redemptions);
@@ -11,12 +12,16 @@ export default function VaultPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5">
-        <h2 className="font-bold">🎁 我的寶庫</h2>
-        <p className="text-sm text-slate-500 mt-1">
-          已兌換 {redemptions.length} 張 · 未使用 {unused.length} 張
-        </p>
-      </div>
+      <PageBanner
+        title="我的寶庫"
+        subtitle="兌換券 · 真實獎勵 · 領取記錄"
+        emoji="🎁"
+        gradient="rose"
+        stats={[
+          { label: "未使用", value: unused.length },
+          { label: "已使用", value: used.length },
+        ]}
+      />
 
       {unused.length > 0 && (
         <div>

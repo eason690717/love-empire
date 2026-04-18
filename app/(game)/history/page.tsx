@@ -1,12 +1,27 @@
 "use client";
 
 import { useGame } from "@/lib/store";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function HistoryPage() {
   const submissions = useGame((s) => s.submissions);
+  const approved = submissions.filter((s) => s.status === "approved").length;
+  const rejected = submissions.filter((s) => s.status === "rejected").length;
+  const pending = submissions.filter((s) => s.status === "pending").length;
 
   return (
     <div className="space-y-3">
+      <PageBanner
+        title="歷程紀錄"
+        subtitle="所有申報 · 准奏 / 駁回 / 待審"
+        emoji="📖"
+        gradient="leaf"
+        stats={[
+          { label: "准奏", value: approved },
+          { label: "駁回", value: rejected },
+          { label: "待審", value: pending },
+        ]}
+      />
       {submissions.map((s) => (
         <div key={s.id} className="card p-4 flex items-center justify-between">
           <div className="min-w-0">

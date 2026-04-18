@@ -2,6 +2,7 @@
 
 import { useGame } from "@/lib/store";
 import { isSpecialDay, SPECIAL_DAY_LABEL } from "@/lib/passive";
+import { PageBanner } from "@/components/PageBanner";
 
 const WEEKLY_CHALLENGES = [
   { id: "w1", title: "本週完成 15 個任務", target: 15, reward: "📜 15 任務 → +50 金幣" },
@@ -46,6 +47,17 @@ export default function RitualsPage() {
 
   return (
     <div className="space-y-4">
+      <PageBanner
+        title="每日儀式"
+        subtitle="晨間 + 睡前完成 → 連擊 +1 · 不斷就能累積獎勵"
+        emoji="🌅"
+        gradient="rose"
+        stats={[
+          { label: "連擊", value: `${streak.current} 天` },
+          { label: "最長", value: `${streak.longest} 天` },
+        ]}
+      />
+
       {isSpecialDay() && (
         <div className="card p-3 bg-gradient-to-r from-rose-100 to-amber-100 border-2 border-empire-berry/40 text-center">
           <span className="font-bold text-empire-ink">{SPECIAL_DAY_LABEL} · 愛意指數 ×2</span>
