@@ -2,6 +2,7 @@
 
 import { useGame } from "@/lib/store";
 import { useState } from "react";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function ExchangePage() {
   const rewards = useGame((s) => s.rewards);
@@ -9,12 +10,20 @@ export default function ExchangePage() {
   const redeem = useGame((s) => s.redeem);
   const [just, setJust] = useState<string | null>(null);
 
+  const affordableCount = rewards.filter((r) => couple.coins >= r.cost).length;
+
   return (
     <div className="space-y-4">
-      <div className="card p-5">
-        <h2 className="font-bold text-empire-ink">國庫兌換中心</h2>
-        <p className="text-sm text-slate-500 mt-1">累積的金幣，可用來兌換真實獎勵 💞</p>
-      </div>
+      <PageBanner
+        title="國庫兌換中心"
+        subtitle="累積金幣 → 兌換真實獎勵 💞"
+        emoji="💰"
+        gradient="sunshine"
+        stats={[
+          { label: "我的金幣", value: couple.coins.toLocaleString() },
+          { label: "可兌換", value: `${affordableCount}/${rewards.length}` },
+        ]}
+      />
 
       <div className="space-y-3">
         {rewards.map((r) => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { ShareMomentButton } from "@/components/ShareMomentButton";
 import type { MomentType } from "@/lib/types";
+import { PageBanner } from "@/components/PageBanner";
 
 const FILTERS: { id: "all" | "self" | MomentType; label: string }[] = [
   { id: "all", label: "全部" },
@@ -45,12 +46,16 @@ export default function PlazaPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5 bg-gradient-to-br from-empire-cream/80 to-white">
-        <h2 className="font-bold text-lg">🌸 帝國廣場</h2>
-        <p className="text-xs text-empire-mute mt-1">
-          全世界情侶的紀念時刻 · 可按讚、分享到自己的 LINE / 社群
-        </p>
-      </div>
+      <PageBanner
+        title="帝國廣場"
+        subtitle="全世界情侶的紀念時刻 · 按讚 / 分享"
+        emoji="🌸"
+        gradient="rose"
+        stats={[
+          { label: "我的動態", value: moments.filter((m) => m.isSelf).length },
+          { label: "收到讚", value: moments.filter((m) => m.isSelf).reduce((a, m) => a + m.likes, 0) },
+        ]}
+      />
 
       {/* 本週榜首 top 3 */}
       <div className="card p-4 bg-gradient-to-br from-empire-sunshine/15 to-empire-berry/10 border-2 border-empire-sunshine/30">

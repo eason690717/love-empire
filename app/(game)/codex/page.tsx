@@ -6,6 +6,7 @@ import { RARITY_CLASS } from "@/lib/utils";
 import type { Rarity } from "@/lib/types";
 import { inFestivalWindow, daysToFestival } from "@/lib/festival";
 import { CardFrame } from "@/components/art/CardFrame";
+import { PageBanner } from "@/components/PageBanner";
 
 const THEMES = [
   { id: "all", label: "全部" },
@@ -34,20 +35,31 @@ export default function CodexPage() {
     .sort((a, b) => a.days - b.days)
     .slice(0, 3);
 
+  const completionPct = Math.round(collected / codex.length * 100);
+  const ssrCount = codex.filter((c) => c.obtainedAt && c.rarity === "SSR").length;
+  const srCount = codex.filter((c) => c.obtainedAt && c.rarity === "SR").length;
+
   return (
     <div className="space-y-4">
-      <div className="card p-5">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="font-bold">🖼️ 記憶圖鑑</h2>
-            <p className="text-sm text-slate-500 mt-1">
-              完成度 {collected} / {codex.length} · {Math.round(collected / codex.length * 100)}%
-            </p>
-          </div>
-          <div className="text-3xl">📚</div>
+      <PageBanner
+        title="記憶圖鑑"
+        subtitle={`完成度 ${completionPct}% · 節日限定卡過期不補`}
+        emoji="🎴"
+        gradient="violet"
+        stats={[
+          { label: "已收集", value: `${collected}/${codex.length}` },
+          { label: "SSR", value: ssrCount },
+          { label: "SR", value: srCount },
+        ]}
+      />
+
+      <div className="card p-3">
+        <div className="flex justify-between items-center text-xs text-empire-mute mb-1">
+          <span>📚 收藏進度</span>
+          <span className="font-bold">{completionPct}%</span>
         </div>
-        <div className="mt-3 bar-bg">
-          <div className="bar-fill" style={{ width: `${collected / codex.length * 100}%` }} />
+        <div className="bar-bg">
+          <div className="bar-fill" style={{ width: `${completionPct}%` }} />
         </div>
       </div>
 

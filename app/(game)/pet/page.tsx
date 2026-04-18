@@ -5,6 +5,7 @@ import { useGame } from "@/lib/store";
 import { ATTR_LABEL, ATTR_COLOR, PET_STAGE_LABEL } from "@/lib/utils";
 import { InlineRename } from "@/components/InlineRename";
 import { PetAvatar } from "@/components/art/PetAvatar";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function PetPage() {
   const pet = useGame((s) => s.pet);
@@ -17,6 +18,17 @@ export default function PetPage() {
 
   return (
     <div className="space-y-4">
+      <PageBanner
+        title="愛之寵物"
+        subtitle="五屬性達標 → 進化 · 48hr 不互動會餓"
+        emoji="🐣"
+        gradient="leaf"
+        stats={[
+          { label: "階段", value: PET_STAGE_LABEL[pet.stage] },
+          { label: "平均", value: `${avg.toFixed(0)}/100` },
+        ]}
+      />
+
       <div className="card p-8 text-center relative overflow-hidden"
            style={{ background: "linear-gradient(180deg, #d8eefd 0%, #e7f4d5 60%, #cfe9b4 100%)" }}>
         {/* 環繞光暈 + 浮葉 */}

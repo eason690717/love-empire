@@ -6,6 +6,7 @@ import {
   QUESTIONS, CATEGORY_LABELS, DEPTH_LABELS, randomQuestion,
   type Question, type QuestionCategory, type QuestionDepth, getQuestionById,
 } from "@/lib/questions";
+import { PageBanner } from "@/components/PageBanner";
 
 export default function QuestionsPage() {
   const role = useGame((s) => s.role);
@@ -53,18 +54,17 @@ export default function QuestionsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5 bg-gradient-to-br from-empire-cream/60 to-white">
-        <h2 className="font-bold">💬 深度問答</h2>
-        <p className="text-xs text-empire-mute mt-1">
-          200 題跨 10 主題，真切認識對方 · 每題 {5}-{20} 愛意 XP + 5 星有機會掉記憶卡
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-          <MiniStat label="已答" value={answers.length} />
-          <MiniStat label="5 星" value={fiveStar} />
-          <MiniStat label="均分" value={String(avgRating)} />
-        </div>
-      </div>
-
+      <PageBanner
+        title="深度問答"
+        subtitle="200 題跨 10 主題，真切認識對方"
+        emoji="💬"
+        gradient="sky"
+        stats={[
+          { label: "已答", value: `${answers.length}/${QUESTIONS.length}` },
+          { label: "5 星", value: fiveStar },
+          { label: "均分", value: String(avgRating) },
+        ]}
+      />
       <div className="card p-2 flex gap-1 overflow-x-auto">
         <TabBtn active={tab === "today"} onClick={() => setTab("today")}>抽題</TabBtn>
         <TabBtn active={tab === "mine"} onClick={() => setTab("mine")}>
