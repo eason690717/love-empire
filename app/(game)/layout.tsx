@@ -8,6 +8,7 @@ import { titleByLevel, SEASON_LABEL, season } from "@/lib/utils";
 import { InlineRename } from "@/components/InlineRename";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CoupleAvatar } from "@/components/art/CoupleAvatar";
+import { SupabaseSync } from "@/components/SupabaseSync";
 
 const TABS = [
   { href: "/dashboard",   label: "儀表板",   icon: "📊" },
@@ -71,6 +72,7 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen pb-24">
+      <SupabaseSync />
       <OnboardingModal />
       {/* 聖旨公告 */}
       <div className="max-w-3xl mx-auto px-4 pt-5">

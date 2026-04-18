@@ -13,6 +13,24 @@ import { QUEEN_COIN_BONUS, isSpecialDay, SPECIAL_DAY_MULTIPLIER } from "./passiv
 import { inFestivalWindow, PIKMIN_BY_CATEGORY, getTodayVisitor } from "./festival";
 import { ACHIEVEMENTS } from "./achievements";
 import {
+  isSupabaseEnabled,
+  updateCoupleFields,
+  insertSubmission as sbInsertSubmission,
+  reviewSubmissionRemote,
+  upsertPet,
+  addMemoryCardRemote,
+  addIslandItemRemote,
+  moveIslandItemRemote,
+  removeIslandItemRemote,
+  upsertRitual,
+  updateStreak,
+  insertRedemption,
+  insertMomentRemote,
+  insertQuestionAnswerRemote,
+  rateQuestionAnswerRemote,
+  getCurrentUser,
+} from "./supabaseAdapter";
+import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
   LEADERBOARD, ALLIANCES, FRIEND_COUPLES, GIFT_INBOX, NOTICE, INITIAL_MOMENTS,
@@ -71,6 +89,7 @@ interface State {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   checkAchievements: () => void;
+  applyRemoteState: (remote: any) => void;
   recordPkWin: () => void;
   recordVisit: () => void;
   claimDailyBonus: () => { claimed: boolean; day?: number; reward?: string };
@@ -103,6 +122,18 @@ function getIsoWeek(d: Date): string {
   const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
   const week = Math.ceil(((+date - +yearStart) / 86400000 + 1) / 7);
   return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+/** 把 couple 欄位變動 mirror 到 Supabase（fire-and-forget） */
+function mirrorCouple(coupleId: string, fields: Partial<Couple>) {
+  if (!isSupabaseEnabled() || !coupleId || coupleId === "me") return;
+  updateCoupleFields(coupleId, fields).catch(() => null);
+}
+
+/** 把 pet 變動 mirror 到 Supabase */
+function mirrorPet(coupleId: string, pet: Pet) {
+  if (!isSupabaseEnabled() || !coupleId || coupleId === "me") return;
+  upsertPet(coupleId, pet).catch(() => null);
 }
 
 export const useGame = create<State>()(
@@ -280,6 +311,111 @@ export const useGame = create<State>()(
 
       markAllNotificationsRead: () => {
         set({ notifications: get().notifications.map((n) => ({ ...n, read: true })) });
+      },
+
+      /**
+       * 將 Supabase pull 下來的狀態套用到 store
+       * 呼叫時機：SupabaseSync 首次 mount + realtime 收到變化時
+       */
+      applyRemoteState: (remote: any) => {
+        if (!remote?.couple) return;
+        const selfRole = get().role;
+        const cr = remote.couple;
+        const myUser = remote.users?.find((u: any) => u.role === selfRole);
+        const queenUser = remote.users?.find((u: any) => u.role === "queen");
+        const princeUser = remote.users?.find((u: any) => u.role === "prince");
+
+        set({
+          couple: {
+            id: cr.id,
+            name: cr.name,
+            inviteCode: cr.invite_code,
+            kingdomLevel: cr.kingdom_level,
+            coins: cr.coins,
+            title: cr.title,
+            loveIndex: cr.love_index,
+            bio: cr.bio ?? "",
+            privacy: cr.privacy ?? "public",
+            queen: { nickname: queenUser?.nickname ?? "阿紅" },
+            prince: { nickname: princeUser?.nickname ?? "阿藍" },
+          },
+          submissions: (remote.submissions ?? []).map((s: any) => ({
+            id: s.id,
+            taskId: s.task_id,
+            taskTitle: s.task_title,
+            reward: s.reward,
+            submittedBy: remote.users?.find((u: any) => u.id === s.submitted_by)?.role ?? "queen",
+            status: s.status,
+            createdAt: new Date(s.created_at).toLocaleString("zh-TW"),
+            reviewedAt: s.reviewed_at ? new Date(s.reviewed_at).toLocaleString("zh-TW") : undefined,
+            note: s.note,
+          })),
+          pet: remote.pet ? {
+            name: remote.pet.name,
+            stage: remote.pet.stage,
+            attrs: remote.pet.attrs,
+            lastFedAt: remote.pet.last_fed_at,
+          } : get().pet,
+          // 圖鑑：合併 catalog 定義 + 已擁有卡片
+          codex: get().codex.map((c) => {
+            const owned = (remote.codex ?? []).find((mc: any) => mc.card_id === c.id);
+            return owned ? { ...c, obtainedAt: owned.obtained_at?.slice(0, 10) } : { ...c, obtainedAt: null };
+          }),
+          redemptions: (remote.redemptions ?? []).map((r: any) => ({
+            id: r.id,
+            rewardId: r.reward_id,
+            rewardTitle: r.reward_title,
+            cost: r.cost,
+            redeemedBy: remote.users?.find((u: any) => u.id === r.redeemed_by)?.role ?? "queen",
+            status: r.status,
+            createdAt: new Date(r.created_at).toLocaleDateString("zh-TW"),
+          })),
+          ritual: remote.rituals ? {
+            date: remote.rituals.date,
+            morning: remote.rituals.morning,
+            night: remote.rituals.night,
+          } : get().ritual,
+          streak: remote.streak ? {
+            current: remote.streak.current,
+            longest: remote.streak.longest,
+            lastDate: remote.streak.last_date ?? "",
+            knightShields: (remote.streak as any).knight_shields ?? 1,
+            knightShieldsResetWeek: (remote.streak as any).knight_shields_reset_week ?? "",
+          } : get().streak,
+          questionAnswers: (remote.questionAnswers ?? []).map((qa: any) => ({
+            id: qa.id,
+            questionId: qa.question_id,
+            answeredBy: remote.users?.find((u: any) => u.id === qa.answered_by)?.role ?? "queen",
+            text: qa.text,
+            createdAt: new Date(qa.created_at).toLocaleString("zh-TW"),
+            rating: qa.rating,
+            ratingComment: qa.rating_comment,
+            ratedAt: qa.rated_at,
+          })),
+          moments: (remote.moments ?? []).map((m: any) => ({
+            id: m.id,
+            coupleId: m.couple_id,
+            coupleName: m.couple_name,
+            type: m.type,
+            title: m.title,
+            subtitle: m.subtitle,
+            emoji: m.emoji,
+            createdAt: new Date(m.created_at).toLocaleString("zh-TW"),
+            likes: m.likes ?? 0,
+            likedByMe: false,
+            comments: m.comments ?? 0,
+            isSelf: m.couple_id === cr.id,
+          })),
+          gifts: (remote.gifts ?? []).map((g: any) => ({
+            id: g.id,
+            fromCoupleName: g.from_couple_id === cr.id ? get().couple.name : "系統",
+            type: g.kind,
+            content: g.content ?? "",
+            message: g.message ?? "",
+            receivedAt: new Date(g.created_at).toLocaleDateString("zh-TW"),
+            read: !!g.read_at,
+          })),
+        });
       },
 
       checkAchievements: () => {
@@ -512,7 +648,6 @@ export const useGame = create<State>()(
           createdAt: nowStr(),
         };
         set({ submissions: [sub, ...get().submissions] });
-        // 通知另一半要審
         get().addNotification({
           type: "submission",
           title: "📜 有新申報要審核",
@@ -520,6 +655,18 @@ export const useGame = create<State>()(
           emoji: "📜",
           link: "/tasks",
         });
+        // Supabase mirror
+        if (isSupabaseEnabled()) {
+          (async () => {
+            const user = await getCurrentUser();
+            if (!user) return;
+            const coupleId = get().couple.id;
+            if (!coupleId || coupleId === "me") return;
+            await sbInsertSubmission(coupleId, user.id, {
+              taskId: t.id, taskTitle: t.title, reward: t.reward,
+            });
+          })();
+        }
       },
 
       reviewSubmission: (id, approve, note) => {
@@ -536,6 +683,14 @@ export const useGame = create<State>()(
             emoji: approve ? "✅" : "❌",
             link: "/history",
           });
+        }
+        // Supabase mirror
+        if (isSupabaseEnabled()) {
+          (async () => {
+            const user = await getCurrentUser();
+            if (!user) return;
+            await reviewSubmissionRemote(id, approve, user.id, note);
+          })();
         }
         if (approve) {
           const s = subs.find((x) => x.id === id)!;
@@ -571,19 +726,20 @@ export const useGame = create<State>()(
           const prevLevel = get().couple.kingdomLevel;
           const nextLove = prevLove + systemXp;
           const nextLevel = Math.max(prevLevel, Math.floor(nextLove / 50) + 1);
-          set({
-            couple: {
-              ...get().couple,
-              coins: get().couple.coins + finalCoins,
-              loveIndex: nextLove,
-              kingdomLevel: nextLevel,
-            },
-            pet: {
-              ...get().pet,
-              attrs: { ...get().pet.attrs, [attr]: Math.min(100, get().pet.attrs[attr] + 2) },
-              lastFedAt: new Date().toISOString(),
-            },
-          });
+          const nextCouple = {
+            ...get().couple,
+            coins: get().couple.coins + finalCoins,
+            loveIndex: nextLove,
+            kingdomLevel: nextLevel,
+          };
+          const nextPet = {
+            ...get().pet,
+            attrs: { ...get().pet.attrs, [attr]: Math.min(100, get().pet.attrs[attr] + 2) },
+            lastFedAt: new Date().toISOString(),
+          };
+          set({ couple: nextCouple, pet: nextPet });
+          mirrorCouple(nextCouple.id, { coins: nextCouple.coins, loveIndex: nextCouple.loveIndex, kingdomLevel: nextCouple.kingdomLevel });
+          mirrorPet(nextCouple.id, nextPet);
 
           // 升等自動發動態
           if (nextLevel > prevLevel) {
@@ -599,10 +755,8 @@ export const useGame = create<State>()(
           const uncollected = get().codex.filter(
             (c) => !c.obtainedAt && inFestivalWindow(c),
           );
-          // 節日窗口內節日卡掉落率 +50%
           const festivalBoost = uncollected.some((c) => c.festival) ? 0.6 : 0.4;
           if (uncollected.length && Math.random() < festivalBoost) {
-            // 節日窗口內，節日卡優先挑
             const festivalCards = uncollected.filter((c) => c.festival);
             const pool = festivalCards.length && Math.random() < 0.5 ? festivalCards : uncollected;
             const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -611,6 +765,9 @@ export const useGame = create<State>()(
                 c.id === pick.id ? { ...c, obtainedAt: new Date().toISOString().slice(0, 10) } : c,
               ),
             });
+            if (isSupabaseEnabled() && nextCouple.id !== "me") {
+              addMemoryCardRemote(nextCouple.id, pick.id).catch(() => null);
+            }
             if (pick.rarity === "SSR" || pick.rarity === "SR") {
               get().addMoment({
                 type: pick.rarity === "SSR" ? "ssr_card" : "sr_card",

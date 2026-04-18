@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { ShareInviteButton } from "@/components/ShareInviteButton";
-import { signUp, isSupabaseEnabled } from "@/lib/auth";
+import { signUp, signIn, isSupabaseEnabled } from "@/lib/auth";
+import { ensureCoupleForUser } from "@/lib/supabaseAdapter";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,12 +25,23 @@ export default function RegisterPage() {
     setErr(null);
     if (kingdom.trim()) setKingdomName(kingdom);
     if (nickname.trim()) setNickname("queen", nickname);
-    // 若 Supabase 已啟用，嘗試真實註冊
+
     if (isSupabaseEnabled() && email.trim() && password.trim()) {
-      const { error } = await signUp(email.trim(), password);
+      if (password.length < 6) { setErr("密碼至少 6 碼"); return; }
+      const { user, error } = await signUp(email.trim(), password);
       if (error && !error.includes("demo")) {
-        setErr(error);
-        return;
+        // 若使用者已存在，嘗試登入
+        const signed = await signIn(email.trim(), password);
+        if (signed.error) { setErr(signed.error); return; }
+      }
+      // 確保有 couple row
+      const { getCurrentUser } = await import("@/lib/supabaseAdapter");
+      const u = await getCurrentUser();
+      if (u?.id) {
+        await ensureCoupleForUser(u.id, {
+          kingdomName: kingdom.trim() || undefined,
+          nickname: nickname.trim() || undefined,
+        });
       }
     }
     setStep("done");

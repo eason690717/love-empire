@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { useLiff } from "@/components/LiffProvider";
 import { loginLiff } from "@/lib/liff";
+import { signIn, isSupabaseEnabled } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,19 +14,45 @@ export default function LoginPage() {
   const couple = useGame((s) => s.couple);
   const liff = useLiff();
   const [role, setRole] = useState<"queen" | "prince">("queen");
+  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // 在 LIFF 客戶端內自動登入：profile 取到即直接進入
   useEffect(() => {
     if (liff.inClient && liff.loggedIn && liff.profile) {
-      // 用 LINE user id hash 的第一碼決定預設角色，demo 用 (實作時應讀 Supabase couple_members)
       const isQueen = (liff.profile.userId.charCodeAt(0) % 2) === 0;
       login(isQueen ? "queen" : "prince");
       router.push("/dashboard");
     }
   }, [liff, login, router]);
 
-  const handleEnter = () => {
+  const handleEnter = async () => {
+    setErr(null);
+    // 有 Supabase + 填 email → 真實登入
+    if (isSupabaseEnabled() && email.trim() && pw.trim()) {
+      setLoading(true);
+      const { error } = await signIn(email.trim(), pw);
+      setLoading(false);
+      if (error) { setErr(error); return; }
+      // 讀 users 表決定 role
+      const { getCurrentUser } = await import("@/lib/supabaseAdapter");
+      const u = await getCurrentUser();
+      if (u?.id) {
+        const { getSupabase } = await import("@/lib/supabase");
+        const sb = await getSupabase();
+        if (sb) {
+          const client: any = sb;
+          const { data: urow } = await client.from("users").select("role").eq("id", u.id).maybeSingle();
+          login((urow?.role as "queen" | "prince") ?? "queen");
+        } else {
+          login("queen");
+        }
+      }
+      router.push("/dashboard");
+      return;
+    }
+    // Demo 模式
     login(role);
     router.push("/dashboard");
   };
@@ -76,34 +103,62 @@ export default function LoginPage() {
         )}
 
         <div className="mt-4 space-y-5">
-          <div>
-            <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 身份選擇</label>
-            <div className="mt-2 relative">
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as "queen" | "prince")}
-                className="w-full appearance-none border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky text-base font-medium"
-              >
-                <option value="queen">{couple.queen.nickname}</option>
-                <option value="prince">{couple.prince.nickname}</option>
-              </select>
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-empire-sky">⇅</span>
-            </div>
-          </div>
+          {isSupabaseEnabled() ? (
+            <>
+              <div>
+                <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="mt-2 w-full border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 密碼</label>
+                <input
+                  type="password"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  placeholder="至少 6 碼"
+                  className="mt-2 w-full border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 身份選擇 (demo)</label>
+                <div className="mt-2 relative">
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as "queen" | "prince")}
+                    className="w-full appearance-none border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky text-base font-medium"
+                  >
+                    <option value="queen">{couple.queen.nickname}</option>
+                    <option value="prince">{couple.prince.nickname}</option>
+                  </select>
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-empire-sky">⇅</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 通關密語 (demo)</label>
+                <input
+                  type="password"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  placeholder="請輸入密碼"
+                  className="mt-2 w-full border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky"
+                />
+              </div>
+            </>
+          )}
 
-          <div>
-            <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 通關密語</label>
-            <input
-              type="password"
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              placeholder="請輸入密碼"
-              className="mt-2 w-full border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky"
-            />
-          </div>
+          {err && <div className="text-sm text-rose-600">{err}</div>}
 
-          <button onClick={handleEnter} className="btn-primary w-full py-4 text-base">
-            ✨ 進入城堡
+          <button onClick={handleEnter} disabled={loading} className="btn-primary w-full py-4 text-base">
+            {loading ? "登入中…" : "✨ 進入城堡"}
           </button>
 
           <div className="flex items-center justify-between text-sm pt-2">

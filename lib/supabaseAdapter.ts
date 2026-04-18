@@ -1,127 +1,446 @@
 "use client";
 
 /**
- * Supabase 實時同步 adapter
- *
- * 目的：讓 Zustand store 在 Supabase 啟用時，自動把本地操作 mirror 到遠端，
- *      並透過 realtime 接收另一方的更新。
+ * Supabase 實時同步 adapter — 真實多情侶後端整合
  *
  * 啟用條件：NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY 同時存在。
- *
- * 尚未啟用時：所有函式都 no-op，store 仍用 localStorage。
+ * 未啟用時：所有函式 no-op，store 用 localStorage。
  */
 
 import { getSupabase, isSupabaseEnabled } from "./supabase";
-import type { Submission, MemoryCard, Couple, Pet } from "./types";
+import type {
+  Couple, Submission, MemoryCard, Pet, IslandItem,
+  Ritual, Streak, Redemption, Task, Moment, QuestionAnswer,
+} from "./types";
 
-// =============================================================
-// couple 同步
-// =============================================================
-
-export async function syncCouple(couple: Couple): Promise<boolean> {
-  const sb = await getSupabase();
-  if (!sb) return false;
-  try {
-    const client: any = sb;
-    const { error } = await client.from("couples").upsert({
-      id: couple.id === "me" ? undefined : couple.id,
-      name: couple.name,
-      invite_code: couple.inviteCode,
-      kingdom_level: couple.kingdomLevel,
-      love_index: couple.loveIndex,
-      coins: couple.coins,
-      title: couple.title,
-      bio: couple.bio,
-      privacy: couple.privacy,
-    });
-    return !error;
-  } catch {
-    return false;
-  }
+function uid6(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let c = "";
+  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  return c;
 }
 
 // =============================================================
-// submission 同步
+// Auth & Couple 建立
 // =============================================================
 
-export async function insertSubmission(
-  coupleId: string,
-  submission: Omit<Submission, "id"> & { userId?: string },
-): Promise<string | null> {
+export async function getCurrentUser() {
   const sb = await getSupabase();
   if (!sb) return null;
   try {
-    const client: any = sb;
-    const { data, error } = await client
-      .from("submissions")
-      .insert({
-        couple_id: coupleId,
-        task_id: submission.taskId,
-        task_title: submission.taskTitle,
-        reward: submission.reward,
-        submitted_by: submission.userId,
-        status: submission.status,
-        note: submission.note,
-      })
-      .select("id")
-      .single();
-    if (error) return null;
-    return data?.id ?? null;
+    const { data } = await (sb as any).auth.getUser();
+    return data?.user ?? null;
   } catch {
     return null;
   }
 }
 
+/** 使用者首次登入 → 建立 couples + users row */
+export async function ensureCoupleForUser(
+  userId: string,
+  options: { kingdomName?: string; nickname?: string } = {},
+): Promise<string | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    // 先看這個 user 是否已有 couple
+    const { data: existing } = await client
+      .from("users")
+      .select("couple_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (existing?.couple_id) return existing.couple_id;
+
+    // 建 couple
+    const inviteCode = uid6();
+    const { data: couple, error: cErr } = await client
+      .from("couples")
+      .insert({
+        name: options.kingdomName ?? "新手小窩",
+        invite_code: inviteCode,
+        kingdom_level: 1,
+        love_index: 0,
+        coins: 0,
+        title: "見習情人",
+        privacy: "public",
+      })
+      .select("id")
+      .single();
+    if (cErr) { console.warn("[sb] create couple failed", cErr); return null; }
+
+    // 建 user row (role=queen，首位建國者)
+    const { error: uErr } = await client.from("users").upsert({
+      id: userId,
+      couple_id: couple.id,
+      role: "queen",
+      nickname: options.nickname ?? "阿紅",
+    });
+    if (uErr) console.warn("[sb] create user failed", uErr);
+
+    // 建寵物 + streak
+    await client.from("pets").insert({ couple_id: couple.id });
+    await client.from("streaks").insert({ couple_id: couple.id });
+
+    return couple.id;
+  } catch (e) {
+    console.warn("[sb] ensureCoupleForUser", e);
+    return null;
+  }
+}
+
+/** 透過配對碼加入既有王國（以 prince 身份） */
+export async function joinCoupleByCode(userId: string, inviteCode: string, nickname?: string): Promise<string | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const { data: couple } = await client
+      .from("couples")
+      .select("id")
+      .eq("invite_code", inviteCode.toUpperCase())
+      .maybeSingle();
+    if (!couple) return null;
+    await client.from("users").upsert({
+      id: userId,
+      couple_id: couple.id,
+      role: "prince",
+      nickname: nickname ?? "阿藍",
+    });
+    await client.from("couples").update({ paired_at: new Date().toISOString() }).eq("id", couple.id);
+    return couple.id;
+  } catch (e) {
+    console.warn("[sb] joinCoupleByCode", e);
+    return null;
+  }
+}
+
 // =============================================================
-// 訂閱 couple 的即時變化
+// Pull — 拉取完整情侶狀態到 Zustand
+// =============================================================
+
+export interface FullCoupleState {
+  couple: any;
+  users: any[];
+  submissions: any[];
+  pet: any;
+  codex: any[];
+  island: any[];
+  rituals: any;
+  streak: any;
+  redemptions: any[];
+  moments: any[];
+  gifts: any[];
+  questionAnswers: any[];
+}
+
+export async function pullCoupleState(coupleId: string): Promise<FullCoupleState | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const [
+      coupleRes, usersRes, subsRes, petRes, cardsRes, itemsRes,
+      ritualRes, streakRes, redRes, momentsRes, giftsRes, qaRes,
+    ] = await Promise.all([
+      client.from("couples").select("*").eq("id", coupleId).maybeSingle(),
+      client.from("users").select("*").eq("couple_id", coupleId),
+      client.from("submissions").select("*").eq("couple_id", coupleId).order("created_at", { ascending: false }).limit(100),
+      client.from("pets").select("*").eq("couple_id", coupleId).maybeSingle(),
+      client.from("memory_cards").select("*, card_catalog(*)").eq("couple_id", coupleId),
+      client.from("island_items").select("*, item_catalog(*)").eq("couple_id", coupleId),
+      client.from("rituals").select("*").eq("couple_id", coupleId).eq("date", today).maybeSingle(),
+      client.from("streaks").select("*").eq("couple_id", coupleId).maybeSingle(),
+      client.from("redemptions").select("*, reward_catalog(*)").eq("couple_id", coupleId).order("created_at", { ascending: false }),
+      client.from("moments").select("*").order("created_at", { ascending: false }).limit(50),
+      client.from("gifts").select("*").eq("to_couple_id", coupleId).order("created_at", { ascending: false }).limit(50),
+      client.from("question_answers").select("*").eq("couple_id", coupleId).order("created_at", { ascending: false }),
+    ]);
+
+    return {
+      couple: coupleRes.data,
+      users: usersRes.data ?? [],
+      submissions: subsRes.data ?? [],
+      pet: petRes.data,
+      codex: cardsRes.data ?? [],
+      island: itemsRes.data ?? [],
+      rituals: ritualRes.data,
+      streak: streakRes.data,
+      redemptions: redRes.data ?? [],
+      moments: momentsRes.data ?? [],
+      gifts: giftsRes.data ?? [],
+      questionAnswers: qaRes.data ?? [],
+    };
+  } catch (e) {
+    console.warn("[sb] pullCoupleState", e);
+    return null;
+  }
+}
+
+// =============================================================
+// Push — 從 Zustand 寫入 Supabase
+// =============================================================
+
+export async function updateCoupleFields(coupleId: string, fields: Partial<Couple>): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    const map: any = {};
+    if (fields.name) map.name = fields.name;
+    if (typeof fields.coins === "number") map.coins = fields.coins;
+    if (typeof fields.loveIndex === "number") map.love_index = fields.loveIndex;
+    if (typeof fields.kingdomLevel === "number") map.kingdom_level = fields.kingdomLevel;
+    if (fields.title) map.title = fields.title;
+    if (fields.bio !== undefined) map.bio = fields.bio;
+    if (fields.privacy) map.privacy = fields.privacy;
+    await client.from("couples").update(map).eq("id", coupleId);
+  } catch (e) { console.warn("[sb] updateCouple", e); }
+}
+
+export async function insertSubmission(
+  coupleId: string,
+  userId: string,
+  submission: { taskId: string; taskTitle: string; reward: number },
+): Promise<string | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const { data, error } = await client.from("submissions").insert({
+      couple_id: coupleId,
+      task_id: submission.taskId,
+      task_title: submission.taskTitle,
+      reward: submission.reward,
+      submitted_by: userId,
+      status: "pending",
+    }).select("id").single();
+    if (error) { console.warn("[sb] insertSubmission", error); return null; }
+    return data.id;
+  } catch (e) { console.warn("[sb] insertSubmission", e); return null; }
+}
+
+export async function reviewSubmissionRemote(
+  submissionId: string, approve: boolean, reviewerId: string, note?: string,
+): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("submissions").update({
+      status: approve ? "approved" : "rejected",
+      reviewer_id: reviewerId,
+      reviewed_at: new Date().toISOString(),
+      note,
+    }).eq("id", submissionId);
+  } catch (e) { console.warn("[sb] review", e); }
+}
+
+export async function upsertPet(coupleId: string, pet: Partial<Pet>): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("pets").upsert({
+      couple_id: coupleId,
+      name: pet.name,
+      stage: pet.stage,
+      attrs: pet.attrs,
+      last_fed_at: pet.lastFedAt ?? new Date().toISOString(),
+    });
+  } catch (e) { console.warn("[sb] upsertPet", e); }
+}
+
+export async function addMemoryCardRemote(coupleId: string, cardId: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("memory_cards").insert({
+      couple_id: coupleId,
+      card_id: cardId,
+    });
+  } catch (e) { console.warn("[sb] addCard", e); }
+}
+
+export async function addIslandItemRemote(coupleId: string, catalogId: string, x: number, y: number): Promise<string | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const { data, error } = await client.from("island_items").insert({
+      couple_id: coupleId, catalog_id: catalogId, x, y,
+    }).select("id").single();
+    if (error) return null;
+    return data.id;
+  } catch { return null; }
+}
+
+export async function moveIslandItemRemote(itemId: string, x: number, y: number): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("island_items").update({ x, y }).eq("id", itemId);
+  } catch { /* ignore */ }
+}
+
+export async function removeIslandItemRemote(itemId: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("island_items").delete().eq("id", itemId);
+  } catch { /* ignore */ }
+}
+
+export async function upsertRitual(coupleId: string, morning: boolean, night: boolean): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("rituals").upsert({
+      couple_id: coupleId,
+      date: new Date().toISOString().slice(0, 10),
+      morning, night,
+    });
+  } catch { /* ignore */ }
+}
+
+export async function updateStreak(coupleId: string, current: number, longest: number): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("streaks").upsert({
+      couple_id: coupleId,
+      current, longest,
+      last_date: new Date().toISOString().slice(0, 10),
+    });
+  } catch { /* ignore */ }
+}
+
+export async function insertRedemption(
+  coupleId: string, userId: string, rewardId: string, title: string, cost: number,
+): Promise<string | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const { data } = await client.from("redemptions").insert({
+      couple_id: coupleId, reward_id: rewardId,
+      reward_title: title, cost, redeemed_by: userId,
+      status: "unused",
+    }).select("id").single();
+    return data?.id ?? null;
+  } catch { return null; }
+}
+
+export async function insertMomentRemote(
+  coupleId: string, coupleName: string, m: { type: string; title: string; subtitle?: string; emoji: string },
+): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("moments").insert({
+      couple_id: coupleId, couple_name: coupleName,
+      type: m.type, title: m.title, subtitle: m.subtitle, emoji: m.emoji,
+    });
+  } catch { /* ignore */ }
+}
+
+export async function insertQuestionAnswerRemote(
+  coupleId: string, userId: string, questionId: string, text: string,
+): Promise<string | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const { data } = await client.from("question_answers").insert({
+      couple_id: coupleId, question_id: questionId,
+      answered_by: userId, text,
+    }).select("id").single();
+    return data?.id ?? null;
+  } catch { return null; }
+}
+
+export async function rateQuestionAnswerRemote(
+  answerId: string, rating: number, comment?: string,
+): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("question_answers").update({
+      rating, rating_comment: comment, rated_at: new Date().toISOString(),
+    }).eq("id", answerId);
+  } catch { /* ignore */ }
+}
+
+// =============================================================
+// Realtime subscribe
 // =============================================================
 
 export function subscribeCouple(
   coupleId: string,
-  onChange: (payload: unknown) => void,
+  onChange: (table: string, payload: unknown) => void,
 ): () => void {
   let channel: any = null;
+  let cancelled = false;
   (async () => {
     const sb = await getSupabase();
-    if (!sb) return;
+    if (!sb || cancelled) return;
     const client: any = sb;
-    channel = client
-      .channel(`couple:${coupleId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `couple_id=eq.${coupleId}` }, onChange)
-      .on("postgres_changes", { event: "*", schema: "public", table: "pets", filter: `couple_id=eq.${coupleId}` }, onChange)
-      .on("postgres_changes", { event: "*", schema: "public", table: "memory_cards", filter: `couple_id=eq.${coupleId}` }, onChange)
-      .subscribe();
+    const tables = ["submissions", "pets", "memory_cards", "island_items", "rituals", "streaks", "redemptions", "moments", "gifts", "question_answers"];
+    channel = client.channel(`couple:${coupleId}`);
+    tables.forEach((t) => {
+      channel.on("postgres_changes",
+        { event: "*", schema: "public", table: t, filter: `couple_id=eq.${coupleId}` },
+        (payload: unknown) => onChange(t, payload),
+      );
+    });
+    channel.subscribe();
   })();
   return () => {
+    cancelled = true;
     if (channel) {
       (async () => {
         const sb = await getSupabase();
         if (!sb) return;
-        (sb as any).removeChannel(channel);
+        try { (sb as any).removeChannel(channel); } catch { /* ignore */ }
       })();
     }
   };
 }
 
 // =============================================================
-// 排行榜 (唯讀)
+// Leaderboard (唯讀)
 // =============================================================
 
-export async function fetchLeaderboard(metric: "love_index" | "kingdom_level" | "streak" = "love_index"): Promise<any[] | null> {
+export async function fetchLeaderboard(metric: "love_index" | "kingdom_level" = "love_index"): Promise<any[] | null> {
   const sb = await getSupabase();
   if (!sb) return null;
   try {
     const client: any = sb;
-    const { data, error } = await client
+    // 先試 materialized view
+    const viewQuery = await client
       .from("leaderboard_view")
       .select("*")
       .order(metric, { ascending: false })
       .limit(100);
-    if (error) return null;
-    return data;
-  } catch {
-    return null;
-  }
+    if (!viewQuery.error && viewQuery.data) return viewQuery.data;
+    // Fallback: 直接從 couples 取
+    const { data } = await client
+      .from("couples")
+      .select("id, name, kingdom_level, love_index, title")
+      .eq("privacy", "public")
+      .order(metric, { ascending: false })
+      .limit(100);
+    return data ?? [];
+  } catch { return null; }
 }
 
 export { isSupabaseEnabled };

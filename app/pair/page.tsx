@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useGame } from "@/lib/store";
+import { signUp, signIn, isSupabaseEnabled } from "@/lib/auth";
+import { joinCoupleByCode, getCurrentUser } from "@/lib/supabaseAdapter";
 
 function PairForm() {
   const router = useRouter();
@@ -13,14 +15,39 @@ function PairForm() {
   const [code, setCode] = useState("");
   const [nickname, setNick] = useState("");
   const [role, setRole] = useState<"queen" | "prince">("prince");
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const q = search?.get("code");
     if (q) setCode(q.toUpperCase().slice(0, 6));
   }, [search]);
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
+    setErr(null);
     if (nickname.trim()) setNickname(role, nickname);
+
+    if (isSupabaseEnabled()) {
+      if (!email.trim() || pw.length < 6) { setErr("請輸入 email + 密碼 (至少 6 碼)"); return; }
+      setLoading(true);
+      let u = await getCurrentUser();
+      if (!u) {
+        // 先嘗試註冊
+        const { error } = await signUp(email.trim(), pw);
+        if (error && !error.includes("demo")) {
+          const signed = await signIn(email.trim(), pw);
+          if (signed.error) { setErr(signed.error); setLoading(false); return; }
+        }
+        u = await getCurrentUser();
+      }
+      if (!u?.id) { setErr("認證失敗"); setLoading(false); return; }
+      const coupleId = await joinCoupleByCode(u.id, code, nickname.trim() || undefined);
+      setLoading(false);
+      if (!coupleId) { setErr("配對碼無效或找不到王國"); return; }
+    }
+
     login(role);
     router.push("/dashboard");
   };
@@ -53,6 +80,32 @@ function PairForm() {
           />
         </div>
 
+        {isSupabaseEnabled() && (
+          <>
+            <div>
+              <label className="text-sm text-slate-500">Email (會建立帳號)</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="mt-2 w-full border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-slate-500">密碼 (至少 6 碼)</label>
+              <input
+                type="password"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                className="mt-2 w-full border-2 border-empire-cloud rounded-2xl px-4 py-3 bg-white focus:outline-none focus:border-empire-sky"
+              />
+            </div>
+          </>
+        )}
+
+        {err && <div className="text-sm text-rose-600">{err}</div>}
+
         <div>
           <label className="text-sm text-slate-500">你在這段關係的角色</label>
           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -67,10 +120,10 @@ function PairForm() {
 
         <button
           onClick={handleJoin}
-          disabled={code.length < 4}
+          disabled={code.length < 4 || loading}
           className="btn-primary w-full py-3.5 font-semibold"
         >
-          加入王國
+          {loading ? "加入中…" : "加入王國"}
         </button>
 
         <Link href="/login" className="block text-center text-sm text-empire-sky hover:underline">
