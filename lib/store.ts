@@ -227,6 +227,9 @@ export const useGame = create<State>()(
           ...m,
         };
         set({ moments: [moment, ...get().moments] });
+        if (isSupabaseEnabled() && couple.id !== "me") {
+          insertMomentRemote(couple.id, couple.name, m).catch(() => null);
+        }
       },
 
       likeMoment: (id) => {
@@ -251,11 +254,15 @@ export const useGame = create<State>()(
       setPetName: (name) => {
         const clean = name.trim().slice(0, 20);
         if (!clean) return;
-        set({ pet: { ...get().pet, name: clean } });
+        const nextPet = { ...get().pet, name: clean };
+        set({ pet: nextPet });
+        mirrorPet(get().couple.id, nextPet);
       },
 
       setPrivacy: (p) => {
-        set({ couple: { ...get().couple, privacy: p } });
+        const nextCouple = { ...get().couple, privacy: p };
+        set({ couple: nextCouple });
+        mirrorCouple(nextCouple.id, { privacy: p });
       },
 
       /** 檢查是否有缺席日、是否需要消耗騎士盾 */
@@ -581,11 +588,18 @@ export const useGame = create<State>()(
           createdAt: nowStr(),
         };
         set({ questionAnswers: [answer, ...get().questionAnswers] });
-        // 回答即獲得基礎 XP (分深度)
         const xp = DEPTH_LABELS[q.depth].xp;
         const nextLove = get().couple.loveIndex + xp;
         const nextLevel = Math.max(get().couple.kingdomLevel, Math.floor(nextLove / 50) + 1);
-        set({ couple: { ...get().couple, loveIndex: nextLove, kingdomLevel: nextLevel } });
+        const nextCouple = { ...get().couple, loveIndex: nextLove, kingdomLevel: nextLevel };
+        set({ couple: nextCouple });
+        mirrorCouple(nextCouple.id, { loveIndex: nextLove, kingdomLevel: nextLevel });
+        if (isSupabaseEnabled() && nextCouple.id !== "me") {
+          (async () => {
+            const u = await getCurrentUser();
+            if (u?.id) insertQuestionAnswerRemote(nextCouple.id, u.id, questionId, clean).catch(() => null);
+          })();
+        }
         get().addNotification({
           type: "system",
           title: "💬 對方有新的回答",
@@ -605,6 +619,9 @@ export const useGame = create<State>()(
               : a,
           ),
         });
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          rateQuestionAnswerRemote(answerId, clamped, comment).catch(() => null);
+        }
         // 高分 (>=4) 額外獎勵 XP + 有機會掉卡
         if (clamped >= 4) {
           const bonus = clamped === 5 ? 15 : 8;
@@ -846,10 +863,18 @@ export const useGame = create<State>()(
           status: "unused",
           createdAt: new Date().toLocaleDateString("zh-TW"),
         };
+        const nextCouple = { ...get().couple, coins: get().couple.coins - r.cost };
         set({
           redemptions: [redemption, ...get().redemptions],
-          couple: { ...get().couple, coins: get().couple.coins - r.cost },
+          couple: nextCouple,
         });
+        mirrorCouple(nextCouple.id, { coins: nextCouple.coins });
+        if (isSupabaseEnabled() && nextCouple.id !== "me") {
+          (async () => {
+            const u = await getCurrentUser();
+            if (u?.id) insertRedemption(nextCouple.id, u.id, r.id, r.title, r.cost).catch(() => null);
+          })();
+        }
         // 貴重獎勵 (>= 500 金幣) 自動發動態
         if (r.cost >= 500) {
           get().addMoment({
@@ -878,14 +903,14 @@ export const useGame = create<State>()(
         else if (avg >= 85) nextStage = 3;
         else if (avg >= 65) nextStage = 2;
         else if (avg >= 40) nextStage = 1;
-        set({
-          pet: {
-            ...prev,
-            attrs: nextAttrs,
-            stage: nextStage,
-            lastFedAt: new Date().toISOString(),
-          },
-        });
+        const nextPet: Pet = {
+          ...prev,
+          attrs: nextAttrs,
+          stage: nextStage,
+          lastFedAt: new Date().toISOString(),
+        };
+        set({ pet: nextPet });
+        mirrorPet(get().couple.id, nextPet);
         // 進化自動發動態
         if (nextStage > prev.stage) {
           const stageName = ["蛋", "幼體", "成型", "傳說", "神話"][nextStage];
@@ -905,13 +930,17 @@ export const useGame = create<State>()(
         const r = get().ritual.date === today ? get().ritual : { date: today, morning: false, night: false };
         const next = { ...r, [kind]: !r[kind] };
         set({ ritual: next });
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          upsertRitual(get().couple.id, next.morning, next.night).catch(() => null);
+        }
         if (next.morning || next.night) {
-          set({ couple: { ...get().couple, coins: get().couple.coins + 5 } });
+          const nextCouple = { ...get().couple, coins: get().couple.coins + 5 };
+          set({ couple: nextCouple });
+          mirrorCouple(nextCouple.id, { coins: nextCouple.coins });
         }
         // 早晚儀式都達成 + 今天第一次完成 → 連擊 +1 + 里程碑檢查
         if (next.morning && next.night) {
           const s = get().streak;
-          // 騎士盾牌週重置
           const isoWeek = getIsoWeek(new Date());
           const shieldsReset = s.knightShieldsResetWeek !== isoWeek;
           const baseShields = shieldsReset ? 1 : (s.knightShields ?? 0);
@@ -919,16 +948,18 @@ export const useGame = create<State>()(
           if (s.lastDate !== today) {
             const prev = s.current;
             const nextCurrent = prev + 1;
-            set({
-              streak: {
-                ...s,
-                current: nextCurrent,
-                longest: Math.max(s.longest, nextCurrent),
-                lastDate: today,
-                knightShields: baseShields,
-                knightShieldsResetWeek: isoWeek,
-              },
-            });
+            const nextStreak = {
+              ...s,
+              current: nextCurrent,
+              longest: Math.max(s.longest, nextCurrent),
+              lastDate: today,
+              knightShields: baseShields,
+              knightShieldsResetWeek: isoWeek,
+            };
+            set({ streak: nextStreak });
+            if (isSupabaseEnabled() && get().couple.id !== "me") {
+              updateStreak(get().couple.id, nextStreak.current, nextStreak.longest).catch(() => null);
+            }
             if ([7, 14, 30, 60, 100, 200, 365].includes(nextCurrent)) {
               get().addMoment({
                 type: "streak",
@@ -941,24 +972,36 @@ export const useGame = create<State>()(
         }
       },
 
-      moveIslandItem: (id, x, y) =>
-        set({
-          island: get().island.map((it) => (it.id === id ? { ...it, x, y } : it)),
-        }),
+      moveIslandItem: (id, x, y) => {
+        set({ island: get().island.map((it) => (it.id === id ? { ...it, x, y } : it)) });
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          moveIslandItemRemote(id, x, y).catch(() => null);
+        }
+      },
 
       buyIslandItem: (catalogId, label, emoji, price) => {
         if (get().couple.coins < price) return;
+        const localId = uid();
+        const nextCouple = { ...get().couple, coins: get().couple.coins - price };
         set({
-          couple: { ...get().couple, coins: get().couple.coins - price },
+          couple: nextCouple,
           island: [
             ...get().island,
-            { id: uid(), catalogId, label, emoji, x: 50, y: 50 },
+            { id: localId, catalogId, label, emoji, x: 50, y: 50 },
           ],
         });
+        mirrorCouple(nextCouple.id, { coins: nextCouple.coins });
+        if (isSupabaseEnabled() && nextCouple.id !== "me") {
+          addIslandItemRemote(nextCouple.id, catalogId, 50, 50).catch(() => null);
+        }
       },
 
-      removeIslandItem: (id) =>
-        set({ island: get().island.filter((it) => it.id !== id) }),
+      removeIslandItem: (id) => {
+        set({ island: get().island.filter((it) => it.id !== id) });
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          removeIslandItemRemote(id).catch(() => null);
+        }
+      },
 
       sendGift: (toCoupleName, message) =>
         set({
