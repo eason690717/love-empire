@@ -35,7 +35,7 @@ export async function getCurrentUser() {
   }
 }
 
-/** 使用者首次登入 → 建立 couples + users row。會 retry 處理 session 尚未就緒的情況 */
+/** 建立新王國（或回既有的）。呼叫前須已有 auth session（anonymous 即可） */
 export async function ensureCoupleForUser(
   userId: string,
   options: { kingdomName?: string; nickname?: string } = {},
@@ -44,13 +44,6 @@ export async function ensureCoupleForUser(
   if (!sb) return { coupleId: null, inviteCode: null, error: "Supabase 未啟用" };
 
   const client: any = sb;
-
-  // 等 session 就緒（最多 3 秒）— 防止 signUp 剛回、RLS 還沒認得 authenticated 的競態
-  for (let i = 0; i < 6; i++) {
-    const { data } = await client.auth.getSession();
-    if (data?.session?.access_token) break;
-    await new Promise((r) => setTimeout(r, 500));
-  }
 
   try {
     // 先看這個 user 是否已有 couple

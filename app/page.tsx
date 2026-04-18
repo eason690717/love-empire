@@ -1,6 +1,31 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getSession, isSupabaseEnabled } from "@/lib/auth";
 
 export default function HomePage() {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    if (!isSupabaseEnabled()) { setChecking(false); return; }
+    (async () => {
+      const u = await getSession();
+      if (u) { router.replace("/dashboard"); return; }
+      setChecking(false);
+    })();
+  }, [router]);
+
+  if (checking) {
+    return (
+      <main className="min-h-screen flex items-center justify-center text-empire-mute">
+        載入中…
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="max-w-md w-full card p-8 text-center relative overflow-hidden">
@@ -25,19 +50,16 @@ export default function HomePage() {
 
         <div className="mt-8 space-y-3">
           <Link href="/login" className="btn-primary block py-3.5 text-base">
-            ✨ 進入城堡
+            ✨ 我有王國鑰匙
           </Link>
           <Link href="/register" className="btn-pink block py-3.5 text-base">
             👑 建立新王國
-          </Link>
-          <Link href="/pair" className="btn-ghost block py-3 text-sm">
-            💌 我有配對碼
           </Link>
         </div>
 
         <div className="mt-8 pt-6 border-t border-empire-cloud/60 text-xs text-empire-mute">
           <div className="flex items-center justify-center gap-2">
-            <span className="sprout-dot" /> v0.1 alpha · 資料存於你的瀏覽器
+            <span className="sprout-dot" /> v0.1 alpha · {isSupabaseEnabled() ? "已連雲端" : "資料存於你的瀏覽器"}
           </div>
           <div className="mt-3 flex justify-center gap-4">
             <Link href="/about" className="hover:underline">關於</Link>
