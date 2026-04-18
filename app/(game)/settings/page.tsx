@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { isSupabaseEnabled } from "@/lib/auth";
-// useGame used inside AnniversarySection component
+import { PageBanner } from "@/components/PageBanner";
+import { InviteCodeCard } from "@/components/InviteCodeCard";
 
 export default function SettingsPage() {
   const couple = useGame((s) => s.couple);
@@ -23,10 +24,18 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5">
-        <h2 className="font-bold">⚙️ 設定</h2>
-        <p className="text-xs text-empire-mute mt-1">個人化、隱私、資料管理</p>
-      </div>
+      <PageBanner
+        title="設定"
+        subtitle="個人化 · 配對碼 · 隱私 · 資料管理"
+        emoji="⚙️"
+        gradient="sky"
+        stats={[
+          { label: "王國", value: couple.name },
+          { label: "等級", value: `Lv.${couple.kingdomLevel}` },
+        ]}
+      />
+
+      <InviteCodeCard />
 
       <Section title="📝 命名">
         <Field label="王國名稱" value={kName} onChange={setKName} onBlur={() => kName.trim() && setKingdomName(kName)} />

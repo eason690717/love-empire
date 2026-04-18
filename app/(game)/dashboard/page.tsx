@@ -8,6 +8,7 @@ import { PASSIVE_SKILLS, isSpecialDay, SPECIAL_DAY_LABEL, SPECIAL_DAY_MULTIPLIER
 import { AttributeRadar } from "@/components/AttributeRadar";
 import { PetAvatar } from "@/components/art/PetAvatar";
 import { DailyBonusModal } from "@/components/DailyBonusModal";
+import { InviteCodeCard } from "@/components/InviteCodeCard";
 
 /** Gacha 手遊風 — side rails + center scene + big CTA + stats */
 export default function DashboardPage() {
@@ -56,6 +57,13 @@ export default function DashboardPage() {
   return (
     <>
       <DailyBonusModal />
+
+      {/* 未配對時顯示配對碼提示 */}
+      {couple.inviteCode && couple.prince.nickname === "阿藍" && couple.queen.nickname !== "阿紅" && (
+        <div className="mb-3">
+          <InviteCodeCard compact />
+        </div>
+      )}
 
       {/* 特別日橫幅 */}
       {special && (

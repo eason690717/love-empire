@@ -45,10 +45,14 @@ export default function RegisterPage() {
       const { getCurrentUser } = await import("@/lib/supabaseAdapter");
       const u = await getCurrentUser();
       if (u?.id) {
-        await ensureCoupleForUser(u.id, {
+        const result = await ensureCoupleForUser(u.id, {
           kingdomName: kingdom.trim() || undefined,
           nickname: nickname.trim() || undefined,
         });
+        if (result.error && !result.coupleId) {
+          setErr(`王國建立失敗：${result.error}`);
+          return;
+        }
       }
     }
     setStep("done");

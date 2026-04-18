@@ -35,22 +35,34 @@ export async function getCurrentUser() {
   }
 }
 
-/** 使用者首次登入 → 建立 couples + users row */
+/** 使用者首次登入 → 建立 couples + users row。會 retry 處理 session 尚未就緒的情況 */
 export async function ensureCoupleForUser(
   userId: string,
   options: { kingdomName?: string; nickname?: string } = {},
-): Promise<string | null> {
+): Promise<{ coupleId: string | null; inviteCode: string | null; error?: string }> {
   const sb = await getSupabase();
-  if (!sb) return null;
+  if (!sb) return { coupleId: null, inviteCode: null, error: "Supabase 未啟用" };
+
+  const client: any = sb;
+
+  // 等 session 就緒（最多 3 秒）— 防止 signUp 剛回、RLS 還沒認得 authenticated 的競態
+  for (let i = 0; i < 6; i++) {
+    const { data } = await client.auth.getSession();
+    if (data?.session?.access_token) break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
   try {
-    const client: any = sb;
     // 先看這個 user 是否已有 couple
     const { data: existing } = await client
       .from("users")
-      .select("couple_id")
+      .select("couple_id, nickname")
       .eq("id", userId)
       .maybeSingle();
-    if (existing?.couple_id) return existing.couple_id;
+    if (existing?.couple_id) {
+      const { data: c } = await client.from("couples").select("invite_code").eq("id", existing.couple_id).maybeSingle();
+      return { coupleId: existing.couple_id, inviteCode: c?.invite_code ?? null };
+    }
 
     // 建 couple
     const inviteCode = uid6();
@@ -67,9 +79,12 @@ export async function ensureCoupleForUser(
       })
       .select("id")
       .single();
-    if (cErr) { console.warn("[sb] create couple failed", cErr); return null; }
+    if (cErr) {
+      console.warn("[sb] create couple failed", cErr);
+      return { coupleId: null, inviteCode: null, error: cErr.message };
+    }
 
-    // 建 user row (role=queen，首位建國者)
+    // 建 user row
     const { error: uErr } = await client.from("users").upsert({
       id: userId,
       couple_id: couple.id,
@@ -78,14 +93,14 @@ export async function ensureCoupleForUser(
     });
     if (uErr) console.warn("[sb] create user failed", uErr);
 
-    // 建寵物 + streak
-    await client.from("pets").insert({ couple_id: couple.id });
-    await client.from("streaks").insert({ couple_id: couple.id });
+    // 建寵物 + streak (用 service 層邏輯; 失敗不阻塞)
+    await client.from("pets").insert({ couple_id: couple.id }).then(() => null, () => null);
+    await client.from("streaks").insert({ couple_id: couple.id }).then(() => null, () => null);
 
-    return couple.id;
-  } catch (e) {
+    return { coupleId: couple.id, inviteCode };
+  } catch (e: any) {
     console.warn("[sb] ensureCoupleForUser", e);
-    return null;
+    return { coupleId: null, inviteCode: null, error: String(e) };
   }
 }
 
