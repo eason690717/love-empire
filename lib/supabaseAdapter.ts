@@ -132,6 +132,10 @@ export interface FullCoupleState {
   moments: any[];
   gifts: any[];
   questionAnswers: any[];
+  publicCouples: any[];
+  alliances: any[];
+  allianceMembers: any[];
+  friendships: any[];
 }
 
 export async function pullCoupleState(coupleId: string): Promise<FullCoupleState | null> {
@@ -144,19 +148,24 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
     const [
       coupleRes, usersRes, subsRes, petRes, cardsRes, itemsRes,
       ritualRes, streakRes, redRes, momentsRes, giftsRes, qaRes,
+      publicCouplesRes, alliancesRes, allianceMembersRes, friendshipsRes,
     ] = await Promise.all([
       client.from("couples").select("*").eq("id", coupleId).maybeSingle(),
       client.from("users").select("*").eq("couple_id", coupleId),
       client.from("submissions").select("*").eq("couple_id", coupleId).order("created_at", { ascending: false }).limit(100),
       client.from("pets").select("*").eq("couple_id", coupleId).maybeSingle(),
-      client.from("memory_cards").select("*, card_catalog(*)").eq("couple_id", coupleId),
-      client.from("island_items").select("*, item_catalog(*)").eq("couple_id", coupleId),
+      client.from("memory_cards").select("*").eq("couple_id", coupleId),
+      client.from("island_items").select("*").eq("couple_id", coupleId),
       client.from("rituals").select("*").eq("couple_id", coupleId).eq("date", today).maybeSingle(),
       client.from("streaks").select("*").eq("couple_id", coupleId).maybeSingle(),
-      client.from("redemptions").select("*, reward_catalog(*)").eq("couple_id", coupleId).order("created_at", { ascending: false }),
+      client.from("redemptions").select("*").eq("couple_id", coupleId).order("created_at", { ascending: false }),
       client.from("moments").select("*").order("created_at", { ascending: false }).limit(50),
       client.from("gifts").select("*").eq("to_couple_id", coupleId).order("created_at", { ascending: false }).limit(50),
       client.from("question_answers").select("*").eq("couple_id", coupleId).order("created_at", { ascending: false }),
+      client.from("couples").select("id, name, kingdom_level, love_index, title, privacy").in("privacy", ["public", "friends"]).order("love_index", { ascending: false }).limit(100),
+      client.from("alliances").select("*").limit(50),
+      client.from("alliance_members").select("*"),
+      client.from("friendships").select("*").or(`couple_a_id.eq.${coupleId},couple_b_id.eq.${coupleId}`).eq("status", "accepted"),
     ]);
 
     return {
@@ -172,6 +181,10 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
       moments: momentsRes.data ?? [],
       gifts: giftsRes.data ?? [],
       questionAnswers: qaRes.data ?? [],
+      publicCouples: publicCouplesRes.data ?? [],
+      alliances: alliancesRes.data ?? [],
+      allianceMembers: allianceMembersRes.data ?? [],
+      friendships: friendshipsRes.data ?? [],
     };
   } catch (e) {
     console.warn("[sb] pullCoupleState", e);

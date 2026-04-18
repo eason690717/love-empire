@@ -415,6 +415,42 @@ export const useGame = create<State>()(
             receivedAt: new Date(g.created_at).toLocaleDateString("zh-TW"),
             read: !!g.read_at,
           })),
+          // 排行榜：真實 Supabase couples，empty 時就空
+          leaderboard: (remote.publicCouples ?? []).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            kingdomLevel: c.kingdom_level ?? 1,
+            loveIndex: c.love_index ?? 0,
+            streak: 0,
+            codexCompletion: 0,
+            weeklyTasks: 0,
+            title: c.title ?? "見習情人",
+            emoji: c.id === cr.id ? "👑" : "💞",
+            isSelf: c.id === cr.id,
+          })),
+          // 聯盟 / 好友：從真實資料還原；empty 代表新 couple 還沒加入任何
+          alliances: (remote.alliances ?? []).map((a: any) => {
+            const members = (remote.allianceMembers ?? [])
+              .filter((m: any) => m.alliance_id === a.id)
+              .map((m: any) => m.couple_id);
+            return {
+              id: a.id,
+              name: a.name,
+              description: a.description ?? "",
+              members,
+              weeklyProgress: a.weekly_progress ?? 0,
+              weeklyTarget: a.weekly_target ?? 200,
+              questTitle: a.quest_title ?? "本週挑戰",
+              bossHp: a.boss_hp,
+              bossMaxHp: a.boss_max_hp,
+              bossName: a.boss_name,
+              sharedIsland: [],
+            };
+          }),
+          friends: (remote.friendships ?? []).map((f: any) => ({
+            coupleId: f.couple_a_id === cr.id ? f.couple_b_id : f.couple_a_id,
+            since: f.since ?? new Date().toISOString(),
+          })),
         });
       },
 
