@@ -24,11 +24,12 @@ function LoginInner() {
   // URL 帶 ?code=XXXXXX（分享連結）時自動填入
   useEffect(() => {
     const q = search?.get("code");
-    if (q) setCode(q.toUpperCase().slice(0, 8));
+    if (q) setCode(q.toUpperCase().slice(0, 6));
   }, [search]);
 
-  // LIFF 內自動登入（demo 角色；真實情境仍走鑰匙）
+  // LIFF 內自動登入：僅 demo 模式（Supabase 啟用時仍需打鑰匙加入王國）
   useEffect(() => {
+    if (isSupabaseEnabled()) return;
     if (liff.inClient && liff.loggedIn && liff.profile) {
       const isQueen = (liff.profile.userId.charCodeAt(0) % 2) === 0;
       login(isQueen ? "queen" : "prince");
@@ -117,8 +118,9 @@ function LoginInner() {
             <label className="text-sm text-empire-mute flex items-center gap-2"><span className="sprout-dot" /> 王國鑰匙</label>
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
+              onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
               placeholder="A1B2C3"
+              maxLength={6}
               className="mt-2 w-full text-center tracking-[0.4em] text-2xl font-bold py-3 border-2 border-empire-cloud rounded-2xl bg-white focus:outline-none focus:border-empire-sky"
             />
           </div>

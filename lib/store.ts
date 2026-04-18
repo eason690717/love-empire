@@ -170,7 +170,15 @@ export const useGame = create<State>()(
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
-      logout: () => set({ loggedIn: false }),
+      logout: () => {
+        set({ loggedIn: false });
+        // 同步清掉 Supabase anonymous session，否則 landing/login 頁會自動 resume
+        if (typeof window !== "undefined") {
+          import("./auth").then(({ signOut, isSupabaseEnabled }) => {
+            if (isSupabaseEnabled()) signOut();
+          }).catch(() => null);
+        }
+      },
 
       setNickname: (role, nickname) => {
         const clean = nickname.trim().slice(0, 20);
