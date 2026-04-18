@@ -9,28 +9,15 @@ import { InlineRename } from "@/components/InlineRename";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CoupleAvatar } from "@/components/art/CoupleAvatar";
 import { SupabaseSync } from "@/components/SupabaseSync";
+import { MoreMenu } from "@/components/MoreMenu";
 
-const TABS = [
-  { href: "/dashboard",   label: "儀表板",   icon: "📊" },
-  { href: "/tasks",       label: "任務申報", icon: "📜" },
-  { href: "/exchange",    label: "國庫兌換", icon: "💰" },
-  { href: "/vault",       label: "我的寶庫", icon: "🎁" },
-  { href: "/history",     label: "歷程紀錄", icon: "📖" },
-  { href: "/timeline",    label: "時間軸",   icon: "📅" },
-  { href: "/pet",         label: "愛之寵物", icon: "🐣" },
-  { href: "/codex",       label: "記憶圖鑑", icon: "🖼️" },
-  { href: "/island",      label: "帝國島嶼", icon: "🏝️" },
-  { href: "/rituals",     label: "每日儀式", icon: "🌅" },
-  { href: "/inbox",       label: "通知",     icon: "🔔" },
-  { href: "/achievements", label: "獎盃陳列", icon: "🏅" },
-  { href: "/recap",       label: "年度回顧", icon: "✨" },
-  { href: "/questions",   label: "深度問答", icon: "💬" },
-  { href: "/plaza",       label: "帝國廣場", icon: "🌸" },
-  { href: "/leaderboard", label: "情侶排行", icon: "🏆" },
-  { href: "/friends",     label: "好友情侶", icon: "👫" },
-  { href: "/alliance",    label: "聯盟",     icon: "🤝" },
-  { href: "/pk",          label: "情侶 PK",  icon: "⚔️" },
-  { href: "/settings",    label: "設定",     icon: "⚙️" },
+// 底部 5 主 tab + 更多
+const MAIN_TABS = [
+  { href: "/dashboard", label: "儀表",   icon: "📊" },
+  { href: "/tasks",     label: "任務",   icon: "📜" },
+  { href: "/pet",       label: "寵物",   icon: "🐣" },
+  { href: "/island",    label: "島嶼",   icon: "🏝️" },
+  { href: "/plaza",     label: "廣場",   icon: "🌸" },
 ];
 
 export default function GameLayout({ children }: { children: React.ReactNode }) {
@@ -40,19 +27,17 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   const role = useGame((s) => s.role);
   const loggedIn = useGame((s) => s.loggedIn);
   const logout = useGame((s) => s.logout);
-  const notice = useGame((s) => s.notice);
   const streak = useGame((s) => s.streak);
   const setNickname = useGame((s) => s.setNickname);
   const notifications = useGame((s) => s.notifications);
   const gifts = useGame((s) => s.gifts);
+  const submissions = useGame((s) => s.submissions);
   const unreadCount = notifications.filter((n) => !n.read).length + gifts.filter((g) => !g.read).length;
+  const pendingTasks = submissions.filter((s) => s.status === "pending" && s.submittedBy !== role).length;
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  // 等 Zustand persist 完成 rehydration 再做登入判斷，避免 SSR→client 閃爍回 /login
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
-
+  useEffect(() => { setHydrated(true); }, []);
   useEffect(() => {
     if (hydrated && !loggedIn) router.push("/login");
   }, [hydrated, loggedIn, router]);
@@ -69,75 +54,129 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   const nickname = role === "queen" ? couple.queen.nickname : couple.prince.nickname;
   const title = titleByLevel(couple.kingdomLevel);
   const today = season();
+  const loveToNext = couple.loveIndex % 50;
+  const loveProgress = (loveToNext / 50) * 100;
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-20">
       <SupabaseSync />
       <OnboardingModal />
-      {/* 聖旨公告 */}
-      <div className="max-w-3xl mx-auto px-4 pt-5">
-        <div className="card bg-empire-cream/80 border-empire-gold/30 p-4">
-          <div className="flex items-center gap-2 text-empire-gold font-semibold text-sm">
-            📜 帝國最高聖旨
-          </div>
-          <div className="mt-1 font-bold text-empire-ink">{notice.title}</div>
-          <div className="text-sm text-slate-600">{notice.body}</div>
-        </div>
-      </div>
 
-      {/* 使用者卡 */}
-      <header className="max-w-3xl mx-auto px-4 mt-4">
-        <div className="card p-4 flex items-center gap-3 relative overflow-hidden">
-          <div className="absolute -left-2 -top-2 text-2xl opacity-40 select-none">🍃</div>
-          <CoupleAvatar name={nickname} size={56} />
-          <div className="flex-1 min-w-0">
-            <div className="font-bold truncate text-empire-ink">
-              <InlineRename value={nickname} onSave={(v) => setNickname(role, v)} />
-            </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="emblem text-xs px-2 py-0.5">Lv.{couple.kingdomLevel}</span>
-              <span className="text-xs font-semibold text-empire-ink">{title}</span>
-            </div>
-            <div className="mt-1 flex items-center gap-3 text-xs">
-              <span className="inline-flex items-center gap-1">💰 <b className="text-empire-ink">{couple.coins}</b></span>
-              <span className="inline-flex items-center gap-1">🔥 <b className="text-empire-ink">{streak.current}</b></span>
-              <span className="hidden sm:inline-flex items-center gap-1 text-empire-mute">{SEASON_LABEL[today]}</span>
-            </div>
-          </div>
+      {/* 頂部資源 + avatar bar (固定, 類似 gacha 遊戲) */}
+      <header
+        className="sticky top-0 z-30 px-3 pt-2 pb-3"
+        style={{
+          background: "linear-gradient(180deg, rgba(26,58,86,0.95) 0%, rgba(45,79,106,0.88) 100%)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        {/* 資源列 */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="resource-chip">
+            <span className="plus">+</span>
+            💞 {couple.loveIndex.toLocaleString()}
+          </span>
+          <span className="resource-chip">
+            <span className="plus">+</span>
+            💰 {couple.coins.toLocaleString()}
+          </span>
+          <span className="resource-chip">
+            <span className="plus">+</span>
+            🔥 {streak.current}
+          </span>
+          <div className="flex-1" />
+          <Link href="/inbox" className="relative w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white text-sm">
+            🔔
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-empire-crimson text-white text-[9px] font-black flex items-center justify-center border border-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </Link>
           <button
             onClick={() => { logout(); router.push("/login"); }}
-            className="btn-ghost px-3 py-2 text-xs font-semibold"
+            className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white text-sm"
+            title="登出"
           >
-            登出
+            ↪
           </button>
         </div>
+
+        {/* Avatar + nickname + progress */}
+        <div className="mt-2 flex items-center gap-3">
+          <div className="relative">
+            <CoupleAvatar name={nickname} size={54} />
+            <div className="absolute -bottom-1 -left-1 bg-gradient-to-b from-empire-sunshine to-empire-orange text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-white shadow">
+              Lv.{couple.kingdomLevel}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-white font-bold text-sm truncate">
+              <InlineRename value={nickname} onSave={(v) => setNickname(role, v)} className="text-white" />
+            </div>
+            <div className="text-[11px] text-white/80 truncate">{title} · {SEASON_LABEL[today]}</div>
+            <div className="progress-pill mt-1">
+              <div style={{ width: `${loveProgress}%` }} />
+            </div>
+            <div className="text-[10px] text-white/70 mt-0.5">
+              Lv.{couple.kingdomLevel + 1}：{50 - loveToNext} 愛意
+            </div>
+          </div>
+        </div>
+
+        {/* 最高聖旨 */}
+        <Notice />
       </header>
 
-      {/* Tab bar */}
-      <nav className="max-w-3xl mx-auto px-4 mt-4">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {TABS.map((tab) => {
+      {/* 主內容 */}
+      <main className="max-w-3xl mx-auto px-3 pt-3">{children}</main>
+
+      {/* 底部 gacha 風 tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 gacha-tabbar">
+        <div className="max-w-3xl mx-auto flex">
+          {MAIN_TABS.map((tab) => {
             const active = path === tab.href;
+            const showBadge = tab.href === "/tasks" && pendingTasks > 0;
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`tab-btn ${active ? "tab-btn-active" : "tab-btn-idle"} relative`}
+                className={`gacha-tab ${active ? "active" : ""}`}
               >
-                <span className="mr-1">{tab.icon}</span>
-                {tab.label}
-                {tab.href === "/inbox" && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-empire-berry text-white text-[10px] font-bold flex items-center justify-center">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
+                <div className="icon-wrap relative">
+                  {tab.icon}
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-3 min-w-[16px] h-[16px] px-1 rounded-full bg-empire-crimson text-white text-[9px] font-black flex items-center justify-center border border-white">
+                      {pendingTasks}
+                    </span>
+                  )}
+                </div>
+                <span className="label relative">{tab.label}</span>
               </Link>
             );
           })}
+          <button onClick={() => setMoreOpen(true)} className="gacha-tab">
+            <div className="icon-wrap relative">
+              ☰
+              {unreadCount > 0 && <span className="notify-dot" />}
+            </div>
+            <span className="label relative">更多</span>
+          </button>
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-4 mt-4">{children}</main>
+      {moreOpen && <MoreMenu onClose={() => setMoreOpen(false)} />}
+    </div>
+  );
+}
+
+function Notice() {
+  const notice = useGame((s) => s.notice);
+  if (!notice?.title) return null;
+  return (
+    <div className="mt-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-white text-[11px]">
+      📜 <b>{notice.title}</b>
+      <span className="opacity-80 ml-1.5">{notice.body}</span>
     </div>
   );
 }

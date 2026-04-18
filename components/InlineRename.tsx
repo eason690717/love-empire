@@ -52,9 +52,9 @@ export function InlineRename({
     <button
       onClick={() => setEditing(true)}
       title="點擊改名"
-      className={`inline-flex items-center gap-1 hover:underline decoration-dashed underline-offset-2 ${className}`}
+      className={`inline-flex items-center gap-1 hover:underline decoration-dashed underline-offset-2 max-w-full ${className}`}
     >
-      <span className="truncate">{value}</span>
+      <span className="truncate max-w-[160px]">{value}</span>
       <span className="text-xs opacity-50">✏️</span>
     </button>
   );
