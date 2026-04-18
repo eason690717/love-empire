@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { useLiff } from "@/components/LiffProvider";
 import { loginLiff } from "@/lib/liff";
 import { signIn, isSupabaseEnabled } from "@/lib/auth";
 
-export default function LoginPage() {
+function LoginInner() {
   const router = useRouter();
+  const search = useSearchParams();
   const login = useGame((s) => s.login);
   const couple = useGame((s) => s.couple);
   const liff = useLiff();
+  const resetSuccess = search?.get("reset") === "success";
   const [role, setRole] = useState<"queen" | "prince">("queen");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -169,8 +171,30 @@ export default function LoginPage() {
               我有配對碼
             </Link>
           </div>
+
+          {isSupabaseEnabled() && (
+            <div className="text-center pt-1">
+              <Link href="/forgot" className="text-xs text-empire-mute hover:text-empire-sky underline decoration-dotted">
+                忘記密碼？
+              </Link>
+            </div>
+          )}
+
+          {resetSuccess && (
+            <div className="mt-2 p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 text-center">
+              ✨ 密碼更新成功，請用新密碼登入
+            </div>
+          )}
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-empire-mute">載入中…</div>}>
+      <LoginInner />
+    </Suspense>
   );
 }

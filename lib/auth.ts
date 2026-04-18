@@ -90,4 +90,33 @@ export async function getSession(): Promise<AuthUser | null> {
   }
 }
 
+/** 請求寄送密碼重設連結到 email */
+export async function requestPasswordReset(email: string): Promise<{ ok?: true; error?: string }> {
+  const client = await getSupabase();
+  if (!client) return { error: "Supabase 未設定，demo 模式無需密碼" };
+  try {
+    const redirectTo = typeof window !== "undefined"
+      ? `${window.location.origin}/reset-password`
+      : undefined;
+    const { error } = await (client as any).auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) return { error: humanizeAuthError(error.message) };
+    return { ok: true };
+  } catch (e: any) {
+    return { error: humanizeAuthError(String(e)) };
+  }
+}
+
+/** 使用 recovery session 更新密碼（在 /reset-password 頁呼叫） */
+export async function updatePassword(newPassword: string): Promise<{ ok?: true; error?: string }> {
+  const client = await getSupabase();
+  if (!client) return { error: "Supabase 未設定" };
+  try {
+    const { error } = await (client as any).auth.updateUser({ password: newPassword });
+    if (error) return { error: humanizeAuthError(error.message) };
+    return { ok: true };
+  } catch (e: any) {
+    return { error: humanizeAuthError(String(e)) };
+  }
+}
+
 export { isSupabaseEnabled };
