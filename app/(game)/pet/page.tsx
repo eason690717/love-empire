@@ -27,16 +27,26 @@ export default function PetPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [talkOpen, setTalkOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [fx, setFx] = useState<"pet" | "treat" | "talk" | "feed" | null>(null);
 
   const doInteract = (kind: "pet" | "treat", msg?: string) => {
     const r = petInteract(kind, msg);
     if (r.ok) {
       setToast(kind === "pet" ? "🫳 摸摸，舒服..." : kind === "treat" ? "🍬 好好吃！" : "");
+      setFx(kind);
       setTimeout(() => setToast(null), 1400);
+      setTimeout(() => setFx(null), 1800);
     } else {
       setToast(`❌ ${r.reason}`);
       setTimeout(() => setToast(null), 1500);
     }
+  };
+
+  // 餵屬性時也 trigger 動畫
+  const handleFeedAttr = (k: keyof typeof pet.attrs) => {
+    feedPet(k);
+    setFx("feed");
+    setTimeout(() => setFx(null), 1400);
   };
 
   const avg = Object.values(pet.attrs).reduce((a, b) => a + b, 0) / 5;
@@ -203,7 +213,7 @@ export default function PetPage() {
           {(Object.keys(pet.attrs) as Array<keyof typeof pet.attrs>).map((k) => (
             <button
               key={k}
-              onClick={() => feedPet(k)}
+              onClick={() => handleFeedAttr(k)}
               className="w-full text-left hover:bg-empire-cloud/50 rounded-xl p-2 transition"
             >
               <div className="flex justify-between text-sm mb-1">
@@ -265,13 +275,17 @@ export default function PetPage() {
             const r = petInteract("talk", msg);
             if (r.ok) {
               setToast("💬 牠聽到了，尾巴搖搖");
+              setFx("talk");
               setTimeout(() => setToast(null), 1500);
+              setTimeout(() => setFx(null), 1800);
             }
             setTalkOpen(false);
           }}
           onClose={() => setTalkOpen(false)}
         />
       )}
+
+      {fx && <PetInteractionOverlay kind={fx} />}
     </div>
   );
 }
@@ -291,6 +305,52 @@ function InteractBtn({ emoji, label, sub, onClick, disabled }: { emoji: string; 
       <div className="text-xs font-bold mt-1 text-empire-ink">{label}</div>
       <div className="text-[9px] text-empire-mute mt-0.5 leading-tight">{sub}</div>
     </button>
+  );
+}
+
+function PetInteractionOverlay({ kind }: { kind: "pet" | "treat" | "talk" | "feed" }) {
+  const config = {
+    pet:   { emoji: "💞", label: "摸摸，舒服", color: "#ff8eae" },
+    treat: { emoji: "🍬", label: "好好吃！",   color: "#ffd447" },
+    talk:  { emoji: "💬", label: "牠聽到了",   color: "#8fcff5" },
+    feed:  { emoji: "✨", label: "+5 屬性",     color: "#a8d89a" },
+  }[kind];
+
+  const particles = Array.from({ length: 14 }).map((_, i) => ({
+    id: i,
+    left: 30 + Math.random() * 40,   // 30-70%（寵物區中心）
+    drift: -40 + Math.random() * 80, // -40 ~ +40 向兩側飄
+    delay: Math.random() * 0.3,
+    duration: 1.2 + Math.random() * 0.4,
+    size: 18 + Math.floor(Math.random() * 16),
+  }));
+
+  return (
+    <div className="fixed inset-0 z-[55] pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          className="absolute"
+          style={{
+            left: `${p.left}%`,
+            top: "40%",
+            fontSize: p.size,
+            ["--drift" as any]: `${p.drift}px`,
+            animation: `pet-burst ${p.duration}s ease-out ${p.delay}s forwards`,
+            opacity: 0,
+          }}
+        >
+          {config.emoji}
+        </span>
+      ))}
+      <div
+        className="absolute left-1/2 top-[30%] -translate-x-1/2 px-4 py-2 rounded-full bg-white/95 backdrop-blur border-2 shadow-xl text-sm font-bold"
+        style={{ borderColor: config.color, animation: "mood-pop 1.6s ease-out forwards" }}
+      >
+        <span className="text-lg mr-1">{config.emoji}</span>
+        <span className="text-empire-ink">{config.label}</span>
+      </div>
+    </div>
   );
 }
 

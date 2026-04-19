@@ -149,6 +149,12 @@
     85%  { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
     100% { transform: translate(-50%, -70%) scale(0.9); opacity: 0; }
   }
+  @keyframes pet-burst {
+    0%   { transform: translate(0, 0) scale(0.6);                     opacity: 0; }
+    10%  { transform: translate(calc(var(--drift) * 0.3), -20px) scale(1.1); opacity: 1; }
+    50%  { transform: translate(calc(var(--drift) * 0.7), -60px) scale(1);   opacity: 1; }
+    100% { transform: translate(var(--drift), -140px) scale(0.7);      opacity: 0; }
+  }
 }
 
 /* 性能優化：尊重使用者的 reduce-motion 偏好 */
