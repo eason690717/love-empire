@@ -10,6 +10,7 @@ import { OnboardingModal } from "@/components/OnboardingModal";
 import { CoupleAvatar } from "@/components/art/CoupleAvatar";
 import { SupabaseSync } from "@/components/SupabaseSync";
 import { MoreMenu } from "@/components/MoreMenu";
+import { GlobalCelebrations } from "@/components/GlobalCelebrations";
 import { getKingdomStatus } from "@/lib/types";
 
 // 底部 5 主 tab + 更多
@@ -67,6 +68,7 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen pb-20">
       <SupabaseSync />
+      <GlobalCelebrations />
       <OnboardingModal />
 
       {/* 暫停/封存 banner — 不顯眼但常駐提醒 */}
