@@ -9,12 +9,20 @@ import { TaskEditor } from "@/components/TaskEditor";
 import { RejectModal } from "@/components/RejectModal";
 import { PRESETS_COHABIT, PRESETS_NEARBY, PRESETS_LONGDISTANCE, PRESETS_MARRIED, PRESETS_ANY } from "@/lib/taskPresets";
 
-const DIRECTION_BADGE: Record<TaskDirection, { label: string; className: string }> = {
-  queenToPrince: { label: "對方做",  className: "bg-orange-100 text-orange-700" },
-  princeToQueen: { label: "對方做",  className: "bg-orange-100 text-orange-700" },
-  serve:         { label: "對方做",  className: "bg-orange-100 text-orange-700" },
-  together:      { label: "一起做",  className: "bg-fuchsia-100 text-fuchsia-700" },
-};
+/** 從「當前角色的視角」顯示任務方向 tag
+ *  - 我要做（要執行並送審）→ 綠色「我做」
+ *  - 對方做（我只能審核）→ 橘色「對方做」
+ *  - 一起做 → 紫色
+ *  - serve（為對方做的服務，任一方都可申報）→ 藍色「誰做都可」 */
+function getDirectionBadge(direction: TaskDirection, role: "queen" | "prince"): { label: string; className: string } {
+  if (direction === "together") return { label: "一起做", className: "bg-fuchsia-100 text-fuchsia-700" };
+  if (direction === "serve") return { label: "誰做都可", className: "bg-sky-100 text-sky-700" };
+  const meIsQueen = role === "queen";
+  const iDoIt = (direction === "queenToPrince" && meIsQueen) || (direction === "princeToQueen" && !meIsQueen);
+  return iDoIt
+    ? { label: "我做", className: "bg-emerald-100 text-emerald-700" }
+    : { label: "對方做", className: "bg-orange-100 text-orange-700" };
+}
 
 export default function TasksPage() {
   const tasks = useGame((s) => s.tasks);
@@ -134,7 +142,7 @@ export default function TasksPage() {
                 {items.map((t) => {
                   const submittable = canSubmit(t);
                   const alreadyPending = pendingByTask.has(t.id);
-                  const badge = DIRECTION_BADGE[t.direction];
+                  const badge = getDirectionBadge(t.direction, role);
                   const locked = !!(t.unlockLevel && couple.kingdomLevel < t.unlockLevel);
 
                   return (
