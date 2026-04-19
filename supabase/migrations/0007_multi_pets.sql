@@ -3,6 +3,16 @@
 -- 策略：pets 表保留作「首隻主寵物」backward compat；pet_instances 是第 2 隻以後
 
 -- ============================================================
+-- 防禦性：確保 couples 有 0004 需要的欄位（0004 若未跑或部分失敗時補齊）
+-- ============================================================
+alter table couples
+  add column if not exists paused_at timestamptz,
+  add column if not exists pause_reason text,
+  add column if not exists pause_initiator varchar(10),
+  add column if not exists archived_at timestamptz,
+  add column if not exists relationship_type varchar(20);
+
+-- ============================================================
 -- pet_instances：每對情侶可多隻
 -- ============================================================
 create table if not exists pet_instances (

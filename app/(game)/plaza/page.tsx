@@ -85,31 +85,50 @@ export default function PlazaPage() {
       />
 
       {/* 本週榜首 top 3 */}
-      <div className="card p-4 bg-gradient-to-br from-empire-sunshine/15 to-empire-berry/10 border-2 border-empire-sunshine/30">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-sm">🏆 本週 top 3</h3>
-          <span className="text-[10px] text-empire-mute">每週一結算 · 獎勵 SSR 卡</span>
-        </div>
-        <div className="flex gap-2 overflow-x-auto">
-          {leaderboard.slice(0, 3).map((c, i) => (
-            <Link key={c.id} href={`/couples/${c.id}`} className="shrink-0 w-32 p-2.5 rounded-xl bg-white border-2 border-empire-cloud text-center hover:border-empire-sunshine transition">
-              <div className="text-2xl">{["🥇", "🥈", "🥉"][i]}</div>
-              <div className="text-xl mt-1">{c.emoji}</div>
-              <div className="text-xs font-bold truncate mt-0.5">{c.name}</div>
-              <div className="text-[10px] text-empire-mute">Lv.{c.kingdomLevel}</div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {(() => {
+        const topList = leaderboard.slice(0, 3);
+        const hasOthers = topList.some((c) => !c.isSelf);
+        return (
+          <div className="card p-4 bg-gradient-to-br from-empire-sunshine/15 to-empire-berry/10 border-2 border-empire-sunshine/30">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-sm">🏆 本週 top 3</h3>
+              <span className="text-[10px] text-empire-mute">每週一結算 · 獎勵 SSR 卡</span>
+            </div>
+            {hasOthers ? (
+              <div className="flex gap-2 overflow-x-auto">
+                {topList.map((c, i) => (
+                  <Link key={c.id} href={`/couples/${c.id}`} className="shrink-0 w-32 p-2.5 rounded-xl bg-white border-2 border-empire-cloud text-center hover:border-empire-sunshine transition">
+                    <div className="text-2xl">{["🥇", "🥈", "🥉"][i]}</div>
+                    <div className="text-xl mt-1">{c.emoji}</div>
+                    <div className="text-xs font-bold truncate mt-0.5">{c.name}</div>
+                    <div className="text-[10px] text-empire-mute">Lv.{c.kingdomLevel}</div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-3 text-xs text-empire-mute">
+                🌱 新鮮的世界 · 還沒有其他情侶上榜
+                <br />
+                <Link href="/settings" className="text-empire-sky underline">邀請朋友加入</Link>
+                ，一起讓帝國熱鬧起來
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* 公開小窩精選輪播 */}
-      <div className="card p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-sm">🏡 本週精選小窩</h3>
-          <span className="text-[10px] text-empire-mute">點選參觀</span>
-        </div>
-        <div className="flex gap-2 overflow-x-auto">
-          {leaderboard.filter((c) => !c.isSelf).slice(0, 5).map((c) => (
+      {(() => {
+        const otherCouples = leaderboard.filter((c) => !c.isSelf).slice(0, 5);
+        if (otherCouples.length === 0) return null;
+        return (
+        <div className="card p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-sm">🏡 本週精選小窩</h3>
+            <span className="text-[10px] text-empire-mute">點選參觀</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto">
+            {otherCouples.map((c) => (
             <Link
               key={c.id}
               href={`/couples/${c.id}`}
@@ -128,9 +147,11 @@ export default function PlazaPage() {
                 <div className="text-[10px] text-empire-mute">Lv.{c.kingdomLevel} · {c.title}</div>
               </div>
             </Link>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+        );
+      })()}
 
       <div className="card p-2 flex gap-1 overflow-x-auto">
         {FILTERS.map((f) => (
