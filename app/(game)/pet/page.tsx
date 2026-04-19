@@ -133,8 +133,21 @@ export default function PetPage() {
             {RARITY[resolveRarity(pet.rarity)].emoji} {RARITY[resolveRarity(pet.rarity)].tag} · {SPECIES[resolveSpecies(pet.species)].nameZh}
           </span>
           <span className="tag rarity-sr">{PET_STAGE_LABEL[pet.stage]}</span>
-          <span>平均屬性 <b className="text-empire-ink">{avg.toFixed(0)}</b> / 100</span>
+          <span>平均屬性 <b className="text-empire-ink">{avg.toFixed(0)}</b> / {RARITY[resolveRarity(pet.rarity)].attrCap}</span>
         </div>
+
+        {/* 種系屬性偏向提示 */}
+        {(() => {
+          const sp = SPECIES[resolveSpecies(pet.species)];
+          const bonusEntries = Object.entries(sp.attrBonus ?? {});
+          if (bonusEntries.length === 0) return null;
+          return (
+            <div className="mt-2 inline-block px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800">
+              {sp.nickname} 專長：{bonusEntries.map(([k, v]) => `${k} +${v}%`).join(" / ")}
+            </div>
+          );
+        })()}
+
         {hungry && (
           <div className="mt-3 inline-block px-3 py-1 rounded-full bg-empire-sunshine/30 border border-empire-sunshine/60 text-empire-ink text-xs font-semibold animate-bob">
             有點餓了，陪我玩嘛 🥺
