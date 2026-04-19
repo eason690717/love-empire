@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const notifications = useGame((s) => s.notifications);
   const gifts = useGame((s) => s.gifts);
   const anniversaries = useGame((s) => s.anniversaries);
+  const bucketList = useGame((s) => s.bucketList);
   const checkKnightShield = useGame((s) => s.checkKnightShield);
 
   useEffect(() => { checkKnightShield(); }, [checkKnightShield]);
@@ -141,6 +142,34 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* 人生清單進度 */}
+      <Link href="/bucket-list" className="mb-3 block card p-3 hover:shadow-lift transition">
+        <div className="flex items-center gap-3">
+          <div className="text-2xl">💞</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline justify-between">
+              <div className="font-black text-sm text-empire-ink">情侶人生清單</div>
+              <div className="text-[11px] text-empire-mute">
+                <b className="text-empire-berry">{bucketList.length}</b> / 100
+              </div>
+            </div>
+            <div className="h-2 mt-1 bg-empire-cloud rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-empire-berry via-empire-sunshine to-empire-sky transition-all"
+                style={{ width: `${bucketList.length}%` }}
+              />
+            </div>
+            <div className="text-[10px] text-empire-mute mt-1">
+              {bucketList.length === 0 ? "100 件一起做的事 · 第一件從這裡開始" :
+               bucketList.length < 10 ? `才剛起步，還有 ${100 - bucketList.length} 件等著` :
+               bucketList.length < 50 ? `走在路上，${100 - bucketList.length} 件待勾選` :
+               bucketList.length < 100 ? `過半了，${100 - bucketList.length} 件就完成` :
+               "100 件全收齊 🌟 白頭偕老"}
+            </div>
+          </div>
+        </div>
+      </Link>
 
       {/* 紀念日倒數 */}
       {upcomingAnniversary && (

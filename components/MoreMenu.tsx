@@ -17,6 +17,7 @@ export function MoreMenu({ onClose }: { onClose: () => void }) {
     { href: "/history",      emoji: "📖", label: "歷程紀錄",   tint: "from-stone-100 to-neutral-100" },
     { href: "/timeline",     emoji: "📅", label: "時間軸",      tint: "from-sky-100 to-blue-100" },
     { href: "/recap",        emoji: "✨", label: "年度回顧",   tint: "from-violet-100 to-fuchsia-100" },
+    { href: "/bucket-list",  emoji: "💞", label: "人生清單",   tint: "from-pink-100 to-red-100" },
     { href: "/alliance",     emoji: "🤝", label: "聯盟",        tint: "from-amber-100 to-orange-100" },
     { href: "/friends",      emoji: "👫", label: "好友情侶",   tint: "from-rose-100 to-pink-100" },
     { href: "/leaderboard",  emoji: "🏆", label: "情侶排行",   tint: "from-yellow-100 to-amber-100" },

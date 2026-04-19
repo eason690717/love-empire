@@ -94,6 +94,41 @@ export interface MemoryCard {
   };
 }
 
+/** 情侶人生清單 — 100 件一生想一起做的事 */
+export type BucketCategory = "romantic" | "daily" | "outdoor" | "growth" | "playful" | "tender";
+export type BucketRarity = "N" | "R" | "SR" | "SSR";
+
+export interface BucketItem {
+  id: string;              // b001 - b100
+  category: BucketCategory;
+  rarity: BucketRarity;    // 依「難度/重量」分級，影響獎勵
+  title: string;
+  emoji: string;
+}
+
+export interface BucketRecord {
+  id: string;              // 對應 BucketItem.id
+  doneAt: string;          // ISO 日期
+  note?: string;           // 勾選時的心情短文（< 100 字）
+  photoUrl?: string;       // 可選照片連結
+}
+
+export const BUCKET_CATEGORY_LABELS: Record<BucketCategory, { label: string; emoji: string; desc: string; color: string }> = {
+  romantic: { label: "浪漫約會",   emoji: "💞", desc: "儀式感的大事與紀念", color: "#ff8eae" },
+  daily:    { label: "日常小確幸", emoji: "☕", desc: "把平凡過成特別",     color: "#a8d89a" },
+  outdoor:  { label: "戶外冒險",   emoji: "🏕️", desc: "一起去看世界",       color: "#5aa4ff" },
+  growth:   { label: "共同成長",   emoji: "🌱", desc: "承諾、學習、陪伴",   color: "#d280ff" },
+  playful:  { label: "趣味挑戰",   emoji: "🎮", desc: "一起犯傻的時光",     color: "#ffd447" },
+  tender:   { label: "溫柔瞬間",   emoji: "🫂", desc: "那些很細的好",       color: "#ff9fbc" },
+};
+
+export const BUCKET_REWARD: Record<BucketRarity, { love: number; coins: number; emoji: string }> = {
+  N:   { love: 15,  coins: 30,  emoji: "💞" },
+  R:   { love: 30,  coins: 80,  emoji: "✨" },
+  SR:  { love: 60,  coins: 200, emoji: "💎" },
+  SSR: { love: 150, coins: 500, emoji: "🌟" },
+};
+
 export interface PikminHelper {
   color: "red" | "blue" | "yellow" | "green" | "purple";
   emoji: string;

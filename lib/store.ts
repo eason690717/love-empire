@@ -5,8 +5,10 @@ import { persist } from "zustand/middleware";
 import type {
   Couple, Task, Submission, Reward, Redemption, MemoryCard, Pet, IslandItem,
   Ritual, Streak, CoupleSummary, Alliance, Friendship, Gift, Moment, MomentType, PikminHelper,
-  NotificationItem, QuestionAnswer,
+  NotificationItem, QuestionAnswer, BucketRecord,
 } from "./types";
+import { BUCKET_REWARD } from "./types";
+import { getBucketItemById } from "./bucketList";
 import { getQuestionById, DEPTH_LABELS } from "./questions";
 import { CATEGORY_META } from "./types";
 import { QUEEN_COIN_BONUS, isSpecialDay, SPECIAL_DAY_MULTIPLIER } from "./passive";
@@ -68,6 +70,7 @@ interface State {
   lastLoginDate: string;
   anniversaries: Array<{ id: string; label: string; date: string; recurring: boolean; emoji: string }>;
   questionAnswers: QuestionAnswer[];
+  bucketList: BucketRecord[]; // 已勾選的情侶人生清單項目
   notice: typeof NOTICE;
 
   login: (role: Role) => void;
@@ -122,6 +125,7 @@ interface State {
     night?: { label: string; desc: string; emoji: string };
   };
   setCustomRitual: (kind: "morning" | "night", value: { label: string; desc: string; emoji: string } | null) => void;
+  toggleBucketItem: (id: string, note?: string) => { newlyDone: boolean; reward?: { love: number; coins: number } };
   attackBoss: (allianceId: string, damage: number) => void;
   contributeAllianceItem: (allianceId: string, catalogId: string, label: string, emoji: string, price: number) => void;
 }
@@ -181,6 +185,7 @@ export const useGame = create<State>()(
       lastLoginDate: "",
       anniversaries: [],
       questionAnswers: [],
+      bucketList: [],
       customRituals: {},
       notice: NOTICE,
 
@@ -1160,6 +1165,57 @@ export const useGame = create<State>()(
         if (value === null) delete next[kind];
         else next[kind] = value;
         set({ customRituals: next });
+      },
+
+      toggleBucketItem: (id, note) => {
+        const existing = get().bucketList.find((r) => r.id === id);
+        if (existing) {
+          // 已完成的不可取消（儀式感）— 但可更新 note
+          if (note !== undefined) {
+            set({
+              bucketList: get().bucketList.map((r) =>
+                r.id === id ? { ...r, note: note.trim() || undefined } : r,
+              ),
+            });
+          }
+          return { newlyDone: false };
+        }
+        const item = getBucketItemById(id);
+        if (!item) return { newlyDone: false };
+        const reward = BUCKET_REWARD[item.rarity];
+        const record: BucketRecord = {
+          id,
+          doneAt: new Date().toISOString().slice(0, 10),
+          note: note?.trim() || undefined,
+        };
+        const c = get().couple;
+        const nextCoupleBase = {
+          ...c,
+          coins: c.coins + reward.coins,
+          loveIndex: c.loveIndex + reward.love,
+        };
+        set({
+          bucketList: [...get().bucketList, record],
+          couple: nextCoupleBase,
+        });
+        // 發動態
+        get().addMoment({
+          type: "custom",
+          title: `✨ 清單第 ${get().bucketList.length} 件完成`,
+          subtitle: `${item.emoji} ${item.title}`,
+          emoji: reward.emoji,
+        });
+        // SSR 項目額外通知
+        if (item.rarity === "SSR") {
+          get().addNotification({
+            type: "system",
+            title: "🌟 畢生紀念達成！",
+            body: `${item.title} — 這份回憶你們永遠擁有`,
+            emoji: "🌟",
+          });
+        }
+        get().checkAchievements();
+        return { newlyDone: true, reward: { love: reward.love, coins: reward.coins } };
       },
 
       contributeAllianceItem: (allianceId, catalogId, label, emoji, price) => {
