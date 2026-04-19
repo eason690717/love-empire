@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useGame } from "@/lib/store";
 import {
-  QUESTIONS, CATEGORY_LABELS, DEPTH_LABELS, randomQuestion,
+  QUESTIONS, CATEGORY_LABELS, DEPTH_LABELS, KIND_LABELS, randomQuestion, featuredCount,
   type Question, type QuestionCategory, type QuestionDepth, getQuestionById,
 } from "@/lib/questions";
 import { PageBanner } from "@/components/PageBanner";
@@ -18,6 +18,7 @@ export default function QuestionsPage() {
   const [tab, setTab] = useState<"today" | "mine" | "partner" | "all">("today");
   const [category, setCategory] = useState<QuestionCategory | "all">("all");
   const [depth, setDepth] = useState<QuestionDepth | "all">("all");
+  const [featuredOnly, setFeaturedOnly] = useState(false);
   const [picked, setPicked] = useState<Question | null>(null);
   const [answerDraft, setAnswerDraft] = useState("");
 
@@ -32,6 +33,7 @@ export default function QuestionsPage() {
       category: category === "all" ? undefined : category,
       depth: depth === "all" ? undefined : depth,
       excludeIds: Array.from(answeredIds),
+      featuredOnly: featuredOnly || undefined,
     });
     setPicked(q ?? null);
     setAnswerDraft("");
@@ -56,7 +58,7 @@ export default function QuestionsPage() {
     <div className="space-y-4">
       <PageBanner
         title="深度問答"
-        subtitle="200 題跨 10 主題，真切認識對方"
+        subtitle={`${QUESTIONS.length} 題 × ${Object.keys(CATEGORY_LABELS).length} 主題 · 精選 ${featuredCount()} 題 · 10 題遊戲互動`}
         emoji="💬"
         gradient="sky"
         stats={[
@@ -95,6 +97,10 @@ export default function QuestionsPage() {
                 </FilterPill>
               ))}
             </div>
+            <div className="mt-2 flex gap-1">
+              <FilterPill active={!featuredOnly} onClick={() => setFeaturedOnly(false)}>全部池</FilterPill>
+              <FilterPill active={featuredOnly} onClick={() => setFeaturedOnly(true)}>⭐ 大師精選 ({featuredCount()})</FilterPill>
+            </div>
             <button onClick={pickRandom} className="mt-4 btn-primary w-full py-3 font-semibold">
               🎲 隨機抽一題
             </button>
@@ -112,6 +118,14 @@ export default function QuestionsPage() {
                 <span className="tag rarity-r">
                   {DEPTH_LABELS[picked.depth].label} +{DEPTH_LABELS[picked.depth].xp} XP
                 </span>
+                {picked.featured && (
+                  <span className="tag bg-empire-cream text-empire-gold border-empire-gold/40">⭐ 精選</span>
+                )}
+                {picked.kind && (
+                  <span className="tag rarity-sr">
+                    {KIND_LABELS[picked.kind].emoji} {KIND_LABELS[picked.kind].label}
+                  </span>
+                )}
               </div>
               <p className="font-display text-xl font-bold text-empire-ink leading-relaxed">
                 {picked.text}
