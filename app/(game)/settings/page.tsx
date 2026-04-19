@@ -8,6 +8,8 @@ import { PageBanner } from "@/components/PageBanner";
 import { InviteCodeCard } from "@/components/InviteCodeCard";
 import { RELATIONSHIP_LABELS, getKingdomStatus, KINGDOM_PAUSE_DAYS } from "@/lib/types";
 import { toast } from "@/components/Toast";
+import { clearDeviceBinding } from "@/lib/deviceBinding";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
   const couple = useGame((s) => s.couple);
@@ -26,6 +28,28 @@ export default function SettingsPage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const status = getKingdomStatus(couple);
   const resetOnboarding = useGame((s) => s.resetOnboarding);
+  const logout = useGame((s) => s.logout);
+  const router = useRouter();
+
+  async function handleSwitchRole() {
+    const newRole = role === "queen" ? "阿藍 Prince" : "阿紅 Queen";
+    const ok = await toast.confirm(
+      `要切換回「${newRole}」角色嗎？會登出這個裝置，你需要用配對碼重新登入並在登入頁手動選擇角色。`,
+      { okLabel: "去切換", cancelLabel: "取消" },
+    );
+    if (!ok) return;
+    clearDeviceBinding();
+    logout();
+    router.push("/login");
+  }
+
+  async function handleLogout() {
+    const ok = await toast.confirm("確定要登出嗎？下次要用配對碼重新登入。", { okLabel: "登出", cancelLabel: "取消" });
+    if (!ok) return;
+    clearDeviceBinding();
+    logout();
+    router.push("/login");
+  }
 
   const [kName, setKName] = useState(couple.name);
   const [meName, setMeName] = useState(role === "queen" ? couple.queen.nickname : couple.prince.nickname);
@@ -138,6 +162,26 @@ export default function SettingsPage() {
               }
             />
           ))}
+        </div>
+      </Section>
+
+      <Section title="🔐 裝置與登入" hint={`目前角色：${role === "queen" ? "🌸 阿紅 Queen" : "💎 阿藍 Prince"}`}>
+        <div className="space-y-2">
+          <button
+            onClick={handleSwitchRole}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-100 to-pink-100 border-2 border-empire-berry/30 text-empire-berry font-bold text-sm hover:shadow-md transition"
+          >
+            🔄 切換回 {role === "queen" ? "💎 阿藍 Prince" : "🌸 阿紅 Queen"}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full py-2.5 rounded-xl bg-empire-cloud text-empire-ink font-bold text-sm hover:bg-empire-mist transition"
+          >
+            🚪 登出（保留資料）
+          </button>
+          <div className="text-[11px] text-empire-mute leading-relaxed px-1 pt-1">
+            💡 <b>切換角色：</b>如果你誤以錯角色登入，點上方按鈕會清除裝置綁定並跳到登入頁，你可以重新選擇角色 + 輸入配對碼，Supabase 的角色也會一起更新。
+          </div>
         </div>
       </Section>
 
