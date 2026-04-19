@@ -73,11 +73,12 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 中央舞台：左右懸浮按鈕 + 寵物 scene */}
+      {/* 中央舞台：左右懸浮按鈕 + 寵物 scene
+          minHeight 提升到 420 以容納 4 顆 side-rail 按鈕 + label (avoid 底部被 overflow-hidden 切掉) */}
       <div
         className="relative rounded-3xl overflow-hidden mb-4"
         style={{
-          minHeight: 360,
+          minHeight: 420,
           background: "linear-gradient(180deg, #bfe3f9 0%, #d8eefd 40%, #e7f4d5 60%, #8ed172 100%)",
         }}
       >
@@ -103,7 +104,7 @@ export default function DashboardPage() {
         <div className="absolute bottom-2 left-1/3 text-lg">🌷</div>
 
         {/* 左側懸浮按鈕 */}
-        <div className="absolute left-1 top-3 flex flex-col">
+        <div className="absolute left-1 top-2 flex flex-col z-10">
           <SideRailBtn href="/tasks"       emoji="📜" label="任務" badge={pending > 0 ? pending : undefined} />
           <SideRailBtn href="/exchange"    emoji="💰" label="國庫" />
           <SideRailBtn href="/codex"       emoji="🎴" label="圖鑑" />
@@ -111,7 +112,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 右側懸浮按鈕 */}
-        <div className="absolute right-1 top-3 flex flex-col">
+        <div className="absolute right-1 top-2 flex flex-col z-10">
           <SideRailBtn href="/questions"    emoji="💬" label="問答" />
           <SideRailBtn href="/achievements" emoji="🏅" label="獎盃" />
           <SideRailBtn href="/leaderboard"  emoji="🏆" label="排行" />

@@ -10,6 +10,20 @@ export type TaskCategory = "chore" | "romance" | "wellness" | "surprise" | "coop
  */
 export type TaskDirection = "queenToPrince" | "princeToQueen" | "together";
 
+/** 情侶類型 — 決定哪些任務模板最適合這對情侶
+ *  cohabit      = 同居（同一個家）
+ *  nearby       = 附近（不同居但近距離）
+ *  longdistance = 遠距（不同城市/國家）
+ *  any          = 所有類型都適用
+ */
+export type RelationshipType = "cohabit" | "nearby" | "longdistance" | "any";
+
+export const RELATIONSHIP_LABELS: Record<Exclude<RelationshipType, "any">, { label: string; emoji: string; desc: string }> = {
+  cohabit:      { label: "同居",   emoji: "🏡", desc: "住在同一個屋簷下" },
+  nearby:       { label: "附近",   emoji: "🚗", desc: "不同住但住得近，常見面" },
+  longdistance: { label: "遠距",   emoji: "✈️", desc: "不同城市/國家，靠訊息視訊維繫" },
+};
+
 export interface Task {
   id: string;
   title: string;
@@ -21,6 +35,7 @@ export interface Task {
   custom?: boolean;         // true = 使用者自訂，false/undefined = 系統預設
   coop?: boolean;           // legacy 欄位，新用 direction === 'together'
   unlockLevel?: number;     // 解鎖所需王國等級（未達等級無法申報）
+  relationshipType?: RelationshipType; // 此任務最適合的情侶類型
 }
 
 /** 每個分類的系統預設 XP 與 reward 上限（公平性護欄） */
@@ -127,6 +142,7 @@ export interface Couple {
   bio?: string;
   privacy: "public" | "friends" | "private";
   loveIndex: number;
+  relationshipType?: RelationshipType; // 同居 / 附近 / 遠距
 }
 
 export interface CoupleSummary {

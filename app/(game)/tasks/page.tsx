@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react";
 import { useGame } from "@/lib/store";
 import { CATEGORY_LABEL, ATTR_LABEL } from "@/lib/utils";
-import type { Task, TaskDirection } from "@/lib/types";
+import type { Task, TaskDirection, RelationshipType } from "@/lib/types";
+import { RELATIONSHIP_LABELS } from "@/lib/types";
 import { TaskEditor } from "@/components/TaskEditor";
 import { RejectModal } from "@/components/RejectModal";
+import { PRESETS_COHABIT, PRESETS_NEARBY, PRESETS_LONGDISTANCE, PRESETS_ANY } from "@/lib/taskPresets";
 
 const DIRECTION_BADGE: Record<TaskDirection, { label: string; className: string }> = {
   queenToPrince: { label: "阿紅→阿藍", className: "bg-rose-100 text-rose-700" },
@@ -20,9 +22,12 @@ export default function TasksPage() {
   const submissions = useGame((s) => s.submissions);
   const reviewSubmission = useGame((s) => s.reviewSubmission);
   const removeTask = useGame((s) => s.removeTask);
+  const addPresetTask = useGame((s) => s.addPresetTask);
+  const setRelationshipType = useGame((s) => s.setRelationshipType);
   const role = useGame((s) => s.role);
   const [mode, setMode] = useState<"submit" | "review">("submit");
   const [editor, setEditor] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const [justSent, setJustSent] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
 
@@ -87,12 +92,20 @@ export default function TasksPage() {
 
       {mode === "submit" ? (
         <div className="space-y-5">
-          <button
-            onClick={() => setEditor(true)}
-            className="card w-full p-4 text-center font-semibold text-empire-sky hover:bg-white transition border-2 border-dashed border-empire-sky/40"
-          >
-            ✨ + 新增自訂任務
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setEditor(true)}
+              className="card p-3 text-center font-semibold text-empire-sky hover:bg-white transition border-2 border-dashed border-empire-sky/40"
+            >
+              ✨ 新增自訂任務
+            </button>
+            <button
+              onClick={() => setPresetsOpen(true)}
+              className="card p-3 text-center font-semibold text-empire-gold hover:bg-white transition border-2 border-dashed border-empire-gold/40"
+            >
+              📚 從模板挑選
+            </button>
+          </div>
 
           {nextLockedTask && (
             <div className="card p-3 bg-empire-cream/60 border border-empire-gold/30 text-xs text-empire-ink flex items-center gap-2">
@@ -230,6 +243,130 @@ export default function TasksPage() {
           onClose={() => setRejectTarget(null)}
         />
       )}
+
+      {presetsOpen && (
+        <PresetsDrawer
+          currentType={couple.relationshipType}
+          existingTitles={new Set(tasks.map((t) => t.title))}
+          onAdd={(preset) => addPresetTask(preset)}
+          onSetType={(t) => setRelationshipType(t)}
+          onClose={() => setPresetsOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function PresetsDrawer({
+  currentType, existingTitles, onAdd, onSetType, onClose,
+}: {
+  currentType?: RelationshipType;
+  existingTitles: Set<string>;
+  onAdd: (p: any) => void;
+  onSetType: (t: "cohabit" | "nearby" | "longdistance") => void;
+  onClose: () => void;
+}) {
+  const [view, setView] = useState<"cohabit" | "nearby" | "longdistance" | "any">(
+    currentType && currentType !== "any" ? currentType : "cohabit"
+  );
+  const list =
+    view === "cohabit" ? PRESETS_COHABIT :
+    view === "nearby" ? PRESETS_NEARBY :
+    view === "longdistance" ? PRESETS_LONGDISTANCE :
+    PRESETS_ANY;
+
+  const tabs: { key: "cohabit" | "nearby" | "longdistance" | "any"; emoji: string; label: string }[] = [
+    { key: "cohabit",      emoji: RELATIONSHIP_LABELS.cohabit.emoji,      label: RELATIONSHIP_LABELS.cohabit.label },
+    { key: "nearby",       emoji: RELATIONSHIP_LABELS.nearby.emoji,       label: RELATIONSHIP_LABELS.nearby.label },
+    { key: "longdistance", emoji: RELATIONSHIP_LABELS.longdistance.emoji, label: RELATIONSHIP_LABELS.longdistance.label },
+    { key: "any",          emoji: "💫",                                    label: "通用" },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+      style={{ background: "rgba(20, 40, 70, 0.55)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-empire-cream w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-4 border-b border-empire-cloud flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-empire-ink">📚 任務模板庫</h3>
+            <p className="text-[10px] text-empire-mute">按情侶相處類型推薦 · 點 + 加入自己的任務清單</p>
+          </div>
+          <button onClick={onClose} className="text-empire-mute hover:text-empire-ink">✕</button>
+        </div>
+
+        {/* 類型切換 + 「設為我們的類型」快捷 */}
+        <div className="p-3 border-b border-empire-cloud space-y-2">
+          <div className="flex gap-1 overflow-x-auto">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setView(t.key)}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                  view === t.key ? "bg-empire-sky text-white" : "bg-white text-empire-mute border border-empire-cloud"
+                }`}
+              >
+                {t.emoji} {t.label} ({
+                  t.key === "cohabit" ? PRESETS_COHABIT.length :
+                  t.key === "nearby" ? PRESETS_NEARBY.length :
+                  t.key === "longdistance" ? PRESETS_LONGDISTANCE.length :
+                  PRESETS_ANY.length
+                })
+              </button>
+            ))}
+          </div>
+          {view !== "any" && currentType !== view && (
+            <button
+              onClick={() => onSetType(view as "cohabit" | "nearby" | "longdistance")}
+              className="w-full text-[11px] text-empire-sky hover:underline py-1"
+            >
+              把我們設為「{RELATIONSHIP_LABELS[view as "cohabit" | "nearby" | "longdistance"].label}」情侶 →
+            </button>
+          )}
+          {currentType === view && (
+            <div className="text-[11px] text-emerald-600 text-center">✓ 這是你們目前的情侶類型</div>
+          )}
+        </div>
+
+        {/* 模板清單 */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {list.map((p) => {
+            const added = existingTitles.has(p.title);
+            return (
+              <div
+                key={p.title}
+                className={`p-3 rounded-xl border-2 flex items-center gap-3 transition ${added ? "bg-empire-cloud/40 border-empire-cloud opacity-70" : "bg-white border-empire-cloud hover:border-empire-sky/40"}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm text-empire-ink truncate">{p.title}</div>
+                  <div className="text-[10px] text-empire-mute mt-0.5">
+                    {CATEGORY_LABEL[p.category]} · 💰 {p.reward} · +{p.systemXp} XP
+                    {p.unlockLevel ? ` · 🔒 Lv.${p.unlockLevel}+` : ""}
+                  </div>
+                </div>
+                <button
+                  disabled={added}
+                  onClick={() => onAdd(p)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 ${
+                    added ? "bg-empire-cloud text-empire-mute" : "bg-empire-sky text-white hover:brightness-110"
+                  }`}
+                >
+                  {added ? "已加入" : "+ 加入"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="p-3 border-t border-empire-cloud bg-white">
+          <button onClick={onClose} className="btn-primary w-full py-2 font-semibold">完成</button>
+        </div>
+      </div>
     </div>
   );
 }

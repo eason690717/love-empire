@@ -5,6 +5,7 @@ import { useGame } from "@/lib/store";
 import { isSupabaseEnabled } from "@/lib/auth";
 import { PageBanner } from "@/components/PageBanner";
 import { InviteCodeCard } from "@/components/InviteCodeCard";
+import { RELATIONSHIP_LABELS } from "@/lib/types";
 
 export default function SettingsPage() {
   const couple = useGame((s) => s.couple);
@@ -14,6 +15,7 @@ export default function SettingsPage() {
   const setNickname = useGame((s) => s.setNickname);
   const setPetName = useGame((s) => s.setPetName);
   const setPrivacy = useGame((s) => s.setPrivacy);
+  const setRelationshipType = useGame((s) => s.setRelationshipType);
   const resetAllData = useGame((s) => s.resetAllData);
   const resetOnboarding = useGame((s) => s.resetOnboarding);
 
@@ -41,6 +43,36 @@ export default function SettingsPage() {
         <Field label="王國名稱" value={kName} onChange={setKName} onBlur={() => kName.trim() && setKingdomName(kName)} />
         <Field label="我的暱稱" value={meName} onChange={setMeName} onBlur={() => meName.trim() && setNickname(role, meName)} />
         <Field label="寵物名字" value={petNm} onChange={setPetNm} onBlur={() => petNm.trim() && setPetName(petNm)} />
+      </Section>
+
+      <Section title="💑 我們的相處類型">
+        <p className="text-xs text-empire-mute mb-2">
+          影響「任務模板庫」推薦哪類任務給你們 · 之後可隨時更改
+        </p>
+        <div className="space-y-2">
+          {(["cohabit", "nearby", "longdistance"] as const).map((type) => {
+            const info = RELATIONSHIP_LABELS[type];
+            const selected = couple.relationshipType === type;
+            return (
+              <button
+                key={type}
+                onClick={() => setRelationshipType(type)}
+                className={`w-full p-3 rounded-xl border-2 text-left transition ${
+                  selected ? "border-empire-berry bg-rose-50" : "border-empire-cloud bg-white hover:border-empire-sky/50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">{info.emoji}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm">{info.label}</div>
+                    <div className="text-xs text-empire-mute">{info.desc}</div>
+                  </div>
+                  {selected && <span className="text-empire-berry font-bold">✓</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </Section>
 
       <Section title="🔒 隱私">

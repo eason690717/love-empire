@@ -75,6 +75,8 @@ interface State {
   setNickname: (role: Role, nickname: string) => void;
   setKingdomName: (name: string) => void;
   addCustomTask: (t: Omit<Task, "id" | "systemXp" | "custom">) => void;
+  addPresetTask: (preset: Omit<Task, "id" | "custom">) => void;
+  setRelationshipType: (type: "cohabit" | "nearby" | "longdistance") => void;
   removeTask: (id: string) => void;
   addMoment: (m: Omit<Moment, "id" | "createdAt" | "likes" | "likedByMe" | "comments" | "coupleId" | "coupleName" | "isSelf">) => void;
   likeMoment: (id: string) => void;
@@ -236,6 +238,23 @@ export const useGame = create<State>()(
         const t = get().tasks.find((x) => x.id === id);
         if (!t?.custom) return; // 系統預設任務不可刪除
         set({ tasks: get().tasks.filter((x) => x.id !== id) });
+      },
+
+      addPresetTask: (preset) => {
+        // 避免重複加入（用 title 去重）
+        if (get().tasks.some((t) => t.title === preset.title)) return;
+        const newTask: Task = {
+          ...preset,
+          id: `preset_${uid()}`,
+          custom: true, // 標為自訂讓使用者可刪
+        };
+        set({ tasks: [...get().tasks, newTask] });
+      },
+
+      setRelationshipType: (type) => {
+        const nextCouple = { ...get().couple, relationshipType: type };
+        set({ couple: nextCouple });
+        mirrorCouple(nextCouple.id, { relationshipType: type } as any);
       },
 
       addMoment: (m) => {
