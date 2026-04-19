@@ -9,7 +9,9 @@ import { AttributeRadar } from "@/components/AttributeRadar";
 import { PetAvatar } from "@/components/art/PetAvatar";
 import { DailyBonusModal } from "@/components/DailyBonusModal";
 import { InviteCodeCard } from "@/components/InviteCodeCard";
-import { MOOD_LABELS, type MoodState } from "@/lib/types";
+import { MOOD_LABELS, type MoodState, type PetGeneRarity, type PetSpecies } from "@/lib/types";
+import { SPECIES, resolveSpecies } from "@/lib/pet/species";
+import { RARITY, resolveRarity } from "@/lib/pet/rarity";
 
 /** Gacha 手遊風 — side rails + center scene + big CTA + stats */
 export default function DashboardPage() {
@@ -286,8 +288,13 @@ export default function DashboardPage() {
           <div className="absolute inset-0 -m-4 rounded-full animate-sparkle"
                style={{ background: "radial-gradient(circle, rgba(255,212,71,0.4) 0%, transparent 60%)" }} />
           <PetAvatar stage={pet.stage} size={150} species={pet.species ?? "nuzzle"} rarity={pet.rarity ?? "common"} />
-          <div className="mt-2 px-3 py-1 rounded-full bg-white/85 border-2 border-white text-xs font-black text-empire-ink">
-            {pet.name} · {PET_STAGE_LABEL[pet.stage]}
+          <div className="mt-2 flex flex-col items-center gap-1">
+            <div className="px-3 py-1 rounded-full bg-white/85 border-2 border-white text-xs font-black text-empire-ink">
+              {pet.name} · {PET_STAGE_LABEL[pet.stage]}
+            </div>
+            {pet.rarity && pet.species && (
+              <DashboardPetBadge rarity={pet.rarity} species={pet.species} />
+            )}
           </div>
         </div>
 
@@ -478,6 +485,25 @@ function TinyStat({ label, value }: { label: string; value: string | number }) {
     <div className="rounded-xl p-2 bg-empire-mist text-center">
       <div className="text-[10px] text-empire-mute">{label}</div>
       <div className="font-black text-empire-ink">{value}</div>
+    </div>
+  );
+}
+
+function DashboardPetBadge({ rarity, species }: { rarity: PetGeneRarity; species: PetSpecies }) {
+  const rr = RARITY[resolveRarity(rarity)];
+  const sp = SPECIES[resolveSpecies(species)];
+  const isMythic = rarity === "mythic";
+  return (
+    <div
+      className="px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-sm"
+      style={{
+        background: isMythic
+          ? "linear-gradient(90deg,#ff8eae,#ffb947,#8ed172,#5aa4ff,#d280ff)"
+          : rr.primaryColor,
+        border: "1.5px solid rgba(255,255,255,0.85)",
+      }}
+    >
+      {rr.emoji} {rr.tag} · {sp.nameZh}
     </div>
   );
 }
