@@ -37,6 +37,7 @@ import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
   LEADERBOARD, ALLIANCES, FRIEND_COUPLES, GIFT_INBOX, NOTICE, INITIAL_MOMENTS,
+  ISLAND_SHOP,
 } from "./demoData";
 import { checkEligibility as mintCheckEligibility, calcCoinCost as mintCalcCoinCost, executeMint } from "./pet/mint";
 import { SPECIES as PET_SPECIES, attrBonusMultiplier } from "./pet/species";
@@ -749,6 +750,22 @@ export const useGame = create<State>()(
             status: r.status,
             createdAt: new Date(r.created_at).toLocaleDateString("zh-TW"),
           })),
+          // 跨裝置同步：遠端 island_items → local island（從 ISLAND_SHOP 查 label/emoji）
+          island: (() => {
+            const remoteItems = remote.island ?? [];
+            if (!Array.isArray(remoteItems) || remoteItems.length === 0) return get().island;
+            return remoteItems.map((r: any) => {
+              const shop = ISLAND_SHOP.find((s) => s.id === r.catalog_id);
+              return {
+                id: r.id,
+                catalogId: r.catalog_id,
+                label: shop?.label ?? r.catalog_id ?? "物件",
+                emoji: shop?.emoji ?? "📦",
+                x: r.x,
+                y: r.y,
+              };
+            });
+          })(),
           ritual: remote.rituals ? {
             date: remote.rituals.date,
             morning: remote.rituals.morning,
