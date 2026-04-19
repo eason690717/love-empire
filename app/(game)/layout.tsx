@@ -95,20 +95,20 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
           backdropFilter: "blur(12px)",
         }}
       >
-        {/* 資源列 */}
+        {/* 資源列（每顆 chip 點擊都連到對應頁，「+」按鈕是快速賺取入口） */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="resource-chip">
+          <Link href="/questions" className="resource-chip" title="去深度問答賺愛意">
             <span className="plus">+</span>
             💞 {couple.loveIndex.toLocaleString()}
-          </span>
-          <span className="resource-chip">
+          </Link>
+          <Link href="/exchange" className="resource-chip" title="去兌換中心使用金幣">
             <span className="plus">+</span>
             💰 {couple.coins.toLocaleString()}
-          </span>
-          <span className="resource-chip">
+          </Link>
+          <Link href="/rituals" className="resource-chip" title="去儀式頁完成今日打卡">
             <span className="plus">+</span>
             🔥 {streak.current}
-          </span>
+          </Link>
           <div className="flex-1" />
           <Link href="/inbox" className="relative w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white text-sm">
             🔔

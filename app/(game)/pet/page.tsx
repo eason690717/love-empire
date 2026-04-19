@@ -81,10 +81,11 @@ export default function PetPage() {
         <div className="absolute bottom-4 left-10 text-3xl opacity-60 select-none">🌱</div>
         <div className="absolute bottom-2 right-8 text-3xl opacity-60 select-none">🍄</div>
 
-        {/* 點擊可偷看 5 階預覽 */}
+        {/* 點擊可偷看 5 階預覽 — touch-pan-y 讓手機仍可垂直捲動 */}
         <button
           onClick={() => setPreviewOpen(true)}
-          className="relative inline-block cursor-pointer active:scale-95 transition"
+          className="relative inline-block cursor-pointer active:scale-95 transition touch-pan-y"
+          style={{ touchAction: "pan-y" }}
           aria-label="點擊看 5 階段預覽"
         >
           <div
