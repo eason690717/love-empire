@@ -15,7 +15,7 @@ export interface Achievement {
   check: (state: {
     couple: { kingdomLevel: number; coins: number; loveIndex: number };
     streak: { current: number; longest: number };
-    pet: { stage: number };
+    pet: { stage: number; attrs: Record<string, number> };
     submissionsApproved: number;
     cardsOwned: number;
     cardsSSR: number;
@@ -99,7 +99,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "a_highLove", category: "special", emoji: "💖", title: "愛意滿溢",
     description: "愛意指數 1000+", check: (s) => s.couple.loveIndex >= 1000 },
   { id: "a_allAttrs", category: "special", emoji: "⭐", title: "全能情侶",
-    description: "所有屬性達 80+", check: () => false /* placeholder; check in store with pet.attrs */ },
+    description: "所有屬性達 80+", check: (s) => Object.values(s.pet.attrs).every((v) => v >= 80) },
 
   // 深度問答 (2026-04-17 新增)
   { id: "a_firstQuestion", category: "social", emoji: "💬", title: "敞開心扉",

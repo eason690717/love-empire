@@ -85,7 +85,7 @@ export default function RegisterPage() {
               />
               {!isSupabaseEnabled() && (
                 <div className="text-[11px] text-empire-mute bg-empire-mist rounded-lg p-2">
-                  ℹ️ 目前為本地 demo 模式（資料存瀏覽器）。接入 Supabase 後才啟用真實跨裝置帳號。
+                  ℹ️ 雲端尚未連線，資料僅存於這個瀏覽器。下次請從同一裝置登入。
                 </div>
               )}
               {err && <div className="text-xs text-rose-600">{err}</div>}

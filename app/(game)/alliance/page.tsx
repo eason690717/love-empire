@@ -10,6 +10,7 @@ export default function AlliancePage() {
   const alliances = useGame((s) => s.alliances);
   const leaderboard = useGame((s) => s.leaderboard);
   const joinAlliance = useGame((s) => s.joinAlliance);
+  const leaveAlliance = useGame((s) => s.leaveAlliance);
   const attackBoss = useGame((s) => s.attackBoss);
   const contributeAllianceItem = useGame((s) => s.contributeAllianceItem);
   const couple = useGame((s) => s.couple);
@@ -185,37 +186,56 @@ export default function AlliancePage() {
           </div>
 
           <div className="card p-5">
-            <h3 className="font-bold mb-3">聯盟成員 ({myAlliance.members.length})</h3>
-            <div className="space-y-2">
-              {myAlliance.members.map((id) => {
-                if (id === "me") {
-                  return (
-                    <div key={id} className="flex items-center gap-3 p-3 rounded-xl bg-empire-mist ring-2 ring-empire-pink/40">
-                      <div className="text-2xl">🌱</div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold">聯盟成員 ({myAlliance.members.length})</h3>
+              <button
+                onClick={() => { if (confirm(`確定離開「${myAlliance.name}」？共同島嶼的貢獻會留下。`)) leaveAlliance(myAlliance.id); }}
+                className="text-xs text-empire-mute hover:text-rose-600"
+              >
+                離開聯盟
+              </button>
+            </div>
+            {/* 本週貢獻榜 (以 weeklyTasks 排序) */}
+            {(() => {
+              const ranked = myAlliance.members.map((id) => {
+                if (id === "me") return { id, name: couple.name, emoji: "🌱", tasks: 0, isMe: true, lv: couple.kingdomLevel, streak: 0 };
+                const c = getMember(id);
+                return c ? { id, name: c.name, emoji: c.emoji, tasks: c.weeklyTasks, isMe: false, lv: c.kingdomLevel, streak: c.streak } : null;
+              }).filter(Boolean) as any[];
+              ranked.sort((a, b) => b.tasks - a.tasks);
+              return (
+                <div className="space-y-2">
+                  {ranked.map((m, i) => (
+                    <div
+                      key={m.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl bg-empire-mist ${m.isMe ? "ring-2 ring-empire-pink/40" : ""}`}
+                    >
+                      <div className="text-xs font-black text-empire-mute w-6 text-center">
+                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
+                      </div>
+                      <div className="text-2xl">{m.emoji}</div>
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-sm truncate">
-                          {couple.name}
-                          <span className="ml-2 text-xs text-empire-berry">(我們)</span>
+                          {m.name}
+                          {m.isMe && <span className="ml-2 text-xs text-empire-berry">(我們)</span>}
                         </div>
-                        <div className="text-xs text-empire-mute">Lv.{couple.kingdomLevel} · 愛意 {couple.loveIndex}</div>
+                        <div className="text-xs text-empire-mute">Lv.{m.lv}{m.streak ? ` · 🔥${m.streak} 天` : ""}</div>
                       </div>
+                      <div className="text-xs text-empire-gold font-semibold">本週 {m.tasks} 任務</div>
                     </div>
-                  );
-                }
-                const c = getMember(id);
-                if (!c) return null;
-                return (
-                  <div key={id} className="flex items-center gap-3 p-3 rounded-xl bg-empire-mist">
-                    <div className="text-2xl">{c.emoji}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm truncate">{c.name}</div>
-                      <div className="text-xs text-empire-mute">Lv.{c.kingdomLevel} · 🔥{c.streak} 天</div>
-                    </div>
-                    <div className="text-xs text-empire-gold font-semibold">本週 {c.weeklyTasks} 任務</div>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* 聯盟公告 — 目前為固定歡迎詞，未來可改後端同步 */}
+          <div className="card p-4">
+            <h3 className="font-bold mb-2 text-sm">📣 聯盟公告</h3>
+            <p className="text-sm text-empire-mute leading-relaxed">
+              歡迎加入「{myAlliance.name}」！本週目標 <b className="text-empire-ink">{myAlliance.questTitle}</b> —
+              每對情侶貢獻一點，BOSS 擊敗後全員獲得「限定紀念卡」。記得週五凌晨前攻擊幾輪。
+            </p>
           </div>
         </>
       ) : (
@@ -251,9 +271,9 @@ export default function AlliancePage() {
         </div>
       </div>
 
-      <button className="card w-full p-4 text-center font-semibold text-empire-sky hover:bg-white transition">
-        + 建立新聯盟
-      </button>
+      <p className="text-[10px] text-empire-mute text-center pb-2">
+        建立新聯盟功能將在下一版開放 · 目前可自由加入既有聯盟
+      </p>
     </div>
   );
 }

@@ -108,7 +108,15 @@ interface State {
   removeIslandItem: (id: string) => void;
   sendGift: (toCoupleName?: string, message?: string) => void;
   sendCardGift: (cardId: string, toCoupleId: string, toCoupleName: string, message: string) => void;
+  addFriend: (coupleId: string) => { ok: boolean; reason?: string };
+  removeFriend: (coupleId: string) => void;
   joinAlliance: (id: string) => void;
+  leaveAlliance: (id: string) => void;
+  customRituals: {
+    morning?: { label: string; desc: string; emoji: string };
+    night?: { label: string; desc: string; emoji: string };
+  };
+  setCustomRitual: (kind: "morning" | "night", value: { label: string; desc: string; emoji: string } | null) => void;
   attackBoss: (allianceId: string, damage: number) => void;
   contributeAllianceItem: (allianceId: string, catalogId: string, label: string, emoji: string, price: number) => void;
 }
@@ -167,6 +175,7 @@ export const useGame = create<State>()(
       lastLoginDate: "",
       anniversaries: [],
       questionAnswers: [],
+      customRituals: {},
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -478,7 +487,7 @@ export const useGame = create<State>()(
         const snap = {
           couple: { kingdomLevel: s.couple.kingdomLevel, coins: s.couple.coins, loveIndex: s.couple.loveIndex },
           streak: { current: s.streak.current, longest: s.streak.longest },
-          pet: { stage: s.pet.stage },
+          pet: { stage: s.pet.stage, attrs: s.pet.attrs },
           submissionsApproved: s.submissions.filter((x) => x.status === "approved").length,
           cardsOwned: s.codex.filter((c) => c.obtainedAt).length,
           cardsSSR: s.codex.filter((c) => c.obtainedAt && c.rarity === "SSR").length,
@@ -497,10 +506,6 @@ export const useGame = create<State>()(
           if (unlocked.includes(ach.id)) continue;
           let passes = false;
           try { passes = ach.check(snap); } catch { passes = false; }
-          // 特例：全屬性 80+
-          if (ach.id === "a_allAttrs") {
-            passes = Object.values(s.pet.attrs).every((v) => v >= 80);
-          }
           if (passes) {
             unlocked.push(ach.id);
             newly.push(ach);
@@ -520,7 +525,14 @@ export const useGame = create<State>()(
         }
       },
 
-      recordPkWin: () => set({ pkWins: get().pkWins + 1 }),
+      recordPkWin: () => {
+        const s = get();
+        const reward = 30 + Math.floor(Math.random() * 40); // 30-70 金
+        set({
+          pkWins: s.pkWins + 1,
+          couple: { ...s.couple, coins: s.couple.coins + reward, loveIndex: s.couple.loveIndex + 15 },
+        });
+      },
       recordVisit: () => set({ visitsSent: get().visitsSent + 1 }),
 
       claimDailyBonus: () => {
@@ -1061,6 +1073,31 @@ export const useGame = create<State>()(
         }
       },
 
+      addFriend: (coupleId) => {
+        if (!coupleId) return { ok: false, reason: "缺少情侶 ID" };
+        const target = get().leaderboard.find((c) => c.id === coupleId);
+        if (!target) return { ok: false, reason: "找不到這對情侶" };
+        if (target.isSelf) return { ok: false, reason: "不能加自己" };
+        if (get().friends.some((f) => f.coupleId === coupleId)) {
+          return { ok: false, reason: "已經是好友了" };
+        }
+        set({
+          friends: [...get().friends, { coupleId, since: new Date().toISOString() }],
+        });
+        get().addNotification({
+          type: "system",
+          title: "新增好友情侶",
+          body: `「${target.name}」已加入好友清單`,
+          emoji: "👫",
+          link: `/couples/${coupleId}`,
+        });
+        return { ok: true };
+      },
+
+      removeFriend: (coupleId) => {
+        set({ friends: get().friends.filter((f) => f.coupleId !== coupleId) });
+      },
+
       joinAlliance: (id) =>
         set({
           alliances: get().alliances.map((a) =>
@@ -1069,6 +1106,20 @@ export const useGame = create<State>()(
               : a,
           ),
         }),
+
+      leaveAlliance: (id) =>
+        set({
+          alliances: get().alliances.map((a) =>
+            a.id === id ? { ...a, members: a.members.filter((m) => m !== "me") } : a,
+          ),
+        }),
+
+      setCustomRitual: (kind, value) => {
+        const next = { ...get().customRituals };
+        if (value === null) delete next[kind];
+        else next[kind] = value;
+        set({ customRituals: next });
+      },
 
       contributeAllianceItem: (allianceId, catalogId, label, emoji, price) => {
         const alliance = get().alliances.find((a) => a.id === allianceId);

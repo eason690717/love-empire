@@ -73,7 +73,7 @@ export default function SettingsPage() {
           <div className="flex justify-between">
             <span className="text-empire-mute">Supabase 後端</span>
             <span className={isSupabaseEnabled() ? "text-emerald-600 font-bold" : "text-empire-mute"}>
-              {isSupabaseEnabled() ? "✓ 已連線" : "未啟用（demo 模式）"}
+              {isSupabaseEnabled() ? "✓ 已連線雲端" : "未連線（僅存本機）"}
             </span>
           </div>
           <div className="flex justify-between">

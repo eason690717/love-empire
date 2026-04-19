@@ -1,8 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { isSpecialDay, SPECIAL_DAY_LABEL } from "@/lib/passive";
 import { PageBanner } from "@/components/PageBanner";
+
+const DEFAULT_RITUALS = {
+  morning: { label: "晨間簽到", desc: "第一件事，對彼此說聲早安", emoji: "🌅" },
+  night:   { label: "睡前話語", desc: "睡前一句情話，一個擁抱",       emoji: "🌙" },
+};
+
+function campfireForStreak(days: number): { emoji: string; glow: string; label: string } {
+  if (days >= 100) return { emoji: "🌋", glow: "from-rose-300 via-amber-200 to-rose-200", label: "神話之炎" };
+  if (days >= 30)  return { emoji: "🎆", glow: "from-amber-200 via-rose-100 to-amber-100", label: "盛典焰火" };
+  if (days >= 14)  return { emoji: "🔥🔥", glow: "from-orange-200 via-amber-100 to-rose-100", label: "熱戀營火" };
+  if (days >= 7)   return { emoji: "🔥", glow: "from-amber-100 to-rose-100", label: "持續燃燒" };
+  if (days >= 1)   return { emoji: "🪵🔥", glow: "from-amber-50 to-empire-cream", label: "剛點燃" };
+  return { emoji: "🪵", glow: "from-empire-cloud to-white", label: "等你點火" };
+}
 
 const WEEKLY_CHALLENGES = [
   { id: "w1", title: "本週完成 15 個任務", target: 15, reward: "📜 15 任務 → +50 金幣" },
@@ -15,8 +30,12 @@ export default function RitualsPage() {
   const streak = useGame((s) => s.streak);
   const submissions = useGame((s) => s.submissions);
   const toggle = useGame((s) => s.toggleRitual);
+  const customRituals = useGame((s) => s.customRituals);
+  const setCustomRitual = useGame((s) => s.setCustomRitual);
   const today = new Date().toISOString().slice(0, 10);
   const active = ritual.date === today ? ritual : { morning: false, night: false };
+  const [editing, setEditing] = useState<"morning" | "night" | null>(null);
+  const fire = campfireForStreak(streak.current);
 
   // 本週進度
   const oneWeekAgo = new Date(Date.now() - 7 * 86400000);
@@ -26,9 +45,11 @@ export default function RitualsPage() {
     return s.status === "approved" && d && d >= oneWeekAgo;
   }).length;
 
+  const morningContent = customRituals.morning ?? DEFAULT_RITUALS.morning;
+  const nightContent = customRituals.night ?? DEFAULT_RITUALS.night;
   const steps = [
-    { id: "morning" as const, icon: "🌅", label: "晨間簽到", desc: "第一件事，對彼此說聲早安", done: active.morning },
-    { id: "night" as const, icon: "🌙", label: "睡前話語", desc: "睡前一句情話，一個擁抱", done: active.night },
+    { id: "morning" as const, icon: morningContent.emoji, label: morningContent.label, desc: morningContent.desc, done: active.morning, isCustom: !!customRituals.morning },
+    { id: "night" as const,   icon: nightContent.emoji,   label: nightContent.label,   desc: nightContent.desc,   done: active.night,   isCustom: !!customRituals.night },
   ];
 
   const rewardLadder = [
@@ -64,9 +85,12 @@ export default function RitualsPage() {
         </div>
       )}
 
-      <div className="card p-6 text-center bg-gradient-to-br from-empire-pink/20 to-empire-sky/20">
-        <div className="text-sm text-slate-500">連續互動天數</div>
-        <div className="text-6xl font-bold text-empire-ink mt-2">🔥 {streak.current}</div>
+      <div className={`card p-6 text-center bg-gradient-to-br ${fire.glow}`}>
+        <div className="text-sm text-slate-500">連續互動天數 · {fire.label}</div>
+        <div className="text-7xl mt-2 leading-none" style={{ filter: "drop-shadow(0 4px 8px rgba(255,120,50,0.35))" }}>
+          {fire.emoji}
+        </div>
+        <div className="text-5xl font-black text-empire-ink mt-2 font-display">{streak.current}<span className="text-xl text-empire-mute ml-1">天</span></div>
         <div className="text-sm text-slate-500 mt-1">
           歷史最長 {streak.longest} 天
           {(streak.knightShields ?? 0) > 0 && ` · 🛡 騎士盾 ×${streak.knightShields}`}
@@ -74,34 +98,55 @@ export default function RitualsPage() {
       </div>
 
       <div className="card p-5">
-        <h3 className="font-bold mb-3">今日儀式</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold">今日儀式</h3>
+          <span className="text-[10px] text-empire-mute">點 ✎ 可以改成你們自己的儀式</span>
+        </div>
         <div className="space-y-3">
           {steps.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => toggle(s.id)}
-              className={`w-full text-left p-4 rounded-xl border-2 transition ${
-                s.done
-                  ? "border-empire-sky bg-empire-cloud"
-                  : "border-empire-cloud hover:border-empire-sky/60"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="text-3xl">{s.icon}</div>
-                <div className="flex-1">
-                  <div className="font-bold">{s.label}</div>
-                  <div className="text-xs text-slate-500">{s.desc}</div>
+            <div key={s.id} className="relative">
+              <button
+                onClick={() => toggle(s.id)}
+                className={`w-full text-left p-4 rounded-xl border-2 transition ${
+                  s.done ? "border-empire-sky bg-empire-cloud" : "border-empire-cloud hover:border-empire-sky/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">{s.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold flex items-center gap-1">
+                      {s.label}
+                      {s.isCustom && <span className="text-[10px] text-empire-berry">自訂</span>}
+                    </div>
+                    <div className="text-xs text-slate-500 truncate">{s.desc}</div>
+                  </div>
+                  <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    s.done ? "bg-empire-sky border-empire-sky text-white" : "border-empire-cloud"
+                  }`}>
+                    {s.done && "✓"}
+                  </div>
                 </div>
-                <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center ${
-                  s.done ? "bg-empire-sky border-empire-sky text-white" : "border-empire-cloud"
-                }`}>
-                  {s.done && "✓"}
-                </div>
-              </div>
-            </button>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setEditing(s.id); }}
+                className="absolute top-2 right-12 text-xs text-empire-mute hover:text-empire-ink px-2 py-1"
+                title="編輯儀式內容"
+              >✎</button>
+            </div>
           ))}
         </div>
       </div>
+
+      {editing && (
+        <RitualEditor
+          kind={editing}
+          current={(editing === "morning" ? customRituals.morning : customRituals.night) ?? DEFAULT_RITUALS[editing]}
+          isCustom={!!(editing === "morning" ? customRituals.morning : customRituals.night)}
+          onSave={(v) => { setCustomRitual(editing, v); setEditing(null); }}
+          onReset={() => { setCustomRitual(editing, null); setEditing(null); }}
+          onClose={() => setEditing(null)}
+        />
+      )}
 
       <div className="card p-5">
         <h3 className="font-bold mb-3">📆 本週挑戰</h3>
@@ -128,7 +173,7 @@ export default function RitualsPage() {
       </div>
 
       <div className="card p-5">
-        <h3 className="font-bold mb-3">連擊獎勵階梯</h3>
+        <h3 className="font-bold mb-3">🔥 連擊獎勵階梯</h3>
         <div className="space-y-2">
           {rewardLadder.map((r) => (
             <div key={r.days} className={`p-3 rounded-xl flex items-center justify-between ${
@@ -147,6 +192,82 @@ export default function RitualsPage() {
               )}
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RitualEditor({
+  kind, current, isCustom, onSave, onReset, onClose,
+}: {
+  kind: "morning" | "night";
+  current: { label: string; desc: string; emoji: string };
+  isCustom: boolean;
+  onSave: (v: { label: string; desc: string; emoji: string }) => void;
+  onReset: () => void;
+  onClose: () => void;
+}) {
+  const [label, setLabel] = useState(current.label);
+  const [desc, setDesc] = useState(current.desc);
+  const [emoji, setEmoji] = useState(current.emoji);
+  const emojiChoices = kind === "morning"
+    ? ["🌅", "☕", "🌞", "🥐", "🧘", "💌", "🐣"]
+    : ["🌙", "🕯️", "🛁", "📖", "🫂", "🌠", "🍵"];
+
+  const canSave = label.trim().length > 0 && desc.trim().length > 0;
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="card max-w-sm w-full p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <h3 className="font-bold">編輯{kind === "morning" ? "晨間" : "睡前"}儀式</h3>
+        <div>
+          <div className="text-xs text-empire-mute mb-1">圖示</div>
+          <div className="flex gap-2 flex-wrap">
+            {emojiChoices.map((e) => (
+              <button
+                key={e}
+                onClick={() => setEmoji(e)}
+                className={`text-2xl w-10 h-10 rounded-xl border-2 ${emoji === e ? "border-empire-berry bg-rose-50" : "border-empire-cloud bg-white"}`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-empire-mute mb-1">儀式名稱</div>
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value.slice(0, 20))}
+            className="w-full border-2 border-empire-cloud rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-empire-sky"
+            maxLength={20}
+            placeholder="例：一起煮早餐"
+          />
+        </div>
+        <div>
+          <div className="text-xs text-empire-mute mb-1">描述</div>
+          <textarea
+            value={desc}
+            onChange={(e) => setDesc(e.target.value.slice(0, 60))}
+            rows={2}
+            className="w-full border-2 border-empire-cloud rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-empire-sky"
+            maxLength={60}
+            placeholder="例：煮兩杯咖啡，一起看窗外"
+          />
+          <div className="text-[10px] text-right text-empire-mute">{desc.length}/60</div>
+        </div>
+        <div className="flex gap-2 pt-2">
+          {isCustom && (
+            <button onClick={onReset} className="btn-ghost py-2 px-3 text-xs">重設為預設</button>
+          )}
+          <button onClick={onClose} className="btn-ghost flex-1 py-2 text-sm">取消</button>
+          <button
+            onClick={() => onSave({ label: label.trim(), desc: desc.trim(), emoji })}
+            disabled={!canSave}
+            className="btn-primary flex-1 py-2 font-semibold disabled:opacity-40"
+          >
+            儲存
+          </button>
         </div>
       </div>
     </div>

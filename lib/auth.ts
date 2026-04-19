@@ -32,7 +32,7 @@ function humanizeAuthError(msg: string): string {
 /** 若尚未有 session 就建匿名 session。有 session 就直接回。 */
 export async function signInAnon(): Promise<{ user?: AuthUser; error?: string }> {
   const client = await getSupabase();
-  if (!client) return { error: "Supabase 未設定，目前使用本地 demo 模式（資料存於瀏覽器）" };
+  if (!client) return { error: "雲端尚未連線，資料將只存在這個瀏覽器" };
   const c: any = client;
   try {
     const { data: s } = await c.auth.getSession();

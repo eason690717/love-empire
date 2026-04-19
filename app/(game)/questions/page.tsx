@@ -164,7 +164,7 @@ export default function QuestionsPage() {
       {tab === "partner" && (
         <div className="space-y-3">
           {answersByPartner.length === 0 && (
-            <p className="card p-8 text-center text-empire-mute">對方還沒回答 (demo 模式下請先用對方身份登入答題)</p>
+            <p className="card p-8 text-center text-empire-mute">對方還沒回答任何題目。等 TA 抽一題寫下答案後，這裡會出現。</p>
           )}
           {answersByPartner.map((a) => {
             const q = getQuestionById(a.questionId);
