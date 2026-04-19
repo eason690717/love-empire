@@ -135,7 +135,7 @@ interface State {
   setCustomRitual: (kind: "morning" | "night", value: { label: string; desc: string; emoji: string } | null) => void;
   setShowAdultRewards: (v: boolean) => void;
   setMood: (mood: "default" | "busy" | "tired" | "missing" | "intimate" | "quiet") => void;
-  toggleBucketItem: (id: string, note?: string) => { newlyDone: boolean; reward?: { love: number; coins: number } };
+  toggleBucketItem: (id: string, note?: string, proof?: { kind: "text" | "location" | "photo"; value: string; caption?: string }) => { newlyDone: boolean; reward?: { love: number; coins: number } };
   attackBoss: (allianceId: string, damage: number) => void;
   contributeAllianceItem: (allianceId: string, catalogId: string, label: string, emoji: string, price: number) => void;
 }
@@ -1469,14 +1469,18 @@ export const useGame = create<State>()(
         }
       },
 
-      toggleBucketItem: (id, note) => {
+      toggleBucketItem: (id, note, proof) => {
         const existing = get().bucketList.find((r) => r.id === id);
         if (existing) {
-          // 已完成的不可取消（儀式感）— 但可更新 note
-          if (note !== undefined) {
+          // 已完成的不可取消（儀式感）— 但可更新 note / proof
+          if (note !== undefined || proof !== undefined) {
             set({
               bucketList: get().bucketList.map((r) =>
-                r.id === id ? { ...r, note: note.trim() || undefined } : r,
+                r.id === id ? {
+                  ...r,
+                  note: note !== undefined ? (note.trim() || undefined) : r.note,
+                  proof: proof ? { ...proof, addedAt: new Date().toISOString() } : r.proof,
+                } : r,
               ),
             });
           }
@@ -1489,6 +1493,7 @@ export const useGame = create<State>()(
           id,
           doneAt: new Date().toISOString().slice(0, 10),
           note: note?.trim() || undefined,
+          proof: proof ? { ...proof, addedAt: new Date().toISOString() } : undefined,
         };
         const c = get().couple;
         const nextCoupleBase = {

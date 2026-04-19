@@ -129,13 +129,24 @@ export interface BucketItem {
   rarity: BucketRarity;    // 依「難度/重量」分級，影響獎勵
   title: string;
   emoji: string;
+  proofHint?: ProofKind;   // 建議的證明類型（UI 推薦而非強制）
+}
+
+export type ProofKind = "text" | "location" | "photo";
+
+export interface ProofItem {
+  kind: ProofKind;
+  value: string;        // text: 內容 / location: "lat,lng" / photo: URL
+  caption?: string;     // 附加說明
+  addedAt?: string;     // ISO 時間
 }
 
 export interface BucketRecord {
   id: string;              // 對應 BucketItem.id
   doneAt: string;          // ISO 日期
   note?: string;           // 勾選時的心情短文（< 100 字）
-  photoUrl?: string;       // 可選照片連結
+  photoUrl?: string;       // 可選照片連結（legacy，新版用 proof）
+  proof?: ProofItem;       // 完成證明（選填）
 }
 
 export const BUCKET_CATEGORY_LABELS: Record<BucketCategory, { label: string; emoji: string; desc: string; color: string }> = {

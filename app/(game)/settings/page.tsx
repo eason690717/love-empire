@@ -122,10 +122,8 @@ export default function SettingsPage() {
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-empire-mute">LIFF (LINE)</span>
-            <span className={process.env.NEXT_PUBLIC_LIFF_ID ? "text-emerald-600 font-bold" : "text-empire-mute"}>
-              {process.env.NEXT_PUBLIC_LIFF_ID ? "✓ 已綁定" : "未設定"}
-            </span>
+            <span className="text-empire-mute">LINE 綁定</span>
+            <span className="text-empire-mute text-xs italic">尚未完成（開發中）</span>
           </div>
           <div className="flex justify-between">
             <span className="text-empire-mute">Service Worker</span>

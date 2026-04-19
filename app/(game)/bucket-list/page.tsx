@@ -46,9 +46,9 @@ export default function BucketListPage() {
     return m;
   }, [filtered]);
 
-  const handleConfirm = (note: string) => {
+  const handleConfirm = (note: string, proof?: { kind: "text" | "location" | "photo"; value: string; caption?: string }) => {
     if (!picking) return;
-    const result = toggleBucketItem(picking.id, note);
+    const result = toggleBucketItem(picking.id, note, proof);
     if (result.newlyDone && result.reward) {
       setCelebrate({ item: picking, reward: result.reward });
     }
@@ -218,6 +218,14 @@ function CategorySection({
               <div className="flex-1 min-w-0">
                 <div className={`text-sm font-bold truncate ${done ? "text-emerald-800" : "text-empire-ink"}`}>
                   {item.title}
+                  {done && rec?.proof && (
+                    <span className="ml-1 text-[9px] px-1 rounded bg-emerald-100 text-emerald-700 font-bold">
+                      {rec.proof.kind === "text" ? "📝" : rec.proof.kind === "location" ? "📍" : "📷"}
+                    </span>
+                  )}
+                  {!done && item.proofHint && (
+                    <span className="ml-1 text-[9px] text-empire-berry">證明推薦</span>
+                  )}
                 </div>
                 {done && rec?.note ? (
                   <div className="text-[10px] text-emerald-700 italic truncate">&ldquo;{rec.note}&rdquo;</div>
@@ -246,12 +254,43 @@ function PickerModal({
   item: BucketItem;
   existingNote?: string;
   alreadyDone: boolean;
-  onConfirm: (note: string) => void;
+  onConfirm: (note: string, proof?: { kind: "text" | "location" | "photo"; value: string; caption?: string }) => void;
   onClose: () => void;
 }) {
   const [note, setNote] = useState(existingNote ?? "");
+  const [proofKind, setProofKind] = useState<"text" | "location" | "photo" | "none">(item.proofHint ?? "none");
+  const [proofText, setProofText] = useState("");
+  const [proofPhoto, setProofPhoto] = useState("");
+  const [proofLocation, setProofLocation] = useState<string>("");
+  const [locating, setLocating] = useState(false);
   const info = BUCKET_CATEGORY_LABELS[item.category];
   const reward = BUCKET_REWARD[item.rarity];
+
+  const getLocation = () => {
+    if (!navigator.geolocation) {
+      alert("瀏覽器不支援定位");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setProofLocation(`${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
+        setLocating(false);
+      },
+      (err) => {
+        alert("定位失敗：" + err.message);
+        setLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
+  };
+
+  const buildProof = (): { kind: "text" | "location" | "photo"; value: string } | undefined => {
+    if (proofKind === "text" && proofText.trim()) return { kind: "text", value: proofText.trim() };
+    if (proofKind === "photo" && proofPhoto.trim()) return { kind: "photo", value: proofPhoto.trim() };
+    if (proofKind === "location" && proofLocation) return { kind: "location", value: proofLocation };
+    return undefined;
+  };
 
   return (
     <div
@@ -294,13 +333,83 @@ function PickerModal({
           </div>
         )}
 
+        {/* 證明收集區 */}
+        <div className="mt-4 pt-3 border-t border-empire-cloud">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs text-empire-mute">
+              {item.proofHint ? "📌 建議附證明" : "📌 可選擇附上證明"}
+              {item.proofHint && <span className="ml-1 text-empire-berry">(推薦 {item.proofHint === "text" ? "文字" : item.proofHint === "location" ? "GPS" : "照片"})</span>}
+            </label>
+          </div>
+          <div className="flex gap-1 mb-2">
+            {([
+              { k: "none", label: "略過", emoji: "·" },
+              { k: "text", label: "文字", emoji: "📝" },
+              { k: "location", label: "GPS", emoji: "📍" },
+              { k: "photo", label: "照片", emoji: "📷" },
+            ] as const).map((o) => (
+              <button
+                key={o.k}
+                onClick={() => setProofKind(o.k)}
+                className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold transition ${
+                  proofKind === o.k ? "bg-empire-sky text-white" : "bg-white border border-empire-cloud text-empire-mute"
+                }`}
+              >
+                {o.emoji} {o.label}
+              </button>
+            ))}
+          </div>
+
+          {proofKind === "text" && (
+            <input
+              value={proofText}
+              onChange={(e) => setProofText(e.target.value.slice(0, 60))}
+              placeholder="例：電影名 / 餐廳 / 樂團 / 書名..."
+              className="w-full border-2 border-empire-cloud rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-empire-sky"
+              maxLength={60}
+            />
+          )}
+          {proofKind === "location" && (
+            <div>
+              {proofLocation ? (
+                <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs">
+                  ✓ GPS 座標已記錄：{proofLocation}
+                  <button onClick={() => setProofLocation("")} className="ml-2 text-empire-mute underline">重新</button>
+                </div>
+              ) : (
+                <button
+                  onClick={getLocation}
+                  disabled={locating}
+                  className="w-full py-2 text-sm rounded-lg bg-empire-cream border-2 border-empire-gold/40 text-empire-ink font-semibold"
+                >
+                  {locating ? "定位中…" : "📍 取得目前位置"}
+                </button>
+              )}
+            </div>
+          )}
+          {proofKind === "photo" && (
+            <input
+              value={proofPhoto}
+              onChange={(e) => setProofPhoto(e.target.value)}
+              placeholder="貼上照片網址（Google Drive / iCloud / Imgur 等）"
+              className="w-full border-2 border-empire-cloud rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-empire-sky"
+              type="url"
+            />
+          )}
+          {proofKind !== "none" && (
+            <div className="text-[10px] text-empire-mute mt-1">
+              👀 只有你們倆看得到 · 儲存後無法改
+            </div>
+          )}
+        </div>
+
         <div className="mt-4 flex gap-2">
           <button onClick={onClose} className="btn-ghost flex-1 py-2 text-sm">取消</button>
           <button
-            onClick={() => onConfirm(note)}
+            onClick={() => onConfirm(note, buildProof())}
             className="btn-primary flex-1 py-2 font-bold"
           >
-            {alreadyDone ? "儲存心情" : "我們做到了 ✓"}
+            {alreadyDone ? "儲存" : "我們做到了 ✓"}
           </button>
         </div>
       </div>
