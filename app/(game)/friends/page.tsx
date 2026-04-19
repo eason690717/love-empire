@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { CardGiftModal } from "@/components/CardGiftModal";
 import { PageBanner } from "@/components/PageBanner";
+import { toast } from "@/components/Toast";
 
 export default function FriendsPage() {
   const friends = useGame((s) => s.friends);
@@ -50,7 +51,7 @@ export default function FriendsPage() {
                   <div className="text-xs text-slate-500">{c.title} · Lv.{c.kingdomLevel} · 🔥{c.streak} 天</div>
                 </div>
                 <button
-                  onClick={() => { if (confirm(`移除好友「${c.name}」？`)) removeFriend(c.id); }}
+                  onClick={async () => { if (await toast.confirm(`移除好友「${c.name}」？`, { okLabel: "移除" })) removeFriend(c.id); }}
                   className="text-xs text-empire-mute hover:text-rose-600 px-2"
                   title="移除好友"
                 >✕</button>

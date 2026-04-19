@@ -35,6 +35,8 @@ export function SupabaseSync() {
     const forceLogoutIfOrphan = async (reason: string) => {
       console.warn("[SupabaseSync] orphan session detected:", reason);
       if (typeof window !== "undefined") {
+        // 用 alert 是因為這個訊息要立刻阻塞使用者注意，Toast 可能被忽略
+        // eslint-disable-next-line no-alert
         alert("資料已被重置或你的帳號已被清理，請重新登入。");
       }
       // 同時清 zustand persist 避免 state 殘留

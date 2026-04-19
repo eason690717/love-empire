@@ -7,6 +7,7 @@ import { BUCKET_CATEGORY_LABELS, BUCKET_REWARD } from "@/lib/types";
 import type { BucketCategory, BucketItem, BucketRarity } from "@/lib/types";
 import { RARITY_CLASS } from "@/lib/utils";
 import { PageBanner } from "@/components/PageBanner";
+import { toast } from "@/components/Toast";
 
 const CATEGORY_ORDER: BucketCategory[] = ["romantic", "daily", "outdoor", "growth", "playful", "tender"];
 
@@ -268,7 +269,7 @@ function PickerModal({
 
   const getLocation = () => {
     if (!navigator.geolocation) {
-      alert("瀏覽器不支援定位");
+      toast.error("瀏覽器不支援定位");
       return;
     }
     setLocating(true);
@@ -276,9 +277,10 @@ function PickerModal({
       (pos) => {
         setProofLocation(`${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`);
         setLocating(false);
+        toast.success("已記錄位置");
       },
       (err) => {
-        alert("定位失敗：" + err.message);
+        toast.error("定位失敗：" + err.message);
         setLocating(false);
       },
       { enableHighAccuracy: false, timeout: 10000 },

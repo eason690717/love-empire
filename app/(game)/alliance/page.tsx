@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ISLAND_SHOP } from "@/lib/demoData";
 import { ALLIANCE_TIERS, allianceTitleFor } from "@/lib/types";
 import { PageBanner } from "@/components/PageBanner";
+import { toast } from "@/components/Toast";
 
 export default function AlliancePage() {
   const alliances = useGame((s) => s.alliances);
@@ -216,7 +217,7 @@ export default function AlliancePage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold">聯盟成員 ({myAlliance.members.length})</h3>
               <button
-                onClick={() => { if (confirm(`確定離開「${myAlliance.name}」？共同小窩的貢獻會留下。`)) leaveAlliance(myAlliance.id); }}
+                onClick={async () => { if (await toast.confirm(`確定離開「${myAlliance.name}」？共同小窩的貢獻會留下。`, { okLabel: "離開" })) leaveAlliance(myAlliance.id); }}
                 className="text-xs text-empire-mute hover:text-rose-600"
               >
                 離開聯盟
