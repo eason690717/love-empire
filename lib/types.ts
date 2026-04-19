@@ -270,6 +270,11 @@ export interface Pet {
   };
   mintCount?: number;            // 已 MIT 次數（生過幾隻後代）
   isFounder?: boolean;           // 初代玩家標記（公測前拿到的）
+  lastMatedAt?: string;          // 最後繁殖時間（ISO）— 用於 7 天 cooldown
+  // 血統（MIT 生出的才有）
+  parentAId?: string;
+  parentBId?: string;
+  generation?: number;           // 0 = 初代 / >0 = 後代
 }
 
 export interface IslandItem {

@@ -7,6 +7,7 @@ import { isSupabaseEnabled } from "@/lib/auth";
 import { PageBanner } from "@/components/PageBanner";
 import { InviteCodeCard } from "@/components/InviteCodeCard";
 import { RELATIONSHIP_LABELS, getKingdomStatus, KINGDOM_PAUSE_DAYS } from "@/lib/types";
+import { toast } from "@/components/Toast";
 
 export default function SettingsPage() {
   const couple = useGame((s) => s.couple);
@@ -52,10 +53,40 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Section title="📝 命名">
-        <Field label="王國名稱" value={kName} onChange={setKName} onBlur={() => kName.trim() && setKingdomName(kName)} />
-        <Field label="我的暱稱" value={meName} onChange={setMeName} onBlur={() => meName.trim() && setNickname(role, meName)} />
-        <Field label="寵物名字" value={petNm} onChange={setPetNm} onBlur={() => petNm.trim() && setPetName(petNm)} />
+      <Section title="📝 命名" hint="輸入後按下方『儲存』或輕點空白處即可">
+        <Field
+          label="王國名稱"
+          value={kName}
+          onChange={setKName}
+          onSave={() => {
+            if (!kName.trim()) return;
+            setKingdomName(kName);
+            toast.success(`王國名改為「${kName}」`);
+          }}
+          savedValue={couple.name}
+        />
+        <Field
+          label="我的暱稱"
+          value={meName}
+          onChange={setMeName}
+          onSave={() => {
+            if (!meName.trim()) return;
+            setNickname(role, meName);
+            toast.success(`暱稱改為「${meName}」`);
+          }}
+          savedValue={role === "queen" ? couple.queen.nickname : couple.prince.nickname}
+        />
+        <Field
+          label="寵物名字"
+          value={petNm}
+          onChange={setPetNm}
+          onSave={() => {
+            if (!petNm.trim()) return;
+            setPetName(petNm);
+            toast.success(`寵物改名「${petNm}」`);
+          }}
+          savedValue={pet.name}
+        />
       </Section>
 
       <Section title="💑 我們的相處類型">
@@ -69,7 +100,10 @@ export default function SettingsPage() {
             return (
               <button
                 key={type}
-                onClick={() => setRelationshipType(type)}
+                onClick={() => {
+                  setRelationshipType(type);
+                  toast.success(`相處類型已存：${info.emoji} ${info.label}`);
+                }}
                 className={`w-full p-3 rounded-xl border-2 text-left transition ${
                   selected ? "border-empire-berry bg-rose-50" : "border-empire-cloud bg-white hover:border-empire-sky/50"
                 }`}
@@ -95,7 +129,7 @@ export default function SettingsPage() {
               key={p}
               value={p}
               current={couple.privacy}
-              onChange={setPrivacy}
+              onChange={(v) => { setPrivacy(v); toast.success(`隱私改為：${v === "public" ? "公開" : v === "friends" ? "僅限好友" : "完全不公開"}`); }}
               label={p === "public" ? "公開" : p === "friends" ? "僅限好友情侶" : "完全不公開"}
               desc={
                 p === "public" ? "上排行榜、被其他情侶搜尋到、可被隨機配對"
@@ -280,25 +314,55 @@ export default function SettingsPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="card p-5">
-      <h3 className="font-bold mb-3">{title}</h3>
+      <h3 className="font-bold mb-1">{title}</h3>
+      {hint && <div className="text-[11px] text-empire-mute mb-3">{hint}</div>}
       <div className="space-y-3">{children}</div>
     </div>
   );
 }
 
-function Field({ label, value, onChange, onBlur }: { label: string; value: string; onChange: (v: string) => void; onBlur: () => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+  onSave,
+  savedValue,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  savedValue: string;
+}) {
+  const dirty = value.trim() !== savedValue.trim() && value.trim().length > 0;
   return (
     <div>
       <label className="text-xs text-empire-mute">{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value.slice(0, 20))}
-        onBlur={onBlur}
-        className="mt-1 w-full border-2 border-empire-cloud rounded-xl px-3 py-2 focus:outline-none focus:border-empire-sky"
-      />
+      <div className="mt-1 flex items-center gap-2">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value.slice(0, 20))}
+          onBlur={() => dirty && onSave()}
+          className="flex-1 border-2 border-empire-cloud rounded-xl px-3 py-2 focus:outline-none focus:border-empire-sky"
+        />
+        <button
+          onClick={onSave}
+          disabled={!dirty}
+          className={`px-3 py-2 rounded-xl font-bold text-sm transition shrink-0 ${
+            dirty
+              ? "bg-empire-berry text-white shadow hover:shadow-md"
+              : "bg-empire-cloud text-empire-mute cursor-not-allowed"
+          }`}
+        >
+          {dirty ? "儲存" : "✓"}
+        </button>
+      </div>
+      {dirty && (
+        <div className="text-[10px] text-empire-gold mt-1">尚未儲存（點「儲存」或輕點空白處）</div>
+      )}
     </div>
   );
 }
