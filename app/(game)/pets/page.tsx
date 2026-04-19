@@ -66,6 +66,11 @@ export default function PetsPage() {
                   stage {pet.stage} · MIT {pet.mintCount ?? 0}/{rr.mintLimit === Infinity ? "∞" : rr.mintLimit}
                   {pet.generation && pet.generation > 0 && <span className="ml-1">· Gen {pet.generation}</span>}
                 </div>
+                {pet.id && (pet.generation ?? 0) > 0 && (
+                  <Link href={`/pet/${pet.id}/lineage`} className="text-[10px] text-empire-sky underline mt-0.5 inline-block">
+                    🌳 血統樹
+                  </Link>
+                )}
               </div>
 
               <div className="flex gap-1 w-full">

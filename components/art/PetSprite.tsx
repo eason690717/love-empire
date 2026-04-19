@@ -88,10 +88,10 @@ function Egg({ species }: { species: PetSpecies }) {
       {/* 蛋殼 */}
       <ellipse cx="100" cy="110" rx="56" ry="70" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
       <ellipse cx="100" cy="110" rx="56" ry="70" fill="url(#bodyShine)" />
-      {/* 斑點 */}
-      <ellipse cx="78" cy="90" rx="7" ry="5" fill={sp.blushColor} opacity="0.7" />
-      <ellipse cx="122" cy="130" rx="8" ry="6" fill={sp.blushColor} opacity="0.7" />
-      <ellipse cx="100" cy="165" rx="6" ry="4" fill={sp.blushColor} opacity="0.7" />
+
+      {/* 依 species 不同的斑點花紋 */}
+      <EggPattern species={sp.id} accent={sp.blushColor} />
+
       {/* 閉眼（Zzz 睡覺中） */}
       <path d="M 80 108 Q 86 104 92 108" stroke="#1c1c28" strokeWidth="2.5" fill="none" strokeLinecap="round" />
       <path d="M 108 108 Q 114 104 120 108" stroke="#1c1c28" strokeWidth="2.5" fill="none" strokeLinecap="round" />
@@ -102,6 +102,70 @@ function Egg({ species }: { species: PetSpecies }) {
       <text x="100" y="52" fontSize="24" textAnchor="middle">{sp.signatureEmoji}</text>
     </g>
   );
+}
+
+/** 5 系蛋殼花紋差異（各有獨特標誌） */
+function EggPattern({ species, accent }: { species: PetSpecies; accent: string }) {
+  switch (species) {
+    case "nuzzle":
+      // 水滴斑 3 顆
+      return (
+        <g opacity="0.7">
+          <path d="M 75 85 q 5 -8 10 0 q -5 8 -10 0 z" fill={accent} />
+          <path d="M 125 130 q 6 -9 12 0 q -6 9 -12 0 z" fill={accent} />
+          <path d="M 95 165 q 5 -7 10 0 q -5 7 -10 0 z" fill={accent} />
+        </g>
+      );
+    case "spark":
+      // 小星星散佈
+      return (
+        <g fill={accent} opacity="0.8">
+          <text x="75" y="95" fontSize="14">✦</text>
+          <text x="125" y="135" fontSize="12">✦</text>
+          <text x="95" y="170" fontSize="10">✦</text>
+          <text x="118" y="88" fontSize="9">✧</text>
+        </g>
+      );
+    case "sturdy":
+      // 葉片 / 愛心斑
+      return (
+        <g opacity="0.7">
+          <ellipse cx="78" cy="90" rx="10" ry="5" fill={accent} transform="rotate(-30 78 90)" />
+          <ellipse cx="124" cy="130" rx="10" ry="5" fill={accent} transform="rotate(20 124 130)" />
+          <ellipse cx="100" cy="168" rx="9" ry="5" fill={accent} transform="rotate(10 100 168)" />
+        </g>
+      );
+    case "glide":
+      // 雲朵斑（半圓雙連）
+      return (
+        <g opacity="0.65" fill={accent}>
+          <path d="M 68 92 q 5 -6 10 0 q 5 -6 10 0 l 0 4 l -20 0 z" />
+          <path d="M 115 138 q 5 -6 10 0 q 5 -6 10 0 l 0 4 l -20 0 z" />
+          <path d="M 90 170 q 5 -6 10 0 q 5 -6 10 0 l 0 4 l -20 0 z" />
+        </g>
+      );
+    case "lumen":
+      // 光粒子 + 彩虹弧
+      return (
+        <g>
+          <path d="M 60 100 q 40 -40 80 0" fill="none" stroke="#ff8eae" strokeWidth="2" opacity="0.5" />
+          <path d="M 60 112 q 40 -40 80 0" fill="none" stroke="#ffb947" strokeWidth="2" opacity="0.5" />
+          <path d="M 60 124 q 40 -40 80 0" fill="none" stroke="#5aa4ff" strokeWidth="2" opacity="0.5" />
+          <circle cx="72" cy="150" r="2" fill="#ffd7f0" />
+          <circle cx="128" cy="155" r="2.5" fill="#ffd7f0" />
+          <circle cx="100" cy="78" r="2" fill="#ffd7f0" />
+          <circle cx="118" cy="92" r="1.5" fill="#ffffff" />
+        </g>
+      );
+    default:
+      return (
+        <g opacity="0.7">
+          <ellipse cx="78" cy="90" rx="7" ry="5" fill={accent} />
+          <ellipse cx="122" cy="130" rx="8" ry="6" fill={accent} />
+          <ellipse cx="100" cy="165" rx="6" ry="4" fill={accent} />
+        </g>
+      );
+  }
 }
 
 // ============================================================
