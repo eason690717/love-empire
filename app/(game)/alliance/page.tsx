@@ -33,12 +33,20 @@ export default function AlliancePage() {
       )
     : null;
 
+  const [combatFx, setCombatFx] = useState<{ damage: number; crit: boolean; shake: boolean; kill: boolean } | null>(null);
+
   const handleAttack = (allianceId: string) => {
     if (couple.loveIndex < 10) { setFlash("愛意指數不足 10，先去完成任務回血"); setTimeout(() => setFlash(null), 2000); return; }
-    const damage = 20 + Math.floor(Math.random() * 40);
+    const baseDamage = 20 + Math.floor(Math.random() * 40);
+    const isCrit = Math.random() < 0.15; // 15% 暴擊
+    const damage = isCrit ? baseDamage * 2 : baseDamage;
+    const alliance = myAlliance;
+    const willKill = !!(alliance?.bossHp && alliance.bossHp - damage <= 0);
+
     attackBoss(allianceId, damage);
-    setFlash(`-${damage} HP · 消耗 10 愛意`);
-    setTimeout(() => setFlash(null), 1600);
+    setCombatFx({ damage, crit: isCrit, shake: true, kill: willKill });
+    setTimeout(() => setCombatFx((fx) => fx ? { ...fx, shake: false } : null), 600);
+    setTimeout(() => setCombatFx(null), willKill ? 2400 : 1400);
   };
 
   return (
@@ -90,10 +98,29 @@ export default function AlliancePage() {
           {myAlliance.bossHp != null && myAlliance.bossMaxHp && (
             <div className="card p-5">
               <h3 className="font-bold mb-3">🐉 聯盟 BOSS 戰</h3>
-              <div className="rounded-2xl bg-gradient-to-br from-rose-100 via-amber-50 to-amber-100 p-6 text-center relative overflow-hidden">
-                <div className={`text-7xl ${myAlliance.bossHp === 0 ? "grayscale opacity-60" : "animate-bob"}`}>
+              <div className={`rounded-2xl bg-gradient-to-br from-rose-100 via-amber-50 to-amber-100 p-6 text-center relative overflow-hidden ${combatFx?.shake ? "animate-shake" : ""}`}>
+                {combatFx?.kill && (
+                  <div className="absolute inset-0 bg-white z-20 animate-pop pointer-events-none flex items-center justify-center">
+                    <div className="text-5xl font-display font-black text-empire-berry">擊殺！</div>
+                  </div>
+                )}
+                <div className={`text-7xl ${myAlliance.bossHp === 0 ? "grayscale opacity-60" : "animate-bob"} ${combatFx ? "scale-110 transition-transform" : ""}`}>
                   {myAlliance.bossHp === 0 ? "💀" : "🐲"}
                 </div>
+                {/* 傷害數字飛出 */}
+                {combatFx && (
+                  <div
+                    className="absolute left-1/2 top-1/3 -translate-x-1/2 pointer-events-none z-10 animate-pop"
+                    style={{ animation: "damage-float 1.2s ease-out forwards" }}
+                  >
+                    <div className={`font-display font-black ${combatFx.crit ? "text-empire-crimson text-6xl" : "text-empire-sunshine text-4xl"} text-shadow-soft`}>
+                      -{combatFx.damage}
+                    </div>
+                    {combatFx.crit && (
+                      <div className="text-xs text-empire-crimson font-black tracking-widest mt-1">⚡ CRITICAL!</div>
+                    )}
+                  </div>
+                )}
                 <div className="mt-2 font-bold text-lg">{myAlliance.bossName}</div>
 
                 <div className="mt-3 bar-bg h-4">

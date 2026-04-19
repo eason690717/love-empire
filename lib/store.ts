@@ -109,6 +109,7 @@ interface State {
   redeem: (rewardId: string) => void;
   useRedemption: (id: string, note?: string) => void;
   feedPet: (attr: keyof Pet["attrs"]) => void;
+  petInteract: (kind: "pet" | "treat" | "talk", message?: string) => { ok: boolean; reason?: string };
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
@@ -1013,6 +1014,74 @@ export const useGame = create<State>()(
           });
         }
         get().checkAchievements();
+      },
+
+      petInteract: (kind, message) => {
+        const role = get().role;
+        const prev = get().pet;
+        let bondDelta = 0;
+        let coinCost = 0;
+        let attrBump: Partial<Pet["attrs"]> = {};
+        let toastEmoji = "💝";
+        let momentTitle = "";
+
+        if (kind === "pet") {
+          bondDelta = 2;
+          toastEmoji = "🫳";
+          momentTitle = `${role === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname} 撫摸了 ${prev.name}`;
+        } else if (kind === "treat") {
+          coinCost = 20;
+          if (get().couple.coins < coinCost) return { ok: false, reason: "金幣不足" };
+          bondDelta = 5;
+          // 隨機加 1 個屬性 +3
+          const keys = Object.keys(prev.attrs) as Array<keyof Pet["attrs"]>;
+          const randKey = keys[Math.floor(Math.random() * keys.length)];
+          attrBump[randKey] = Math.min(100, prev.attrs[randKey] + 3) - prev.attrs[randKey];
+          toastEmoji = "🍬";
+          momentTitle = `餵 ${prev.name} 吃零食`;
+        } else if (kind === "talk") {
+          bondDelta = 3;
+          attrBump.communication = Math.min(100, prev.attrs.communication + 3) - prev.attrs.communication;
+          toastEmoji = "💬";
+          momentTitle = `跟 ${prev.name} 聊天`;
+        }
+
+        const nextAttrs = { ...prev.attrs };
+        for (const [k, delta] of Object.entries(attrBump)) {
+          nextAttrs[k as keyof Pet["attrs"]] = (nextAttrs[k as keyof Pet["attrs"]] ?? 0) + (delta ?? 0);
+        }
+
+        const bondQueen = Math.min(100, (prev.bondQueen ?? 0) + (role === "queen" ? bondDelta : 0));
+        const bondPrince = Math.min(100, (prev.bondPrince ?? 0) + (role === "prince" ? bondDelta : 0));
+
+        const nextPet: Pet = {
+          ...prev,
+          attrs: nextAttrs,
+          lastFedAt: new Date().toISOString(),
+          bondQueen,
+          bondPrince,
+          lastFedBy: role,
+        };
+        const nextCoupleCoins = get().couple.coins - coinCost;
+
+        set({
+          pet: nextPet,
+          couple: { ...get().couple, coins: nextCoupleCoins },
+        });
+        mirrorPet(get().couple.id, nextPet);
+        if (coinCost > 0) mirrorCouple(get().couple.id, { coins: nextCoupleCoins });
+
+        // talk 額外存訊息到動態
+        if (kind === "talk" && message?.trim()) {
+          get().addMoment({
+            type: "custom",
+            title: momentTitle,
+            subtitle: `「${message.trim().slice(0, 40)}」`,
+            emoji: toastEmoji,
+          });
+        }
+
+        return { ok: true };
       },
 
       toggleRitual: (kind) => {

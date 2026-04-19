@@ -122,6 +122,20 @@
     from { width: 0%; }
     to { width: 100%; }
   }
+  @keyframes damage-float {
+    0%   { transform: translate(-50%, 0)     scale(0.8); opacity: 0; }
+    30%  { transform: translate(-50%, -10px) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -60px) scale(0.9); opacity: 0; }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes heart-burst {
+    0%   { transform: scale(0.5) translateY(0);    opacity: 1; }
+    40%  { transform: scale(1.3) translateY(-8px); opacity: 1; }
+    100% { transform: scale(1.0) translateY(-24px); opacity: 0; }
+  }
   .shine-ssr::before {
     content: "";
     position: absolute;

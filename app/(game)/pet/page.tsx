@@ -22,8 +22,22 @@ export default function PetPage() {
   const couple = useGame((s) => s.couple);
   const role = useGame((s) => s.role);
   const feedPet = useGame((s) => s.feedPet);
+  const petInteract = useGame((s) => s.petInteract);
   const setPetName = useGame((s) => s.setPetName);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [talkOpen, setTalkOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const doInteract = (kind: "pet" | "treat", msg?: string) => {
+    const r = petInteract(kind, msg);
+    if (r.ok) {
+      setToast(kind === "pet" ? "🫳 摸摸，舒服..." : kind === "treat" ? "🍬 好好吃！" : "");
+      setTimeout(() => setToast(null), 1400);
+    } else {
+      setToast(`❌ ${r.reason}`);
+      setTimeout(() => setToast(null), 1500);
+    }
+  };
 
   const avg = Object.values(pet.attrs).reduce((a, b) => a + b, 0) / 5;
   const hoursSinceFed = (Date.now() - new Date(pet.lastFedAt).getTime()) / 36e5;
@@ -144,6 +158,37 @@ export default function PetPage() {
         )}
       </div>
 
+      {/* 快速互動區 — 不用開屬性也能加 bond */}
+      <div className="card p-4 relative">
+        <h3 className="font-bold text-sm mb-3">💫 快速互動 · 提升親密度</h3>
+        <div className="grid grid-cols-3 gap-2">
+          <InteractBtn
+            emoji="🫳"
+            label="撫摸"
+            sub="+2 親密"
+            onClick={() => doInteract("pet")}
+          />
+          <InteractBtn
+            emoji="🍬"
+            label="餵零食"
+            sub="-20 金 · +5 親密 · 隨機屬性 +3"
+            onClick={() => doInteract("treat")}
+            disabled={couple.coins < 20}
+          />
+          <InteractBtn
+            emoji="💬"
+            label="說說話"
+            sub="+3 親密 · +3 溝通"
+            onClick={() => setTalkOpen(true)}
+          />
+        </div>
+        {toast && (
+          <div className="absolute top-2 right-3 px-2.5 py-1 rounded-full bg-empire-ink text-white text-xs font-bold animate-pop shadow-lg">
+            {toast}
+          </div>
+        )}
+      </div>
+
       <div className="card p-5">
         <h3 className="font-bold mb-3">
           五項屬性 · 點擊餵養 +5 屬性 · +4 親密
@@ -212,6 +257,77 @@ export default function PetPage() {
       </div>
 
       {previewOpen && <StagePreviewModal currentStage={pet.stage} onClose={() => setPreviewOpen(false)} />}
+      {talkOpen && (
+        <TalkModal
+          petName={pet.name}
+          onSend={(msg) => {
+            const r = petInteract("talk", msg);
+            if (r.ok) {
+              setToast("💬 牠聽到了，尾巴搖搖");
+              setTimeout(() => setToast(null), 1500);
+            }
+            setTalkOpen(false);
+          }}
+          onClose={() => setTalkOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function InteractBtn({ emoji, label, sub, onClick, disabled }: { emoji: string; label: string; sub: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`p-3 rounded-2xl border-2 text-center transition active:scale-95 ${
+        disabled
+          ? "bg-empire-cloud/40 border-empire-cloud opacity-50 cursor-not-allowed"
+          : "bg-white border-empire-cloud hover:border-empire-berry/60 hover:shadow-md"
+      }`}
+    >
+      <div className="text-2xl">{emoji}</div>
+      <div className="text-xs font-bold mt-1 text-empire-ink">{label}</div>
+      <div className="text-[9px] text-empire-mute mt-0.5 leading-tight">{sub}</div>
+    </button>
+  );
+}
+
+function TalkModal({ petName, onSend, onClose }: { petName: string; onSend: (msg: string) => void; onClose: () => void }) {
+  const [msg, setMsg] = useState("");
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(20,40,70,0.55)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+    >
+      <div className="max-w-sm w-full card p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="text-center">
+          <div className="text-5xl mb-2">💬</div>
+          <div className="font-display font-black text-lg text-empire-ink">跟 {petName} 說句話</div>
+          <div className="text-xs text-empire-mute mt-1">+3 親密度 · +3 溝通屬性 · 訊息會存成紀念時刻</div>
+        </div>
+        <textarea
+          value={msg}
+          onChange={(e) => setMsg(e.target.value.slice(0, 40))}
+          placeholder="例：今天很乖哦，晚點陪你玩～"
+          rows={3}
+          autoFocus
+          className="mt-4 w-full border-2 border-empire-cloud rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-empire-sky"
+          maxLength={40}
+        />
+        <div className="text-[10px] text-right text-empire-mute">{msg.length}/40</div>
+        <div className="mt-3 flex gap-2">
+          <button onClick={onClose} className="btn-ghost flex-1 py-2 text-sm">取消</button>
+          <button
+            onClick={() => msg.trim() && onSend(msg)}
+            disabled={!msg.trim()}
+            className="btn-primary flex-1 py-2 font-bold disabled:opacity-40"
+          >
+            傳送 💕
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -92,38 +92,71 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      <div className="space-y-2">
-        {filtered.map((c, i) => (
-          <div
-            key={c.id}
-            className={`card p-4 flex items-center gap-3 ${
-              c.isSelf ? "ring-2 ring-empire-pink/60" : ""
-            }`}
-          >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0 ${
-              i === 0 ? "bg-empire-gold/30 text-empire-gold text-lg"
-              : i === 1 ? "bg-slate-300 text-slate-700"
-              : i === 2 ? "bg-amber-200 text-amber-700"
-              : "bg-empire-cloud text-slate-500"
-            }`}>
-              {i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}
+      {/* 冠軍 spotlight (只在排第 1 時顯示) */}
+      {filtered[0] && (
+        <div
+          className="relative card p-5 overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #ffd447, #ff9052, #ff4f7e)" }}
+        >
+          <div className="absolute top-2 right-3 text-4xl animate-sparkle opacity-80">✨</div>
+          <div className="absolute bottom-2 left-4 text-3xl animate-sparkle opacity-70" style={{ animationDelay: "0.6s" }}>💫</div>
+          <div className="flex items-center gap-4 relative">
+            <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center text-5xl shadow-lg animate-bob">
+              {filtered[0].emoji}
             </div>
-            <div className="text-3xl">{c.emoji}</div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold truncate">
-                {c.name}
-                {c.isSelf && <span className="ml-2 text-xs text-empire-pink">(我們)</span>}
+            <div className="flex-1 min-w-0 text-white">
+              <div className="text-[10px] font-black tracking-widest opacity-90">👑 CHAMPION</div>
+              <div className="font-display font-black text-xl truncate">{filtered[0].name}</div>
+              <div className="text-xs opacity-90">{filtered[0].title} · Lv.{filtered[0].kingdomLevel}</div>
+              <div className="mt-1 text-lg font-black">
+                {filtered[0][metric].toLocaleString()}{m.suffix}
               </div>
-              <div className="text-xs text-slate-500">{c.title} · Lv.{c.kingdomLevel}</div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className="font-bold text-empire-sky">
-                {c[metric].toLocaleString()}{m.suffix}
-              </div>
-              <div className="text-xs text-slate-400">{m.icon} {m.label}</div>
             </div>
           </div>
-        ))}
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {filtered.map((c, i) => {
+          const isTopThree = i < 3;
+          const isChampion = i === 0;
+          return (
+            <div
+              key={c.id}
+              className={`card p-4 flex items-center gap-3 transition-all hover:-translate-y-0.5 ${
+                c.isSelf ? "ring-2 ring-empire-pink/60 bg-gradient-to-r from-rose-50 to-white" : ""
+              } ${isChampion ? "ring-2 ring-empire-gold/80 shadow-lg" : ""}`}
+              style={{ animationDelay: `${i * 50}ms`, animation: "fadeInUp 0.4s ease-out backwards" }}
+            >
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold shrink-0 relative ${
+                i === 0 ? "bg-gradient-to-br from-empire-gold to-empire-sunshine text-white text-xl shadow-md animate-pulse"
+                : i === 1 ? "bg-gradient-to-br from-slate-300 to-slate-500 text-white text-lg shadow-sm"
+                : i === 2 ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white text-lg shadow-sm"
+                : "bg-empire-cloud text-slate-600"
+              }`}>
+                {i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}
+                {isTopThree && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-empire-sunshine animate-sparkle" />
+                )}
+              </div>
+              <div className="text-3xl">{c.emoji}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold truncate flex items-center gap-1">
+                  {c.name}
+                  {c.isSelf && <span className="text-[10px] px-1.5 py-0.5 bg-empire-pink text-white rounded-full">(我們)</span>}
+                  {isChampion && <span className="text-[10px] px-1.5 py-0.5 bg-empire-gold text-white rounded-full animate-pulse">👑</span>}
+                </div>
+                <div className="text-xs text-slate-500">{c.title} · Lv.{c.kingdomLevel}</div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className={`font-black ${isChampion ? "text-empire-gold text-lg" : "text-empire-sky"}`}>
+                  {c[metric].toLocaleString()}{m.suffix}
+                </div>
+                <div className="text-xs text-slate-400">{m.icon} {m.label}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
