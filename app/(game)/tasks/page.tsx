@@ -309,7 +309,9 @@ function PresetsDrawer({
         <div className="p-4 border-b border-empire-cloud flex items-center justify-between">
           <div>
             <h3 className="font-bold text-empire-ink">📚 任務模板庫</h3>
-            <p className="text-[10px] text-empire-mute">按情侶相處類型推薦 · 點 + 加入自己的任務清單</p>
+            <p className="text-[10px] text-empire-mute leading-relaxed">
+              切換類型只是<b className="text-empire-ink">預覽</b>推薦任務 · 要點「+ 加入」才會出現在你的任務清單
+            </p>
           </div>
           <button onClick={onClose} className="text-empire-mute hover:text-empire-ink">✕</button>
         </div>
@@ -347,6 +349,25 @@ function PresetsDrawer({
             <div className="text-[11px] text-emerald-600 text-center">✓ 這是你們目前的情侶類型</div>
           )}
         </div>
+
+        {/* 批次加入 */}
+        {(() => {
+          const notAdded = list.filter((p) => !existingTitles.has(p.title));
+          if (notAdded.length === 0) return null;
+          return (
+            <div className="px-3 pt-3">
+              <button
+                onClick={() => notAdded.forEach((p) => onAdd(p))}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-empire-berry to-empire-sunshine text-white font-bold text-sm shadow hover:brightness-110 active:scale-95 transition"
+              >
+                ⚡ 全部加入（{notAdded.length} 件）→ 主列表
+              </button>
+              <p className="text-[10px] text-empire-mute text-center mt-1">
+                加入後關閉這裡 · 回任務頁會看到新增的分類
+              </p>
+            </div>
+          );
+        })()}
 
         {/* 模板清單 */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
