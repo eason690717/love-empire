@@ -312,6 +312,18 @@ function AnniversarySection() {
   const [emoji, setEmoji] = useState("💝");
   const [recurring, setRecurring] = useState(true);
 
+  const PRESETS = [
+    { label: "認識的日子",   emoji: "🌱" },
+    { label: "交往紀念日",   emoji: "💞" },
+    { label: "初吻那天",     emoji: "💋" },
+    { label: "第一次旅行",   emoji: "✈️" },
+    { label: "同居紀念日",   emoji: "🏡" },
+    { label: "結婚紀念日",   emoji: "💍" },
+    { label: "我的生日",     emoji: "🎂" },
+    { label: "對方生日",     emoji: "🎂" },
+    { label: "寶寶誕生日",   emoji: "👶" },
+  ];
+
   return (
     <div className="card p-5">
       <h3 className="font-bold mb-3">💎 紀念日</h3>
@@ -329,6 +341,22 @@ function AnniversarySection() {
         {anniversaries.length === 0 && (
           <p className="text-xs text-empire-mute text-center py-2">還沒有紀念日，加一個試試</p>
         )}
+      </div>
+
+      {/* 快速選擇預設紀念日 */}
+      <div className="mb-3 p-2 rounded-xl bg-empire-cream/60 border border-empire-gold/30">
+        <div className="text-[10px] text-empire-mute mb-1.5">💡 常見紀念 · 點一下預填</div>
+        <div className="flex gap-1 overflow-x-auto">
+          {PRESETS.map((p) => (
+            <button
+              key={p.label}
+              onClick={() => { setLabel(p.label); setEmoji(p.emoji); }}
+              className="shrink-0 px-2 py-1 rounded-full text-[11px] bg-white border border-empire-cloud hover:border-empire-sky/60"
+            >
+              {p.emoji} {p.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-6 gap-1.5 mb-2">
         {["💝", "💎", "🎂", "🌸", "💍", "🎆"].map((e) => (

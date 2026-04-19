@@ -66,6 +66,7 @@ interface State {
   achievements: string[];
   pkWins: number;
   pkQuota: { date: string; used: number }; // 每日 3 場
+  taskQuota: { date: string; used: number }; // 每日 10 次送審上限
   visitsSent: number;
   dailyLoginDay: number;
   lastLoginDate: string;
@@ -191,6 +192,7 @@ export const useGame = create<State>()(
       achievements: [],
       pkWins: 0,
       pkQuota: { date: "", used: 0 },
+      taskQuota: { date: "", used: 0 },
       visitsSent: 0,
       dailyLoginDay: 0,
       lastLoginDate: "",
@@ -909,6 +911,21 @@ export const useGame = create<State>()(
       submitTask: (taskId) => {
         const t = get().tasks.find((x) => x.id === taskId);
         if (!t) return;
+        // 每日任務送審上限 10 次
+        const today = new Date().toISOString().slice(0, 10);
+        const q = get().taskQuota;
+        const usedToday = q.date === today ? q.used : 0;
+        if (usedToday >= 10) {
+          get().addNotification({
+            type: "system",
+            title: "⚠️ 今日任務送審上限",
+            body: "每天最多送 10 個任務審核。明天再來吧～",
+            emoji: "⏰",
+            priority: "normal",
+          });
+          return;
+        }
+        set({ taskQuota: { date: today, used: usedToday + 1 } });
         const role = get().role;
         const sub: Submission = {
           id: uid(),

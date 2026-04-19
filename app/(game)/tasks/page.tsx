@@ -29,6 +29,10 @@ export default function TasksPage() {
   const [mode, setMode] = useState<"submit" | "review">("submit");
   const [editor, setEditor] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const taskQuota = useGame((s) => s.taskQuota);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const usedToday = taskQuota.date === todayStr ? taskQuota.used : 0;
+  const remaining = Math.max(0, 10 - usedToday);
   const [justSent, setJustSent] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
 
@@ -75,11 +79,17 @@ export default function TasksPage() {
     <div className="space-y-4">
       {/* 使用說明橫幅 */}
       <div className="card p-4 bg-empire-cream/60 border border-empire-gold/30 text-sm">
-        <div className="font-bold text-empire-ink mb-1">🔔 任務流程</div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="font-bold text-empire-ink">🔔 任務流程</div>
+          <div className={`text-xs font-bold ${remaining <= 2 ? "text-empire-crimson" : "text-empire-mute"}`}>
+            今日剩 {remaining}/10 次送審
+          </div>
+        </div>
         <div className="text-empire-mute text-xs leading-relaxed">
           1️⃣ 點任務右側 <b className="text-empire-sky">「送出審核」</b> → 通知對方<br />
           2️⃣ 對方到「審核」分頁按 <b className="text-emerald-600">准奏</b> 或 <b className="text-rose-500">駁回</b><br />
           3️⃣ 准奏 → 金幣入帳 + 愛意 +{5}~{15} XP + 有機率掉記憶卡
+          {remaining === 0 && <><br /><span className="text-empire-crimson font-bold">⚠️ 今日配額用完，明天再來</span></>}
         </div>
       </div>
 

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useGame } from "@/lib/store";
+import { PageBanner } from "@/components/PageBanner";
 
 /** 情侶活動時間軸：合併申報 / 動態 / 通知，按日期排序 */
 export default function TimelinePage() {
@@ -66,10 +68,31 @@ export default function TimelinePage() {
 
   return (
     <div className="space-y-4">
-      <div className="card p-5">
-        <h2 className="font-bold">📅 {couple.name} 時間軸</h2>
-        <p className="text-xs text-empire-mute mt-1">所有申報、動態、里程碑按時間排序</p>
-      </div>
+      <PageBanner
+        title="時間軸"
+        subtitle={`${couple.name} · 所有申報 / 動態 / 里程碑`}
+        emoji="📅"
+        gradient="violet"
+        stats={[
+          { label: "申報", value: submissions.length },
+          { label: "動態", value: moments.filter((m) => m.isSelf).length },
+          { label: "總項", value: entries.length },
+        ]}
+      />
+
+      {/* 電影感 CTA — 連到 recap 電影模式 */}
+      <Link
+        href="/recap"
+        className="block p-4 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-amber-400 text-white font-black shadow-lg hover:shadow-xl hover:brightness-110 transition active:scale-95"
+      >
+        <div className="flex items-center justify-center gap-3">
+          <span className="text-3xl">🎬</span>
+          <div>
+            <div className="text-lg">把這些日子拍成電影</div>
+            <div className="text-xs opacity-90 font-semibold">8 幕全螢幕回顧 · 一起重溫</div>
+          </div>
+        </div>
+      </Link>
 
       {dateKeys.length === 0 && (
         <p className="card p-8 text-center text-empire-mute">還沒有足夠的紀錄。快去申報幾個任務吧！</p>
