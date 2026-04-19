@@ -169,54 +169,232 @@ function EggPattern({ species, accent }: { species: PetSpecies; accent: string }
 }
 
 // ============================================================
-// 寵物本體（吉伊卡哇風）— 依 species 切分
+// 寵物本體（吉伊卡哇風）— 依 species 切分 + 依 stage 大幅差異化
 // ============================================================
-function Creature({ species, stage, rarity }: { species: PetSpecies; stage: 1 | 2 | 3 | 4; rarity?: PetGeneRarity }) {
+function Creature({ species, stage, rarity: _rarity }: { species: PetSpecies; stage: 1 | 2 | 3 | 4; rarity?: PetGeneRarity }) {
   const sp = SPECIES[resolveSpecies(species)];
   const bodyFill = sp.id === "lumen" ? "url(#rainbowBody)" : sp.baseColor;
-  const stageScale = 0.8 + stage * 0.05; // stage 1 = 0.85, stage 4 = 1.0
+
+  // ── 依 stage 定義的大幅差異化參數 ──
+  const stageCfg = {
+    1: { // 幼體 — 超萌嬰兒版
+      scale: 0.65,
+      bodyRx: 52, bodyRy: 50, // 較扁圓
+      eyeRx: 8, eyeRy: 9,    // 大眼 +++
+      pupilR: 2.8,
+      blushOpacity: 0.7,
+      handY: 125, handR: 7,  // 手更低更小
+      footY: 162, footRx: 9, // 腳更短
+      showHead: false,       // 幼體無耳朵/角
+      showFront: false,      // 無前景配件
+      showBack: false,       // 無尾巴
+      showAura: false,
+      showCrown: false,
+      showWings: false,
+    },
+    2: { // 成型 — 標準版
+      scale: 0.88,
+      bodyRx: 52, bodyRy: 56,
+      eyeRx: 6.5, eyeRy: 7.5,
+      pupilR: 2.2,
+      blushOpacity: 0.55,
+      handY: 122, handR: 8,
+      footY: 166, footRx: 11,
+      showHead: true,
+      showFront: true,
+      showBack: true,
+      showAura: false,
+      showCrown: false,
+      showWings: false,
+    },
+    3: { // 傳說 — 進化版（加翅膀 + 光環 + 閃亮眼）
+      scale: 1.0,
+      bodyRx: 52, bodyRy: 56,
+      eyeRx: 6.5, eyeRy: 7.5,
+      pupilR: 2.2,
+      blushOpacity: 0.55,
+      handY: 122, handR: 8,
+      footY: 166, footRx: 11,
+      showHead: true,
+      showFront: true,
+      showBack: true,
+      showAura: true,   // 金光環
+      showCrown: false,
+      showWings: true,  // 背後翅膀
+    },
+    4: { // 神話 — 究極版（皇冠 + 大翅膀 + 底座光圈 + 光芒）
+      scale: 1.08,
+      bodyRx: 52, bodyRy: 56,
+      eyeRx: 7, eyeRy: 8,
+      pupilR: 2.4,
+      blushOpacity: 0.55,
+      handY: 122, handR: 8,
+      footY: 166, footRx: 11,
+      showHead: true,
+      showFront: true,
+      showBack: true,
+      showAura: true,
+      showCrown: true,     // 皇冠
+      showWings: true,     // 大翅膀
+    },
+  } as const;
+
+  const cfg = stageCfg[stage];
 
   return (
-    <g transform={`translate(100 105) scale(${stageScale}) translate(-100 -105)`}>
-      {/* 背後配件（先畫） */}
-      <SpeciesBackDeco species={sp.id} stage={stage} />
+    <g transform={`translate(100 105) scale(${cfg.scale}) translate(-100 -105)`}>
+      {/* Stage 4 底座光圈（最底層） */}
+      {stage === 4 && <StagePlatform />}
 
-      {/* 身體（橢圓頭身一體 — 吉伊卡哇核心） */}
-      <ellipse cx="100" cy="110" rx="52" ry="56" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.8" />
-      <ellipse cx="100" cy="110" rx="52" ry="56" fill="url(#bodyShine)" />
+      {/* Stage 3+ 背後光芒條紋 */}
+      {cfg.showAura && <StageAura stage={stage} />}
+
+      {/* Stage 3+ 背後翅膀 */}
+      {cfg.showWings && <StageWings stage={stage} />}
+
+      {/* 背後配件（尾巴等）— stage ≥ 2 才有 */}
+      {cfg.showBack && <SpeciesBackDeco species={sp.id} stage={stage} />}
+
+      {/* 身體 */}
+      <ellipse cx="100" cy="110" rx={cfg.bodyRx} ry={cfg.bodyRy} fill={bodyFill} stroke="#1c1c28" strokeWidth="2.8" />
+      <ellipse cx="100" cy="110" rx={cfg.bodyRx} ry={cfg.bodyRy} fill="url(#bodyShine)" />
 
       {/* 肚子色區 */}
-      <ellipse cx="100" cy="125" rx="34" ry="34" fill={sp.bellyColor} opacity="0.85" />
+      <ellipse cx="100" cy={110 + (cfg.bodyRy - 56) / 2 + 15} rx="34" ry={Math.min(34, cfg.bodyRy - 22)} fill={sp.bellyColor} opacity="0.85" />
 
-      {/* 耳朵/頭頂（依系別） */}
-      <SpeciesHeadDeco species={sp.id} stage={stage} />
+      {/* 耳朵/頭頂 — stage ≥ 2 才有 */}
+      {cfg.showHead && <SpeciesHeadDeco species={sp.id} stage={stage} />}
 
-      {/* 大眼睛（黑豆 + 白亮點） */}
-      <ellipse cx="82" cy="98" rx="6.5" ry="7.5" fill="#1c1c28" />
-      <ellipse cx="118" cy="98" rx="6.5" ry="7.5" fill="#1c1c28" />
-      <circle cx="84" cy="95" r="2.2" fill="#ffffff" />
-      <circle cx="120" cy="95" r="2.2" fill="#ffffff" />
-      {/* 眼睛下方小亮點（更萌） */}
-      <circle cx="80" cy="101" r="1" fill="#ffffff" opacity="0.8" />
-      <circle cx="116" cy="101" r="1" fill="#ffffff" opacity="0.8" />
+      {/* 眼睛（幼體眼超大） */}
+      <ellipse cx="82" cy="98" rx={cfg.eyeRx} ry={cfg.eyeRy} fill="#1c1c28" />
+      <ellipse cx="118" cy="98" rx={cfg.eyeRx} ry={cfg.eyeRy} fill="#1c1c28" />
+      <circle cx={82 + cfg.eyeRx * 0.3} cy={98 - cfg.eyeRy * 0.4} r={cfg.pupilR} fill="#ffffff" />
+      <circle cx={118 + cfg.eyeRx * 0.3} cy={98 - cfg.eyeRy * 0.4} r={cfg.pupilR} fill="#ffffff" />
+      <circle cx={82 - cfg.eyeRx * 0.3} cy={98 + cfg.eyeRy * 0.4} r={cfg.pupilR * 0.45} fill="#ffffff" opacity="0.8" />
+      <circle cx={118 - cfg.eyeRx * 0.3} cy={98 + cfg.eyeRy * 0.4} r={cfg.pupilR * 0.45} fill="#ffffff" opacity="0.8" />
+
+      {/* Stage 3+ 眼睛閃光 sparkle */}
+      {stage >= 3 && <EyeSparkle />}
 
       {/* 腮紅 */}
-      <ellipse cx="74" cy="115" rx="7" ry="4" fill={sp.blushColor} opacity="0.55" />
-      <ellipse cx="126" cy="115" rx="7" ry="4" fill={sp.blushColor} opacity="0.55" />
+      <ellipse cx="74" cy="115" rx="7" ry="4" fill={sp.blushColor} opacity={cfg.blushOpacity} />
+      <ellipse cx="126" cy="115" rx="7" ry="4" fill={sp.blushColor} opacity={cfg.blushOpacity} />
 
-      {/* 小嘴（w 型或 u 型） */}
+      {/* 小嘴 */}
       <SpeciesMouth species={sp.id} />
 
-      {/* 短手（豆豆） */}
-      <ellipse cx="54" cy="122" rx="8" ry="10" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
-      <ellipse cx="146" cy="122" rx="8" ry="10" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
+      {/* 短手 */}
+      <ellipse cx="54" cy={cfg.handY} rx={cfg.handR} ry={cfg.handR + 2} fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
+      <ellipse cx="146" cy={cfg.handY} rx={cfg.handR} ry={cfg.handR + 2} fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
 
       {/* 短腳 */}
-      <ellipse cx="80" cy="166" rx="11" ry="6" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
-      <ellipse cx="120" cy="166" rx="11" ry="6" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
+      <ellipse cx="80" cy={cfg.footY} rx={cfg.footRx} ry="6" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
+      <ellipse cx="120" cy={cfg.footY} rx={cfg.footRx} ry="6" fill={bodyFill} stroke="#1c1c28" strokeWidth="2.5" />
 
-      {/* 前景配件（額頭星星、蝴蝶結） */}
-      <SpeciesFrontDeco species={sp.id} stage={stage} />
+      {/* 前景配件（額頭星星、蝴蝶結） — stage ≥ 2 才有 */}
+      {cfg.showFront && <SpeciesFrontDeco species={sp.id} stage={stage} />}
+
+      {/* Stage 4 皇冠 */}
+      {cfg.showCrown && <StageCrown />}
+    </g>
+  );
+}
+
+// ============================================================
+// Stage 特效元件
+// ============================================================
+
+/** Stage 4 底座光圈（金色圓盤） */
+function StagePlatform() {
+  return (
+    <g>
+      <ellipse cx="100" cy="178" rx="55" ry="10" fill="#ffd7a8" opacity="0.45" />
+      <ellipse cx="100" cy="178" rx="40" ry="6" fill="#ffe6b8" opacity="0.65" />
+    </g>
+  );
+}
+
+/** Stage 3+ 背後金光環 + 光芒條紋 */
+function StageAura({ stage }: { stage: number }) {
+  const strokeOpacity = stage === 4 ? 0.75 : 0.5;
+  const rayCount = stage === 4 ? 12 : 8;
+  const rays = Array.from({ length: rayCount }, (_, i) => {
+    const angle = (i / rayCount) * 360;
+    return angle;
+  });
+  return (
+    <g transform="translate(100 105)">
+      {rays.map((a, i) => (
+        <rect
+          key={i}
+          x="-1.5"
+          y="-85"
+          width="3"
+          height={stage === 4 ? 30 : 22}
+          fill="#ffe6a8"
+          opacity={strokeOpacity}
+          transform={`rotate(${a})`}
+          rx="1.5"
+        />
+      ))}
+      {/* 金光環 */}
+      <ellipse cx="0" cy="-55" rx="42" ry="9" fill="none" stroke="#ffd580" strokeWidth="3" opacity="0.8" />
+    </g>
+  );
+}
+
+/** Stage 3+ 背後翅膀（天使風） */
+function StageWings({ stage }: { stage: number }) {
+  const scale = stage === 4 ? 1.25 : 0.9;
+  return (
+    <g transform={`translate(100 110) scale(${scale}) translate(-100 -110)`}>
+      {/* 左翅膀 */}
+      <path
+        d="M 45 100 Q 12 80 18 115 Q 28 110 38 120 Q 30 98 45 100 Z"
+        fill="#ffffff"
+        stroke="#1c1c28"
+        strokeWidth="1.8"
+        opacity="0.95"
+      />
+      <path d="M 25 100 Q 22 108 28 112" fill="none" stroke="#c8d4e8" strokeWidth="1.5" />
+      {/* 右翅膀 */}
+      <path
+        d="M 155 100 Q 188 80 182 115 Q 172 110 162 120 Q 170 98 155 100 Z"
+        fill="#ffffff"
+        stroke="#1c1c28"
+        strokeWidth="1.8"
+        opacity="0.95"
+      />
+      <path d="M 175 100 Q 178 108 172 112" fill="none" stroke="#c8d4e8" strokeWidth="1.5" />
+    </g>
+  );
+}
+
+/** Stage 4 皇冠 */
+function StageCrown() {
+  return (
+    <g>
+      <path
+        d="M 75 50 L 85 65 L 92 40 L 100 62 L 108 40 L 115 65 L 125 50 L 122 72 L 78 72 Z"
+        fill="#ffd447"
+        stroke="#b8820f"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      {/* 寶石 */}
+      <circle cx="92" cy="62" r="2.5" fill="#ff8eae" />
+      <circle cx="100" cy="60" r="3" fill="#5aa4ff" />
+      <circle cx="108" cy="62" r="2.5" fill="#8ed172" />
+    </g>
+  );
+}
+
+/** Stage 3+ 眼睛閃光 */
+function EyeSparkle() {
+  return (
+    <g>
+      <text x="88" y="90" fontSize="10" fill="#fff4a3">✦</text>
+      <text x="124" y="90" fontSize="10" fill="#fff4a3">✦</text>
     </g>
   );
 }
