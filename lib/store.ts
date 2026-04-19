@@ -32,6 +32,10 @@ import {
   insertQuestionAnswerRemote,
   rateQuestionAnswerRemote,
   getCurrentUser,
+  upsertBucketRecordRemote,
+  removeBucketRecordRemote,
+  insertAnniversaryRemote,
+  removeAnniversaryRemote,
 } from "./supabaseAdapter";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
@@ -750,6 +754,29 @@ export const useGame = create<State>()(
             status: r.status,
             createdAt: new Date(r.created_at).toLocaleDateString("zh-TW"),
           })),
+          // 跨裝置同步：紀念日
+          anniversaries: (() => {
+            const rows = (remote as any).anniversaries ?? [];
+            if (!Array.isArray(rows)) return get().anniversaries;
+            return rows.map((r: any) => ({
+              id: r.id,
+              label: r.label,
+              date: r.date,
+              recurring: r.recurring ?? true,
+              emoji: r.emoji ?? "💝",
+            }));
+          })(),
+          // 跨裝置同步：人生清單完成項
+          bucketList: (() => {
+            const rows = (remote as any).bucketRecords ?? [];
+            if (!Array.isArray(rows)) return get().bucketList;
+            return rows.map((r: any) => ({
+              id: r.id,
+              doneAt: r.done_at,
+              note: r.note ?? undefined,
+              photoUrl: r.photo_url ?? undefined,
+            }));
+          })(),
           // 跨裝置同步：遠端 island_items → local island（從 ISLAND_SHOP 查 label/emoji）
           island: (() => {
             const remoteItems = remote.island ?? [];
@@ -967,12 +994,19 @@ export const useGame = create<State>()(
       },
 
       addAnniversary: (label, date, recurring, emoji) => {
-        const id = uid();
-        set({ anniversaries: [...get().anniversaries, { id, label, date, recurring, emoji }] });
+        const id = crypto?.randomUUID ? crypto.randomUUID() : uid();
+        const anniv = { id, label, date, recurring, emoji };
+        set({ anniversaries: [...get().anniversaries, anniv] });
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          insertAnniversaryRemote(get().couple.id, anniv).catch(() => null);
+        }
       },
 
       removeAnniversary: (id) => {
         set({ anniversaries: get().anniversaries.filter((a) => a.id !== id) });
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          removeAnniversaryRemote(id).catch(() => null);
+        }
       },
 
       submitQuestionAnswer: (questionId, text) => {
@@ -1724,15 +1758,22 @@ export const useGame = create<State>()(
         if (existing) {
           // 已完成的不可取消（儀式感）— 但可更新 note / proof
           if (note !== undefined || proof !== undefined) {
+            const updated = {
+              ...existing,
+              note: note !== undefined ? (note.trim() || undefined) : existing.note,
+              proof: proof ? { ...proof, addedAt: new Date().toISOString() } : existing.proof,
+            };
             set({
-              bucketList: get().bucketList.map((r) =>
-                r.id === id ? {
-                  ...r,
-                  note: note !== undefined ? (note.trim() || undefined) : r.note,
-                  proof: proof ? { ...proof, addedAt: new Date().toISOString() } : r.proof,
-                } : r,
-              ),
+              bucketList: get().bucketList.map((r) => r.id === id ? updated : r),
             });
+            if (isSupabaseEnabled() && get().couple.id !== "me") {
+              upsertBucketRecordRemote(get().couple.id, {
+                id: updated.id,
+                doneAt: updated.doneAt,
+                note: updated.note,
+                photoUrl: updated.proof?.kind === "photo" ? updated.proof.value : undefined,
+              }).catch(() => null);
+            }
           }
           return { newlyDone: false };
         }
@@ -1755,6 +1796,16 @@ export const useGame = create<State>()(
           bucketList: [...get().bucketList, record],
           couple: nextCoupleBase,
         });
+        // mirror bucket + couple coins/love 到 Supabase
+        if (isSupabaseEnabled() && c.id !== "me") {
+          upsertBucketRecordRemote(c.id, {
+            id: record.id,
+            doneAt: record.doneAt,
+            note: record.note,
+            photoUrl: record.proof?.kind === "photo" ? record.proof.value : undefined,
+          }).catch(() => null);
+          mirrorCouple(c.id, { coins: nextCoupleBase.coins, loveIndex: nextCoupleBase.loveIndex });
+        }
         // 發動態
         get().addMoment({
           type: "custom",

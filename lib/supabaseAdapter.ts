@@ -150,6 +150,8 @@ export interface FullCoupleState {
   alliances: any[];
   allianceMembers: any[];
   friendships: any[];
+  bucketRecords?: any[];
+  anniversaries?: any[];
 }
 
 export async function pullCoupleState(coupleId: string): Promise<FullCoupleState | null> {
@@ -163,6 +165,7 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
       coupleRes, usersRes, subsRes, petRes, cardsRes, itemsRes,
       ritualRes, streakRes, redRes, momentsRes, giftsRes, qaRes,
       publicCouplesRes, alliancesRes, allianceMembersRes, friendshipsRes,
+      bucketRes, annivRes,
     ] = await Promise.all([
       client.from("couples").select("*").eq("id", coupleId).maybeSingle(),
       client.from("users").select("*").eq("couple_id", coupleId),
@@ -180,6 +183,8 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
       client.from("alliances").select("*").limit(50),
       client.from("alliance_members").select("*"),
       client.from("friendships").select("*").or(`couple_a_id.eq.${coupleId},couple_b_id.eq.${coupleId}`).eq("status", "accepted"),
+      client.from("bucket_records").select("*").eq("couple_id", coupleId),
+      client.from("anniversaries").select("*").eq("couple_id", coupleId).order("date", { ascending: true }),
     ]);
 
     return {
@@ -199,6 +204,8 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
       alliances: alliancesRes.data ?? [],
       allianceMembers: allianceMembersRes.data ?? [],
       friendships: friendshipsRes.data ?? [],
+      bucketRecords: bucketRes.data ?? [],
+      anniversaries: annivRes.data ?? [],
     };
   } catch (e) {
     console.warn("[sb] pullCoupleState", e);
@@ -388,6 +395,67 @@ export async function updateStreak(
     if (extras?.knightShields !== undefined) row.knight_shields = extras.knightShields;
     if (extras?.knightShieldsResetWeek !== undefined) row.knight_shields_reset_week = extras.knightShieldsResetWeek;
     await client.from("streaks").upsert(row);
+  } catch { /* ignore */ }
+}
+
+// ============================================================
+// Bucket records（人生清單完成項）
+// ============================================================
+export async function upsertBucketRecordRemote(
+  coupleId: string,
+  record: { id: string; doneAt: string; note?: string; photoUrl?: string },
+): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("bucket_records").upsert({
+      couple_id: coupleId,
+      id: record.id,
+      done_at: record.doneAt.slice(0, 10),
+      note: record.note ?? null,
+      photo_url: record.photoUrl ?? null,
+    }, { onConflict: "couple_id,id" });
+  } catch { /* ignore */ }
+}
+
+export async function removeBucketRecordRemote(coupleId: string, id: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("bucket_records").delete().eq("couple_id", coupleId).eq("id", id);
+  } catch { /* ignore */ }
+}
+
+// ============================================================
+// Anniversaries（紀念日）
+// ============================================================
+export async function insertAnniversaryRemote(
+  coupleId: string,
+  a: { id: string; label: string; date: string; recurring: boolean; emoji: string },
+): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("anniversaries").insert({
+      id: a.id,
+      couple_id: coupleId,
+      label: a.label,
+      date: a.date,
+      recurring: a.recurring,
+      emoji: a.emoji,
+    });
+  } catch { /* ignore */ }
+}
+
+export async function removeAnniversaryRemote(id: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("anniversaries").delete().eq("id", id);
   } catch { /* ignore */ }
 }
 
