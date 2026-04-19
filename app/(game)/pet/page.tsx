@@ -143,7 +143,18 @@ export default function PetPage() {
         )}
 
         {/* 下一階條件 */}
-        {!isMaxStage && (
+        {!isMaxStage && (() => {
+          const totalFeeds = (pet.feedCountQueen ?? 0) + (pet.feedCountPrince ?? 0);
+          // 預估還需餵幾次（以最嚴苛條件算）：
+          // 1. 屬性每次 +5 / 5 屬性平均 +1
+          // 2. 餵屬性的那個 role bond +4
+          const feedsForAttr = Math.max(0, Math.ceil((nextReq.attr - avg)));  // 平均每餵 1 次 avg +1
+          const feedsForBondQueen = Math.max(0, Math.ceil((nextReq.bond - bondQueen) / 4));
+          const feedsForBondPrince = Math.max(0, Math.ceil((nextReq.bond - bondPrince) / 4));
+          const estimatedFeeds = Math.max(feedsForAttr, feedsForBondQueen + feedsForBondPrince);
+          // 預估天數（以每天 3 次餵食為常見節奏）
+          const estimatedDays = Math.ceil(estimatedFeeds / 3);
+          return (
           <div className="mt-5 mx-auto max-w-sm bg-white/70 rounded-2xl p-3 text-left">
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs text-empire-mute">距離 <b className="text-empire-ink">{PET_STAGE_LABEL[nextStageIdx]}</b> 還差</div>
@@ -161,12 +172,39 @@ export default function PetPage() {
               )}
               {nextReq.minFeeds && (
                 <div className="text-[10px] text-empire-mute italic">
-                  · 或累積餵食 {nextReq.minFeeds} 次即可破殼 (目前 {(pet.feedCountQueen ?? 0) + (pet.feedCountPrince ?? 0)} 次)
+                  · 或累積餵食 {nextReq.minFeeds} 次即可破殼（目前 {totalFeeds} 次）
                 </div>
               )}
             </div>
+            {/* 預估天數 */}
+            {estimatedFeeds > 0 && (
+              <div className="mt-3 p-2 rounded-xl bg-empire-cream/60 border border-empire-gold/30 text-center">
+                <div className="text-[10px] text-empire-mute">
+                  還需 <b className="text-empire-berry">{estimatedFeeds}</b> 次餵食
+                  {feedsForBondQueen > 0 && feedsForBondPrince > 0 && (
+                    <>（{couple.queen.nickname} {feedsForBondQueen} 次 · {couple.prince.nickname} {feedsForBondPrince} 次）</>
+                  )}
+                </div>
+                <div className="text-sm font-bold text-empire-ink mt-1">
+                  預估 <span className="text-empire-berry text-lg">{estimatedDays}</span> 天可達成
+                </div>
+                <div className="text-[9px] text-empire-mute mt-0.5">以平均每天餵 3 次估算</div>
+              </div>
+            )}
+            {/* 餵食統計 */}
+            <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+              <div className="p-2 rounded-lg bg-rose-50">
+                <div className="text-empire-mute">{couple.queen.nickname} 已餵</div>
+                <div className="font-bold text-empire-ink"><b className="text-rose-600 text-base">{pet.feedCountQueen ?? 0}</b> 次</div>
+              </div>
+              <div className="p-2 rounded-lg bg-sky-50">
+                <div className="text-empire-mute">{couple.prince.nickname} 已餵</div>
+                <div className="font-bold text-empire-ink"><b className="text-sky-600 text-base">{pet.feedCountPrince ?? 0}</b> 次</div>
+              </div>
+            </div>
           </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* 快速互動區 — 不用開屬性也能加 bond */}
@@ -218,7 +256,14 @@ export default function PetPage() {
             >
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium">{ATTR_LABEL[k]}</span>
-                <span className="text-slate-500">{pet.attrs[k]} / 100</span>
+                <span className="text-slate-500">
+                  {pet.attrs[k]} / 100
+                  {pet.attrs[k] < 100 && (
+                    <span className="ml-1 text-[10px] text-empire-mute">
+                      · 還差 {Math.ceil((100 - pet.attrs[k]) / 5)} 次點到滿
+                    </span>
+                  )}
+                </span>
               </div>
               <div className="h-2.5 bg-empire-cloud rounded-full overflow-hidden">
                 <motion.div
