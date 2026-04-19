@@ -164,21 +164,77 @@ export const INITIAL_ISLAND: IslandItem[] = [
   { id: "i2", catalogId: "cat", label: "新手貓", emoji: "🐈", x: 58, y: 45 },
 ];
 
-export interface ShopItem { id: string; label: string; emoji: string; price: number }
+export type FurnitureRoom = "living" | "bedroom" | "kitchen" | "bathroom" | "garden" | "deco";
+export type FurnitureInteraction =
+  | "petBond"        // 點擊 → 寵物雙 bond +2
+  | "linkQuestions"  // 點擊 → 跳問答頁
+  | "linkRituals"    // 點擊 → 跳儀式打卡
+  | "linkBucket"     // 點擊 → 跳人生清單
+  | "linkExchange"   // 點擊 → 跳兌換
+  | "linkRecap"      // 點擊 → 跳年度回顧
+  | "linkArchive"    // 點擊 → 跳畢業紀念
+  | "feedTreat"      // 點擊 → 餵寵物零食
+  | "loveBoost"      // 點擊 → +5 愛意
+  | "playMusic";     // 點擊 → 主題曲（toast 動畫）
+
+export interface ShopItem {
+  id: string;
+  label: string;
+  emoji: string;
+  price: number;
+  room?: FurnitureRoom;
+  interaction?: FurnitureInteraction;
+  desc?: string;        // 互動描述
+}
 
 export const ISLAND_SHOP: ShopItem[] = [
-  { id: "tree_sakura", label: "櫻花樹", emoji: "🌸", price: 50 },
-  { id: "tree_pine", label: "松樹", emoji: "🌲", price: 40 },
-  { id: "fountain", label: "愛心噴泉", emoji: "⛲", price: 200 },
-  { id: "bench", label: "長椅", emoji: "🪑", price: 30 },
-  { id: "cat", label: "城堡貓", emoji: "🐈", price: 120 },
-  { id: "flower", label: "花圃", emoji: "🌷", price: 20 },
-  { id: "castle_tower", label: "城堡塔", emoji: "🗼", price: 500 },
-  { id: "lantern", label: "燈籠", emoji: "🏮", price: 35 },
-  { id: "gazebo", label: "涼亭", emoji: "⛩️", price: 280 },
-  { id: "pond", label: "荷花池", emoji: "🪷", price: 150 },
-  { id: "swan", label: "天鵝", emoji: "🦢", price: 220 },
-  { id: "rainbow", label: "彩虹", emoji: "🌈", price: 800 },
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 客廳 living (8) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "sofa",       label: "雙人沙發", emoji: "🛋️", price: 200,  room: "living",  interaction: "petBond",       desc: "一起坐 · 寵物親密 +2" },
+  { id: "tv",         label: "電視",     emoji: "📺", price: 350,  room: "living",  interaction: "linkRecap",     desc: "點擊看年度回顧" },
+  { id: "bookshelf",  label: "書櫃",     emoji: "📚", price: 180,  room: "living",  interaction: "linkBucket",    desc: "翻看人生清單" },
+  { id: "piano",      label: "鋼琴",     emoji: "🎹", price: 600,  room: "living",  interaction: "playMusic",     desc: "彈一首主題曲" },
+  { id: "rug",        label: "地毯",     emoji: "🟫", price: 80,   room: "living",  desc: "讓家更柔軟" },
+  { id: "lamp_floor", label: "立燈",     emoji: "💡", price: 60,   room: "living",  desc: "暖黃光" },
+  { id: "clock",      label: "時鐘",     emoji: "🕰️", price: 90,   room: "living",  desc: "陪你們度過時光" },
+  { id: "guitar",     label: "吉他",     emoji: "🎸", price: 250,  room: "living",  interaction: "playMusic",     desc: "你彈我聽" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 臥室 bedroom (6) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "bed",        label: "雙人床",   emoji: "🛏️", price: 400,  room: "bedroom", interaction: "linkRituals",   desc: "去打晨/晚安卡" },
+  { id: "wardrobe",   label: "衣櫃",     emoji: "🚪", price: 200,  room: "bedroom", desc: "一起選衣" },
+  { id: "mirror",     label: "鏡子",     emoji: "🪞", price: 120,  room: "bedroom", interaction: "loveBoost",     desc: "互看一眼 +5 愛意" },
+  { id: "lamp_table", label: "床頭燈",   emoji: "🏮", price: 50,   room: "bedroom", desc: "睡前的陪伴" },
+  { id: "diary",      label: "日記本",   emoji: "📓", price: 100,  room: "bedroom", interaction: "linkQuestions", desc: "去寫深度問答" },
+  { id: "alarm",      label: "鬧鐘",     emoji: "⏰", price: 40,   room: "bedroom", desc: "明天記得起床" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 廚房 kitchen (5) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "fridge",     label: "冰箱",     emoji: "🧊", price: 250,  room: "kitchen", interaction: "feedTreat",     desc: "拿零食餵寵物" },
+  { id: "stove",      label: "瓦斯爐",   emoji: "🍳", price: 180,  room: "kitchen", desc: "今晚煮什麼？" },
+  { id: "coffee",     label: "咖啡機",   emoji: "☕", price: 220,  room: "kitchen", interaction: "loveBoost",     desc: "為對方泡杯咖啡 +5 愛意" },
+  { id: "table_dine", label: "餐桌",     emoji: "🍽️", price: 150,  room: "kitchen", desc: "吃飯時間" },
+  { id: "wine",       label: "酒櫃",     emoji: "🍷", price: 350,  room: "kitchen", interaction: "loveBoost",     desc: "微醺夜晚 +5 愛意" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 浴室 bathroom (4) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "bathtub",    label: "浴缸",     emoji: "🛁", price: 380,  room: "bathroom",interaction: "linkExchange",  desc: "兌換泡澡夜獎勵" },
+  { id: "shower",     label: "淋浴間",   emoji: "🚿", price: 200,  room: "bathroom",desc: "新一天的開始" },
+  { id: "towel",      label: "毛巾架",   emoji: "🧖", price: 80,   room: "bathroom",desc: "幫對方擦乾頭髮" },
+  { id: "candle",     label: "香氛蠟燭", emoji: "🕯️", price: 100,  room: "bathroom",interaction: "loveBoost",     desc: "點亮療癒香氣 +5 愛意" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 庭院 garden (5) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "tree_sakura",label: "櫻花樹",   emoji: "🌸", price: 50,   room: "garden",  desc: "春天會盛開" },
+  { id: "tree_pine",  label: "松樹",     emoji: "🌲", price: 40,   room: "garden",  desc: "冬天的守護" },
+  { id: "flower",     label: "花圃",     emoji: "🌷", price: 20,   room: "garden",  interaction: "petBond",       desc: "撫摸植物 · 寵物親密 +2" },
+  { id: "fountain",   label: "愛心噴泉", emoji: "⛲", price: 200,  room: "garden",  desc: "幸福象徵" },
+  { id: "swing",      label: "鞦韆",     emoji: "🪂", price: 180,  room: "garden",  interaction: "petBond",       desc: "盪鞦韆 · 親密 +2" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 裝飾 deco (8) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "cat",        label: "家貓",     emoji: "🐈", price: 120,  room: "deco",    interaction: "petBond",       desc: "撫摸 · 親密 +2" },
+  { id: "dog",        label: "家犬",     emoji: "🐕", price: 120,  room: "deco",    interaction: "petBond",       desc: "陪散步 · 親密 +2" },
+  { id: "fish",       label: "魚缸",     emoji: "🐠", price: 150,  room: "deco",    desc: "看魚游療癒" },
+  { id: "plant",      label: "盆栽",     emoji: "🪴", price: 60,   room: "deco",    desc: "綠意" },
+  { id: "frame",      label: "相框",     emoji: "🖼️", price: 100,  room: "deco",    interaction: "linkArchive",   desc: "看畢業紀念冊" },
+  { id: "lantern",    label: "提燈",     emoji: "🏮", price: 35,   room: "deco",    desc: "節日氣氛" },
+  { id: "music_box",  label: "音樂盒",   emoji: "🎵", price: 280,  room: "deco",    interaction: "playMusic",     desc: "旋律響起" },
+  { id: "wishstar",   label: "許願星",   emoji: "🌟", price: 500,  room: "deco",    interaction: "loveBoost",     desc: "對星星許願 +5 愛意" },
 ];
 
 /** 動森 Nook 每日特惠：依日期 rotate 出 2 件 7 折 */
