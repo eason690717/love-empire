@@ -35,17 +35,19 @@ export default function IslandPage() {
 
   // 季節背景
   const currentSeason = season();
+  // 小窩室內背景：上半牆壁 (奶色) + 下半木地板
   const skyBg: Record<string, string> = {
-    spring: "linear-gradient(180deg, #cee7f5 0%, #e8f5ce 55%, #a6d18a 100%)",
-    summer: "linear-gradient(180deg, #9ed0f5 0%, #d4f0ff 50%, #8ed172 100%)",
-    autumn: "linear-gradient(180deg, #ffd5a8 0%, #ffe8c8 50%, #e0b87a 100%)",
-    winter: "linear-gradient(180deg, #c8dbeb 0%, #e8efef 50%, #c8d2d2 100%)",
+    spring: "linear-gradient(180deg, #fff4e4 0%, #fff9ec 55%, #d9b88a 60%, #b89268 100%)",
+    summer: "linear-gradient(180deg, #fef0dc 0%, #fff4e4 55%, #d4a878 60%, #b08558 100%)",
+    autumn: "linear-gradient(180deg, #ffe5c5 0%, #fff2da 55%, #c88a5a 60%, #a86d3a 100%)",
+    winter: "linear-gradient(180deg, #f0f4f8 0%, #fafcfe 55%, #c8a878 60%, #a08858 100%)",
   };
+  // 季節家飾：窗外景色/牆上掛飾
   const seasonFlora: Record<string, { emoji: string; positions: { x: number; y: number }[] }> = {
-    spring: { emoji: "🌸", positions: [{ x: 8, y: 94 }, { x: 92, y: 96 }, { x: 40, y: 97 }] },
-    summer: { emoji: "🌻", positions: [{ x: 10, y: 92 }, { x: 90, y: 95 }, { x: 35, y: 96 }] },
-    autumn: { emoji: "🍁", positions: [{ x: 12, y: 94 }, { x: 88, y: 96 }, { x: 45, y: 96 }] },
-    winter: { emoji: "❄️", positions: [{ x: 15, y: 93 }, { x: 85, y: 95 }, { x: 50, y: 96 }] },
+    spring: { emoji: "🌸", positions: [{ x: 85, y: 18 }, { x: 15, y: 20 }] },
+    summer: { emoji: "🌻", positions: [{ x: 85, y: 18 }, { x: 15, y: 20 }] },
+    autumn: { emoji: "🍁", positions: [{ x: 85, y: 18 }, { x: 15, y: 20 }] },
+    winter: { emoji: "❄️", positions: [{ x: 85, y: 18 }, { x: 15, y: 20 }] },
   };
 
   const handleGreet = () => {
@@ -136,17 +138,32 @@ export default function IslandPage() {
             }}
           />
         )}
-        <div className="absolute top-5 right-8 text-5xl animate-sparkle">☀️</div>
-        <div className="absolute top-6 left-10 text-3xl opacity-85 animate-float-slow">☁️</div>
-        <div className="absolute top-14 left-40 text-2xl opacity-75 animate-float-slow" style={{ animationDelay: "1s" }}>☁️</div>
-        <div className="absolute bottom-[45%] left-0 right-0 text-center text-6xl opacity-30 tracking-[-0.1em]">⛰️⛰️⛰️</div>
-
-        {/* 季節花草 */}
-        {seasonFlora[currentSeason].positions.map((pos, i) => (
-          <div key={i} className="absolute text-xl" style={{ left: `${pos.x}%`, top: `${pos.y}%` }}>
-            {seasonFlora[currentSeason].emoji}
-          </div>
-        ))}
+        {/* 牆面裝飾（上半） */}
+        <div className="absolute top-3 left-[25%] text-3xl opacity-80">🖼️</div>
+        <div className="absolute top-5 left-[75%] text-3xl opacity-80">🪞</div>
+        {/* 兩扇窗看出去的景色 */}
+        <div
+          className="absolute top-4 left-[8%] w-16 h-20 rounded-md border-4 border-empire-ink/20 shadow-inner flex items-center justify-center overflow-hidden"
+          style={{ background: "linear-gradient(180deg, #bfe3f9 0%, #d8eefd 60%, #e7f4d5 100%)" }}
+          title={`從窗口看出去 · ${currentSeason === "spring" ? "春" : currentSeason === "summer" ? "夏" : currentSeason === "autumn" ? "秋" : "冬"}`}
+        >
+          <span className="text-2xl">{seasonFlora[currentSeason].emoji}</span>
+        </div>
+        <div
+          className="absolute top-4 right-[8%] w-16 h-20 rounded-md border-4 border-empire-ink/20 shadow-inner flex items-center justify-center overflow-hidden"
+          style={{ background: "linear-gradient(180deg, #bfe3f9 0%, #d8eefd 60%, #e7f4d5 100%)" }}
+        >
+          <span className="text-2xl">{seasonFlora[currentSeason].emoji}</span>
+        </div>
+        {/* 牆面與地板交界線（踢腳線） */}
+        <div className="absolute left-0 right-0 h-[3px] bg-empire-ink/25" style={{ top: "55%" }} />
+        {/* 地板紋路 */}
+        <div
+          className="absolute left-0 right-0 bottom-0 top-[55%] pointer-events-none opacity-25"
+          style={{
+            backgroundImage: "repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 60px)",
+          }}
+        />
 
         {/* NPC 訪客 */}
         <div

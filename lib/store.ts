@@ -1287,17 +1287,58 @@ export const useGame = create<State>()(
         if (get().couple.coins < price) return;
         const localId = uid();
         const nextCouple = { ...get().couple, coins: get().couple.coins - price };
+
+        // 新家具依 room 預設放到對應區域（使用者可拖）
+        // 舞台 100x100 百分比。上半 (<55) 為牆面，下半 (>55) 為地板。
+        //   living (客廳)   → 地板中央偏左
+        //   bedroom (臥室)  → 地板右下
+        //   kitchen (廚房)  → 地板左下
+        //   bathroom (浴室) → 地板右中
+        //   garden (庭院)   → 上半左右（像窗外）
+        //   deco (裝飾)     → 隨機散佈
+        const ROOM_SPAWN: Record<string, { x: [number, number]; y: [number, number] }> = {
+          living:   { x: [30, 55], y: [62, 80] },
+          bedroom:  { x: [65, 90], y: [65, 85] },
+          kitchen:  { x: [10, 35], y: [62, 80] },
+          bathroom: { x: [65, 88], y: [58, 72] },
+          garden:   { x: [15, 85], y: [20, 45] },
+          deco:     { x: [20, 80], y: [40, 85] },
+        };
+        // 從 ISLAND_SHOP 找該 catalog 的 room
+        const catalogItem = (get() as any).rewards ? undefined : undefined; // 不用 rewards
+        // 動態 import 避免 cycle
+        const pickSpawn = async () => {
+          try {
+            const { ISLAND_SHOP } = await import("./demoData");
+            const shopItem = ISLAND_SHOP.find((s) => s.id === catalogId);
+            const room = shopItem?.room ?? "deco";
+            const range = ROOM_SPAWN[room] ?? ROOM_SPAWN.deco;
+            const x = range.x[0] + Math.random() * (range.x[1] - range.x[0]);
+            const y = range.y[0] + Math.random() * (range.y[1] - range.y[0]);
+            return { x: Math.round(x), y: Math.round(y) };
+          } catch {
+            return { x: 50, y: 60 };
+          }
+        };
+
+        // 先用 50,60 當 placeholder，之後非同步改 spawn 位置
         set({
           couple: nextCouple,
           island: [
             ...get().island,
-            { id: localId, catalogId, label, emoji, x: 50, y: 50 },
+            { id: localId, catalogId, label, emoji, x: 50, y: 60 },
           ],
         });
         mirrorCouple(nextCouple.id, { coins: nextCouple.coins });
-        if (isSupabaseEnabled() && nextCouple.id !== "me") {
-          addIslandItemRemote(nextCouple.id, catalogId, 50, 50).catch(() => null);
-        }
+
+        pickSpawn().then(({ x, y }) => {
+          set({
+            island: get().island.map((it) => (it.id === localId ? { ...it, x, y } : it)),
+          });
+          if (isSupabaseEnabled() && nextCouple.id !== "me") {
+            addIslandItemRemote(nextCouple.id, catalogId, x, y).catch(() => null);
+          }
+        });
       },
 
       removeIslandItem: (id) => {
