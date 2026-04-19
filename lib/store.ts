@@ -671,19 +671,26 @@ export const useGame = create<State>()(
           });
         }
 
+        const curCouple = get().couple;
         set({
           couple: {
-            id: cr.id,
-            name: cr.name,
-            inviteCode: cr.invite_code,
-            kingdomLevel: cr.kingdom_level,
-            coins: cr.coins,
-            title: cr.title,
-            loveIndex: cr.love_index,
-            bio: cr.bio ?? "",
-            privacy: cr.privacy ?? "public",
-            queen: { nickname: queenUser?.nickname ?? "阿紅" },
-            prince: { nickname: princeUser?.nickname ?? "阿藍" },
+            id: cr.id ?? curCouple.id,
+            name: cr.name ?? curCouple.name,
+            inviteCode: cr.invite_code ?? curCouple.inviteCode,
+            kingdomLevel: cr.kingdom_level ?? curCouple.kingdomLevel,
+            coins: cr.coins ?? curCouple.coins,
+            title: cr.title ?? curCouple.title,
+            loveIndex: cr.love_index ?? curCouple.loveIndex,
+            bio: cr.bio ?? curCouple.bio ?? "",
+            privacy: cr.privacy ?? curCouple.privacy ?? "public",
+            queen: { nickname: queenUser?.nickname ?? curCouple.queen.nickname ?? "阿紅" },
+            prince: { nickname: princeUser?.nickname ?? curCouple.prince.nickname ?? "阿藍" },
+            // 補齊原本遺漏的 couple 欄位
+            relationshipType: cr.relationship_type ?? curCouple.relationshipType,
+            pausedAt: cr.paused_at ?? curCouple.pausedAt,
+            pauseReason: cr.pause_reason ?? curCouple.pauseReason,
+            pauseInitiator: cr.pause_initiator ?? curCouple.pauseInitiator,
+            archivedAt: cr.archived_at ?? curCouple.archivedAt,
           },
           submissions: (remote.submissions ?? []).map((s: any) => ({
             id: s.id,

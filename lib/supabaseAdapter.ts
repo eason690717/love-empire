@@ -235,6 +235,12 @@ export async function updateCoupleFields(coupleId: string, fields: Partial<Coupl
     if (fields.title) map.title = fields.title;
     if (fields.bio !== undefined) map.bio = fields.bio;
     if (fields.privacy) map.privacy = fields.privacy;
+    // 情侶類型 + 暫停/封存狀態（原本這些欄位漏掉，設定頁改了存不到 Supabase）
+    if (fields.relationshipType !== undefined) map.relationship_type = fields.relationshipType;
+    if (fields.pausedAt !== undefined) map.paused_at = fields.pausedAt;
+    if (fields.pauseReason !== undefined) map.pause_reason = fields.pauseReason;
+    if (fields.pauseInitiator !== undefined) map.pause_initiator = fields.pauseInitiator;
+    if (fields.archivedAt !== undefined) map.archived_at = fields.archivedAt;
     await client.from("couples").update(map).eq("id", coupleId);
   } catch (e) { console.warn("[sb] updateCouple", e); }
 }
