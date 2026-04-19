@@ -1498,7 +1498,11 @@ export const useGame = create<State>()(
             };
             set({ streak: nextStreak });
             if (isSupabaseEnabled() && get().couple.id !== "me") {
-              updateStreak(get().couple.id, nextStreak.current, nextStreak.longest).catch(() => null);
+              updateStreak(get().couple.id, nextStreak.current, nextStreak.longest, {
+                knightShields: nextStreak.knightShields,
+                knightShieldsResetWeek: nextStreak.knightShieldsResetWeek,
+                lastDate: nextStreak.lastDate,
+              }).catch(() => null);
             }
             if ([7, 14, 30, 60, 100, 200, 365].includes(nextCurrent)) {
               get().addMoment({

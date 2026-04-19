@@ -370,16 +370,24 @@ export async function upsertRitual(coupleId: string, morning: boolean, night: bo
   } catch { /* ignore */ }
 }
 
-export async function updateStreak(coupleId: string, current: number, longest: number): Promise<void> {
+export async function updateStreak(
+  coupleId: string,
+  current: number,
+  longest: number,
+  extras?: { knightShields?: number; knightShieldsResetWeek?: string; lastDate?: string },
+): Promise<void> {
   const sb = await getSupabase();
   if (!sb) return;
   try {
     const client: any = sb;
-    await client.from("streaks").upsert({
+    const row: any = {
       couple_id: coupleId,
       current, longest,
-      last_date: new Date().toISOString().slice(0, 10),
-    });
+      last_date: extras?.lastDate ?? new Date().toISOString().slice(0, 10),
+    };
+    if (extras?.knightShields !== undefined) row.knight_shields = extras.knightShields;
+    if (extras?.knightShieldsResetWeek !== undefined) row.knight_shields_reset_week = extras.knightShieldsResetWeek;
+    await client.from("streaks").upsert(row);
   } catch { /* ignore */ }
 }
 
