@@ -91,6 +91,11 @@ export interface Redemption {
   redeemedBy: "queen" | "prince";
   status: "unused" | "used";
   createdAt: string;
+  icon?: string;              // reward 的 emoji（票券大圖）
+  category?: RewardCategory;  // 用於卡片配色
+  adult?: boolean;            // 成人向標記
+  usedAt?: string;            // 使用完成日期
+  usedNote?: string;          // 使用後的心得（可選）
 }
 
 export interface MemoryCard {

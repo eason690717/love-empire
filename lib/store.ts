@@ -107,7 +107,7 @@ interface State {
   submitTask: (taskId: string) => void;
   reviewSubmission: (id: string, approve: boolean, note?: string) => void;
   redeem: (rewardId: string) => void;
-  useRedemption: (id: string) => void;
+  useRedemption: (id: string, note?: string) => void;
   feedPet: (attr: keyof Pet["attrs"]) => void;
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
@@ -924,6 +924,9 @@ export const useGame = create<State>()(
           redeemedBy: get().role,
           status: "unused",
           createdAt: new Date().toLocaleDateString("zh-TW"),
+          icon: r.icon,
+          category: r.category,
+          adult: r.adult,
         };
         const nextCouple = { ...get().couple, coins: get().couple.coins - r.cost };
         set({
@@ -948,12 +951,16 @@ export const useGame = create<State>()(
         }
       },
 
-      useRedemption: (id) =>
+      useRedemption: (id, note) => {
+        const today = new Date().toLocaleDateString("zh-TW");
         set({
           redemptions: get().redemptions.map((r) =>
-            r.id === id ? { ...r, status: "used" } : r,
+            r.id === id
+              ? { ...r, status: "used" as const, usedAt: today, usedNote: note?.trim() || undefined }
+              : r,
           ),
-        }),
+        });
+      },
 
       feedPet: (attr) => {
         const prev = get().pet;
