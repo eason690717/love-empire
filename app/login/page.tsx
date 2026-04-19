@@ -23,6 +23,8 @@ function LoginInner() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [locked, setLocked] = useState(false);  // 此裝置是否已綁定角色
+  const [invited, setInvited] = useState(false); // 是否從分享連結進來（?code=XXX）
+  const [invitedKingdomName, setInvitedKingdomName] = useState<string | null>(null);
 
   // 讀裝置綁定 → 預填 + 鎖定角色
   useEffect(() => {
@@ -35,10 +37,34 @@ function LoginInner() {
     }
   }, []);
 
-  // URL 帶 ?code=XXXXXX（分享連結）→ 仍可以覆蓋 code 欄位
+  // URL 帶 ?code=XXXXXX（分享連結）→ 啟用邀請模式 + 預填 code
   useEffect(() => {
     const q = search?.get("code");
-    if (q) setCode(q.toUpperCase().slice(0, 6));
+    if (q) {
+      setCode(q.toUpperCase().slice(0, 6));
+      setInvited(true);
+      // 若當前裝置已綁 queen，對方應該是 prince（反之亦然）
+      const b = readDeviceBinding();
+      if (!b) {
+        // 沒綁過 → 預設先選 prince（queen 通常是建國的那位）
+        setRole("prince");
+      }
+      // 嘗試查王國名（匿名權限讀 public_couples view）
+      (async () => {
+        try {
+          const { getSupabase } = await import("@/lib/supabase");
+          const sb = await getSupabase();
+          if (!sb) return;
+          const client: any = sb;
+          const { data } = await client
+            .from("couples")
+            .select("name")
+            .eq("invite_code", q.toUpperCase().slice(0, 6))
+            .maybeSingle();
+          if (data?.name) setInvitedKingdomName(data.name);
+        } catch { /* ignore */ }
+      })();
+    }
   }, [search]);
 
   // LIFF 內自動登入：僅 demo 模式（Supabase 啟用時仍需打鑰匙加入王國）
@@ -107,6 +133,22 @@ function LoginInner() {
           愛的帝國
         </h1>
         <p className="text-center text-xs tracking-[0.4em] text-empire-berry/80 font-bold mt-1">LOVE EMPIRE</p>
+
+        {/* 被邀請橫幅 — 從分享連結進來時顯示 */}
+        {invited && !locked && (
+          <div className="mt-5 p-3 rounded-2xl bg-gradient-to-br from-rose-100 via-amber-50 to-rose-50 border-2 border-empire-berry/30">
+            <div className="text-xs text-empire-berry font-bold text-center">💞 你被邀請加入一個王國</div>
+            {invitedKingdomName && (
+              <div className="font-display font-black text-lg text-empire-ink text-center mt-0.5">
+                「{invitedKingdomName}」
+              </div>
+            )}
+            <div className="text-[11px] text-empire-mute text-center mt-1 leading-relaxed">
+              ✨ 這是你加入的<b className="text-empire-ink">全新角色</b>，不是對方的帳號。
+              <br />輸入你自己的稱號，選擇你要扮演的角色 → 進入城堡。
+            </div>
+          </div>
+        )}
 
         {liff.ready && !liff.inClient && (
           <div className="mt-6">
