@@ -44,7 +44,13 @@ export default function SettingsPage() {
         ]}
       />
 
-      <InviteCodeCard />
+      <div className="space-y-2">
+        <InviteCodeCard />
+        <div className="card p-3 bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+          ⚠️ <b>請截圖保存配對碼</b>。換新裝置或清快取後，需要這 6 碼重新加入王國。
+          <br />忘記了？請伴侶在 TA 的設定頁截圖傳給你（兩人看到同一個碼）。
+        </div>
+      </div>
 
       <Section title="📝 命名">
         <Field label="王國名稱" value={kName} onChange={setKName} onBlur={() => kName.trim() && setKingdomName(kName)} />
