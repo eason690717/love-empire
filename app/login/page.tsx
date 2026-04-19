@@ -153,15 +153,19 @@ function LoginInner() {
         {liff.ready && !liff.inClient && (
           <div className="mt-6">
             <button
-              onClick={handleLineLogin}
-              className="btn w-full py-3.5 text-base font-semibold text-white"
-              style={{ background: "linear-gradient(180deg, #06C755 0%, #04a546 100%)", border: "2px solid #038a3a", boxShadow: "0 4px 0 #025a25" }}
+              disabled
+              className="btn w-full py-3.5 text-base font-semibold text-slate-400 cursor-not-allowed"
+              style={{ background: "#e5e7eb", border: "2px solid #d1d5db" }}
+              title="LINE 登入功能開發中"
             >
-              💚 使用 LINE 登入
+              💚 使用 LINE 登入 · 尚未完成
             </button>
+            <div className="text-[11px] text-empire-mute text-center mt-1 italic">
+              LINE 綁定功能開發中，請先用王國鑰匙登入
+            </div>
             <div className="my-4 flex items-center gap-3 text-xs text-empire-mute">
               <div className="flex-1 h-px bg-empire-cloud" />
-              或用王國鑰匙登入
+              用王國鑰匙登入
               <div className="flex-1 h-px bg-empire-cloud" />
             </div>
           </div>
@@ -169,9 +173,15 @@ function LoginInner() {
 
         {liff.inClient && !liff.loggedIn && (
           <div className="mt-6">
-            <button onClick={handleLineLogin} className="btn-primary w-full py-3.5">
-              💚 以 LINE 身份進入
+            <button
+              disabled
+              className="btn w-full py-3.5 bg-slate-200 text-slate-400 cursor-not-allowed"
+            >
+              💚 LINE 登入 · 尚未完成
             </button>
+            <div className="text-[11px] text-empire-mute text-center mt-1 italic">
+              LINE 綁定功能開發中
+            </div>
           </div>
         )}
 
