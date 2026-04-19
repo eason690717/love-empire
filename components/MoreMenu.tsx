@@ -8,6 +8,7 @@ import { useState } from "react";
  */
 export function MoreMenu({ onClose }: { onClose: () => void }) {
   const items: Array<{ href: string; emoji: string; label: string; tint: string }> = [
+    { href: "/pets",         emoji: "🐾", label: "寵物列表",   tint: "from-rose-100 to-orange-100" },
     { href: "/codex",        emoji: "🎴", label: "記憶圖鑑",   tint: "from-fuchsia-100 to-pink-100" },
     { href: "/questions",    emoji: "💬", label: "深度問答",   tint: "from-sky-100 to-cyan-100" },
     { href: "/achievements", emoji: "🏅", label: "獎盃",        tint: "from-amber-100 to-yellow-100" },

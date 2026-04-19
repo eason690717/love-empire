@@ -84,6 +84,11 @@ export default function PetPage() {
           { label: "親密 min", value: minBond },
         ]}
       />
+      <div className="flex justify-end">
+        <a href="/pets" className="text-xs text-empire-sky hover:text-empire-berry underline px-2 py-1 rounded bg-white/60">
+          🐾 所有寵物 / MIT 繁殖 →
+        </a>
+      </div>
 
       <div
         className="card p-8 text-center relative overflow-hidden"
