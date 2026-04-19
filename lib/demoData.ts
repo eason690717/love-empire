@@ -65,14 +65,53 @@ export const INITIAL_TASKS: Task[] = [
 export const INITIAL_SUBMISSIONS: Submission[] = [];
 
 export const INITIAL_REWARDS: Reward[] = [
-  { id: "r1", title: "演唱會一場（含熱舞）", cost: 100, icon: "🎤" },
-  { id: "r2", title: "代替洗碗券", cost: 250, icon: "🍽️" },
-  { id: "r3", title: "長輩擋箭牌", cost: 300, icon: "🛡️" },
-  { id: "r4", title: "現金回饋 50 元", cost: 500, icon: "💴" },
-  { id: "r5", title: "現金回饋 100 元", cost: 900, icon: "💴" },
-  { id: "r6", title: "高級貓咪照護（含餵食鏟屎、照片）", cost: 1200, icon: "🐱" },
-  { id: "r7", title: "一日約會主導權", cost: 800, icon: "📅" },
-  { id: "r8", title: "按摩 30 分鐘券", cost: 400, icon: "💆" },
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 日常豁免 daily (8) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "r1",  title: "代替洗碗券",            cost: 250,  icon: "🍽️", category: "daily" },
+  { id: "r2",  title: "代替倒垃圾券",          cost: 200,  icon: "🗑️", category: "daily" },
+  { id: "r3",  title: "假日不打掃券",          cost: 200,  icon: "🛋️", category: "daily" },
+  { id: "r4",  title: "今晚不用做晚餐",        cost: 300,  icon: "🍳", category: "daily" },
+  { id: "r5",  title: "家事豁免一週（極限）",  cost: 1500, icon: "🧹", category: "daily", description: "週內所有家事對方一個人扛" },
+  { id: "r6",  title: "早上替對方起床煮咖啡",  cost: 200,  icon: "☕", category: "daily" },
+  { id: "r7",  title: "替顧寵物一週",          cost: 1200, icon: "🐱", category: "daily" },
+  { id: "r8",  title: "替顧小孩 1 小時放風券", cost: 800,  icon: "🧸", category: "daily", description: "適合 married 情侶" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 約會體驗 date (8) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "r9",  title: "演唱會一場（含熱舞）",   cost: 1500, icon: "🎤", category: "date" },
+  { id: "r10", title: "高級餐廳一次（你買單）", cost: 2000, icon: "🍽️", category: "date" },
+  { id: "r11", title: "一日約會主導權",         cost: 800,  icon: "📅", category: "date", description: "地點/餐廳/行程都你決定" },
+  { id: "r12", title: "週末小旅行規劃權",       cost: 1500, icon: "🚗", category: "date" },
+  { id: "r13", title: "大旅行目的地我決定",     cost: 3000, icon: "✈️", category: "date" },
+  { id: "r14", title: "電影院我選片",           cost: 300,  icon: "🎬", category: "date" },
+  { id: "r15", title: "早餐外送到對方家",       cost: 200,  icon: "🥐", category: "date", description: "適合 nearby / longdistance 情侶" },
+  { id: "r16", title: "突襲拜訪車費 cover",     cost: 800,  icon: "🚄", category: "date", description: "適合 longdistance 情侶" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 親密互動 intimacy (8) — 成人向 ━━━━━━━━━━━━━━━━
+  { id: "r17", title: "全身按摩 60 分鐘",       cost: 600,  icon: "💆", category: "intimacy" },
+  { id: "r18", title: "親手按摩 30 分鐘",       cost: 400,  icon: "🤲", category: "intimacy" },
+  { id: "r19", title: "抱睡一整夜（大湯匙）",   cost: 300,  icon: "🫂", category: "intimacy" },
+  { id: "r20", title: "浪漫雙人泡澡夜",         cost: 800,  icon: "🛁", category: "intimacy", adult: true },
+  { id: "r21", title: "一晚親密主導權",         cost: 1000, icon: "🌹", category: "intimacy", adult: true, description: "節奏、姿勢、時長你決定" },
+  { id: "r22", title: "角色扮演一次",           cost: 1200, icon: "👗", category: "intimacy", adult: true },
+  { id: "r23", title: "你想做什麼都好一次",     cost: 1500, icon: "💋", category: "intimacy", adult: true, description: "在底線內，提什麼都答應" },
+  { id: "r24", title: "為對方手寫一封大膽情書", cost: 400,  icon: "💌", category: "intimacy" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 主導權 control (4) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "r25", title: "一週飲食我決定",         cost: 500,  icon: "🍱", category: "control" },
+  { id: "r26", title: "一週音樂播放權",         cost: 300,  icon: "🎵", category: "control" },
+  { id: "r27", title: "家裡裝飾我決定一次",     cost: 600,  icon: "🪴", category: "control" },
+  { id: "r28", title: "長輩擋箭牌（拒絕家族聚會）", cost: 500, icon: "🛡️", category: "control" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 解禁享受 indulge (4) ━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "r29", title: "想吃什麼就吃什麼一晚",   cost: 200,  icon: "🍕", category: "indulge", description: "高糖/高油/宵夜 解禁" },
+  { id: "r30", title: "看劇通宵不被罵",         cost: 300,  icon: "📺", category: "indulge" },
+  { id: "r31", title: "手機放遠 1 小時靜靜",    cost: 200,  icon: "📵", category: "indulge" },
+  { id: "r32", title: "沙發任我選台一晚",       cost: 150,  icon: "🛋️", category: "indulge" },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━ 現金回饋 cash (4) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  { id: "r33", title: "現金回饋 50 元",         cost: 500,  icon: "💴", category: "cash" },
+  { id: "r34", title: "現金回饋 100 元",        cost: 900,  icon: "💴", category: "cash" },
+  { id: "r35", title: "現金回饋 300 元",        cost: 2500, icon: "💵", category: "cash" },
+  { id: "r36", title: "現金回饋 500 元",        cost: 4000, icon: "💵", category: "cash" },
 ];
 
 /** 新使用者的兌換紀錄：空的 */

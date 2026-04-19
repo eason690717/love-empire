@@ -27,7 +27,11 @@ export default function DashboardPage() {
   const gifts = useGame((s) => s.gifts);
   const anniversaries = useGame((s) => s.anniversaries);
   const bucketList = useGame((s) => s.bucketList);
+  const rewards = useGame((s) => s.rewards);
+  const showAdultRewards = useGame((s) => s.showAdultRewards);
   const checkKnightShield = useGame((s) => s.checkKnightShield);
+  const visibleRewardCount = rewards.filter((r) => showAdultRewards || !r.adult).length;
+  const affordableCount = rewards.filter((r) => (showAdultRewards || !r.adult) && couple.coins >= r.cost).length;
 
   useEffect(() => { checkKnightShield(); }, [checkKnightShield]);
 
@@ -142,6 +146,23 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* 兌換 CTA — 驅動「再做一個任務」的核心動機 */}
+      <Link
+        href="/exchange"
+        className="mb-3 block p-3 rounded-2xl bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 text-empire-ink shadow-lg hover:shadow-xl active:scale-95 transition"
+      >
+        <div className="flex items-center gap-3">
+          <div className="text-3xl">💰</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-black text-sm">獎勵兌換中心 · {visibleRewardCount} 種真實獎勵</div>
+            <div className="text-[11px] text-empire-ink/80">
+              💰 <b>{couple.coins.toLocaleString()}</b> 金 · 現在就可換 <b>{affordableCount}</b> 種
+            </div>
+          </div>
+          <div className="text-2xl">→</div>
+        </div>
+      </Link>
 
       {/* 人生清單進度 */}
       <Link href="/bucket-list" className="mb-3 block card p-3 hover:shadow-lift transition">

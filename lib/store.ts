@@ -124,7 +124,9 @@ interface State {
     morning?: { label: string; desc: string; emoji: string };
     night?: { label: string; desc: string; emoji: string };
   };
+  showAdultRewards: boolean; // 成人向獎勵顯示開關（預設關）
   setCustomRitual: (kind: "morning" | "night", value: { label: string; desc: string; emoji: string } | null) => void;
+  setShowAdultRewards: (v: boolean) => void;
   toggleBucketItem: (id: string, note?: string) => { newlyDone: boolean; reward?: { love: number; coins: number } };
   attackBoss: (allianceId: string, damage: number) => void;
   contributeAllianceItem: (allianceId: string, catalogId: string, label: string, emoji: string, price: number) => void;
@@ -187,6 +189,7 @@ export const useGame = create<State>()(
       questionAnswers: [],
       bucketList: [],
       customRituals: {},
+      showAdultRewards: false,
       notice: NOTICE,
 
       login: (role) => set({ loggedIn: true, role }),
@@ -1166,6 +1169,8 @@ export const useGame = create<State>()(
         else next[kind] = value;
         set({ customRituals: next });
       },
+
+      setShowAdultRewards: (v) => set({ showAdultRewards: v }),
 
       toggleBucketItem: (id, note) => {
         const existing = get().bucketList.find((r) => r.id === id);

@@ -62,12 +62,26 @@ export interface Submission {
   note?: string;
 }
 
+export type RewardCategory = "daily" | "date" | "intimacy" | "control" | "indulge" | "cash";
+
 export interface Reward {
   id: string;
   title: string;
   cost: number;
   icon: string;
+  category?: RewardCategory;
+  adult?: boolean;          // 成人向 — 設定可隱藏
+  description?: string;     // 額外說明
 }
+
+export const REWARD_CATEGORY_LABELS: Record<RewardCategory, { label: string; emoji: string; color: string }> = {
+  daily:    { label: "日常豁免", emoji: "🧹", color: "#a8d89a" },
+  date:     { label: "約會體驗", emoji: "💑", color: "#ff8eae" },
+  intimacy: { label: "親密互動", emoji: "🌹", color: "#e89ac7" }, // 成人向
+  control:  { label: "主導權",   emoji: "👑", color: "#ffd447" },
+  indulge:  { label: "解禁享受", emoji: "🍰", color: "#d280ff" },
+  cash:     { label: "現金回饋", emoji: "💵", color: "#5aa4ff" },
+};
 
 export interface Redemption {
   id: string;
