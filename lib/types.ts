@@ -165,6 +165,71 @@ export const BUCKET_REWARD: Record<BucketRarity, { love: number; coins: number; 
   SSR: { love: 150, coins: 500, emoji: "🌟" },
 };
 
+// ============================================================
+// 多寵物 + 交配系統（schema 0007，UI 階段性實作中）
+// ============================================================
+export type PetSpecies = "basic";
+export type PetGeneColor = "pink" | "blue" | "yellow" | "purple" | "green" | "rainbow";
+export type PetGenePattern = "plain" | "spot" | "star" | "heart";
+export type PetGeneFace = "smile" | "sleepy" | "shock" | "cool";
+export type PetGeneAccessory = "none" | "crown" | "ribbon" | "glasses" | "wings";
+export type PetGeneRarity = "common" | "uncommon" | "rare" | "legendary";
+
+export interface PetInstance {
+  id: string;
+  coupleId: string;
+  name: string;
+  species: PetSpecies;
+  generation: number;              // 0 = 初代, >0 = 後代
+  geneSeed?: string;                // 32+ 字 hash
+  gene: {
+    color: PetGeneColor;
+    pattern: PetGenePattern;
+    face: PetGeneFace;
+    accessory: PetGeneAccessory;
+    rarity: PetGeneRarity;
+  };
+  // 血統（後代才有）
+  parentAId?: string;
+  parentBId?: string;
+  parentACoupleId?: string;
+  parentBCoupleId?: string;
+  // 養成
+  stage: 0 | 1 | 2 | 3 | 4;
+  attrs: Record<Attribute, number>;
+  bondQueen: number;
+  bondPrince: number;
+  feedCountQueen: number;
+  feedCountPrince: number;
+  lastFedBy?: "queen" | "prince";
+  lastFedAt: string;
+  lastMatedAt?: string;
+  createdAt: string;
+}
+
+export interface PetMatingRequest {
+  id: string;
+  fromPetId: string;
+  fromCoupleId: string;
+  toPetId: string;
+  toCoupleId: string;
+  fromQueenApproved: boolean;
+  fromPrinceApproved: boolean;
+  toQueenApproved: boolean;
+  toPrinceApproved: boolean;
+  status: "pending" | "accepted" | "rejected" | "completed" | "expired";
+  offspringId?: string;
+  message?: string;
+  createdAt: string;
+  resolvedAt?: string;
+  expiresAt: string;
+}
+
+/** 判斷所有 4 方都同意 */
+export function isFullyApproved(r: PetMatingRequest): boolean {
+  return r.fromQueenApproved && r.fromPrinceApproved && r.toQueenApproved && r.toPrinceApproved;
+}
+
 export interface PikminHelper {
   color: "red" | "blue" | "yellow" | "green" | "purple";
   emoji: string;
