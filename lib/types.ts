@@ -279,13 +279,15 @@ export interface QuestionAnswer {
 
 export interface NotificationItem {
   id: string;
-  type: "submission" | "review" | "gift" | "visitor" | "level" | "streak" | "pet" | "card" | "system";
+  type: "submission" | "review" | "gift" | "visitor" | "level" | "streak" | "pet" | "card" | "system" | "interaction";
   title: string;
   body?: string;
   emoji: string;
   createdAt: string;
   read: boolean;
   link?: string;
+  priority?: "high" | "normal" | "low"; // high = 互動類要立刻看到
+  fromRole?: "queen" | "prince";         // 誰發起的
 }
 
 export type MomentType =

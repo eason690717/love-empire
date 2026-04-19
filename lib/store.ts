@@ -385,6 +385,28 @@ export const useGame = create<State>()(
         const queenUser = remote.users?.find((u: any) => u.role === "queen");
         const princeUser = remote.users?.find((u: any) => u.role === "prince");
 
+        // 偵測「伴侶剛送的新申報」→ 加 local notification
+        const prevSubIds = new Set(get().submissions.map((s) => s.id));
+        const incomingSubs = (remote.submissions ?? []);
+        for (const s of incomingSubs) {
+          if (prevSubIds.has(s.id)) continue; // 已存在
+          const fromRole = remote.users?.find((u: any) => u.id === s.submitted_by)?.role;
+          if (!fromRole || fromRole === selfRole) continue; // 只在對方送的才通知
+          if (s.status !== "pending") continue;
+          const isInteraction = /擁抱|親|吻|情話|早安|晚安|按摩|告白/.test(s.task_title);
+          get().addNotification({
+            type: isInteraction ? "interaction" : "submission",
+            title: isInteraction
+              ? `${fromRole === "queen" ? queenUser?.nickname ?? "阿紅" : princeUser?.nickname ?? "阿藍"} 送你：${s.task_title}`
+              : "📜 伴侶送來新申報",
+            body: `${s.task_title} · +${s.reward} 金`,
+            emoji: isInteraction ? "💕" : "📜",
+            link: "/tasks",
+            priority: isInteraction ? "high" : "normal",
+            fromRole,
+          });
+        }
+
         set({
           couple: {
             id: cr.id,
@@ -754,22 +776,40 @@ export const useGame = create<State>()(
       submitTask: (taskId) => {
         const t = get().tasks.find((x) => x.id === taskId);
         if (!t) return;
+        const role = get().role;
         const sub: Submission = {
           id: uid(),
           taskId,
           taskTitle: t.title,
           reward: t.reward,
-          submittedBy: get().role,
+          submittedBy: role,
           status: "pending",
           createdAt: nowStr(),
         };
         set({ submissions: [sub, ...get().submissions] });
+
+        // 互動類任務偵測 — 標 high priority + 儀式感文案
+        const senderName = role === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname;
+        const isInteraction =
+          t.category === "romance" ||
+          /擁抱|親|吻|情話|早安|晚安|撒嬌|說愛|我愛你|想你|按摩|告白/.test(t.title);
+        const interactionEmoji =
+          /擁抱/.test(t.title) ? "🫂" :
+          /親|吻/.test(t.title) ? "💋" :
+          /早安/.test(t.title) ? "☀️" :
+          /晚安/.test(t.title) ? "🌙" :
+          /按摩/.test(t.title) ? "💆" :
+          /情話|我愛你|告白/.test(t.title) ? "💕" :
+          "📜";
+
         get().addNotification({
-          type: "submission",
-          title: "📜 有新申報要審核",
-          body: `${t.title} · ${t.reward} 金幣`,
-          emoji: "📜",
+          type: isInteraction ? "interaction" : "submission",
+          title: isInteraction ? `${interactionEmoji} ${senderName} 送你：${t.title}` : "📜 有新申報要審核",
+          body: isInteraction ? `先收下再去准奏 · +${t.reward} 金` : `${t.title} · ${t.reward} 金幣`,
+          emoji: isInteraction ? interactionEmoji : "📜",
           link: "/tasks",
+          priority: isInteraction ? "high" : "normal",
+          fromRole: role,
         });
         // Supabase mirror
         if (isSupabaseEnabled()) {
