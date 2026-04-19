@@ -376,15 +376,16 @@ function ReqLine({ label, current, target, unit }: { label: string; current: num
 function StagePreviewModal({ currentStage, onClose }: { currentStage: 0 | 1 | 2 | 3 | 4; onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(20,40,70,0.55)", backdropFilter: "blur(8px)" }}
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain"
+      style={{ background: "rgba(20,40,70,0.55)", backdropFilter: "blur(8px)", WebkitOverflowScrolling: "touch" }}
       onClick={onClose}
     >
-      <div
-        className="max-w-md w-full card p-6"
-        onClick={(e) => e.stopPropagation()}
-        style={{ background: "linear-gradient(180deg, #fff9e6, #fef2ff)" }}
-      >
+      <div className="min-h-full flex items-center justify-center p-4">
+        <div
+          className="max-w-md w-full card p-6 my-auto"
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: "linear-gradient(180deg, #fff9e6, #fef2ff)" }}
+        >
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-display font-black text-lg text-empire-ink">🔮 5 階段預覽</h3>
           <button onClick={onClose} className="text-empire-mute hover:text-empire-ink">✕</button>
@@ -433,6 +434,7 @@ function StagePreviewModal({ currentStage, onClose }: { currentStage: 0 | 1 | 2 
         <button onClick={onClose} className="mt-5 btn-primary w-full py-2.5 font-bold">
           繼續養
         </button>
+        </div>
       </div>
     </div>
   );
