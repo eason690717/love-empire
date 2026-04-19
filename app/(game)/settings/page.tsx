@@ -48,11 +48,13 @@ export default function SettingsPage() {
   }
 
   /**
-   * 強制登出流程（防閃退：之前 logout 是非同步 fire-and-forget，AuthResume 會再把人拉回來）
+   * 強制登出流程（防閃退 / 防 refresh token resume）
    *  1. 清 device binding（同步）
-   *  2. Zustand logout（同步）
+   *  2. Zustand logout（同步）— 設 loggedIn=false
    *  3. await Supabase signOut（async，必須等完）
-   *  4. 用 window.location.href 硬跳 /login — 強制 AuthResume 重跑時已無 session
+   *  4. 清 localStorage 所有 sb- 開頭的 Supabase auth token（防 refresh token 再登入）
+   *  5. 清 Zustand persist store（避免 loggedIn/role 被 rehydrate 拉回）
+   *  6. window.location.href = /login 硬跳（完整 reload，所有 state 全新）
    */
   async function hardLogout() {
     clearDeviceBinding();
@@ -62,6 +64,15 @@ export default function SettingsPage() {
       await signOut();
     } catch { /* ignore */ }
     if (typeof window !== "undefined") {
+      try {
+        // 清掉 Supabase auth 相關 token（sb-xxx-auth-token），防 refresh token 讓 AuthResume 再次登入
+        // 注意：不清 love-empire-v6（Zustand state），使用者的寵物/任務/記憶卡要保留
+        Object.keys(localStorage).forEach((k) => {
+          if (k.startsWith("sb-") || k === "supabase.auth.token") {
+            localStorage.removeItem(k);
+          }
+        });
+      } catch { /* ignore */ }
       window.location.href = "/login";
     }
   }

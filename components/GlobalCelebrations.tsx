@@ -30,11 +30,13 @@ export function GlobalCelebrations() {
   const kingdomLevel = useGame((s) => s.couple.kingdomLevel);
   const achievements = useGame((s) => s.achievements);
   const streakCurrent = useGame((s) => s.streak.current);
+  const petsCount = useGame((s) => s.pets.length);
 
   const prevPetStage = useRef(petStage);
   const prevLevel = useRef(kingdomLevel);
   const prevAchievements = useRef<Set<string>>(new Set(achievements));
   const prevStreak = useRef(streakCurrent);
+  const prevPetsCount = useRef(petsCount);
   const initialized = useRef(false);
 
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -49,9 +51,27 @@ export function GlobalCelebrations() {
       prevLevel.current = kingdomLevel;
       prevAchievements.current = new Set(achievements);
       prevStreak.current = streakCurrent;
+      prevPetsCount.current = petsCount;
       return;
     }
-  }, [petStage, kingdomLevel, achievements, streakCurrent]);
+  }, [petStage, kingdomLevel, achievements, streakCurrent, petsCount]);
+
+  // MIT 新寵誕生（pets 陣列增加）
+  useEffect(() => {
+    if (!initialized.current) return;
+    if (petsCount > prevPetsCount.current) {
+      const newest = useGame.getState().pets.at(-1);
+      if (newest) {
+        enqueue({
+          kind: "evolve",
+          title: `🥚 新寵物誕生！`,
+          subtitle: newest.name,
+          emoji: "🥚",
+        });
+      }
+    }
+    prevPetsCount.current = petsCount;
+  }, [petsCount]);
 
   // 寵物進化
   useEffect(() => {
