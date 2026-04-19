@@ -39,8 +39,8 @@ import {
   LEADERBOARD, ALLIANCES, FRIEND_COUPLES, GIFT_INBOX, NOTICE, INITIAL_MOMENTS,
 } from "./demoData";
 import { checkEligibility as mintCheckEligibility, calcCoinCost as mintCalcCoinCost, executeMint } from "./pet/mint";
-import { SPECIES as PET_SPECIES } from "./pet/species";
-import { RARITY as PET_RARITY } from "./pet/rarity";
+import { SPECIES as PET_SPECIES, attrBonusMultiplier } from "./pet/species";
+import { RARITY as PET_RARITY, resolveRarity as resolvePetRarity } from "./pet/rarity";
 
 type Role = "queen" | "prince";
 
@@ -698,31 +698,34 @@ export const useGame = create<State>()(
           })),
           pet: (() => {
             if (!remote.pet) return get().pet;
+            const local = get().pet;
             // Race condition guard：若 local 比 remote 新（剛點擊還沒 mirror 完），保留 local
-            const localTs = new Date(get().pet.lastFedAt).getTime();
+            const localTs = new Date(local.lastFedAt).getTime();
             const remoteTs = new Date(remote.pet.last_fed_at).getTime();
-            if (localTs > remoteTs + 1000) return get().pet; // +1s 容忍
+            if (localTs > remoteTs + 1000) return local; // +1s 容忍
+            // 重要：所有欄位用 `?? local.xxx` fallback，避免 remote 該欄位為 undefined/null 時把本機累加值洗成 0
+            // （Supabase 若 migration 沒跑到某欄位，remote.pet.xxx 會是 undefined）
             return {
-              name: remote.pet.name,
-              stage: remote.pet.stage,
-              attrs: remote.pet.attrs,
-              lastFedAt: remote.pet.last_fed_at,
-              bondQueen: remote.pet.bond_queen ?? 0,
-              bondPrince: remote.pet.bond_prince ?? 0,
-              feedCountQueen: remote.pet.feed_count_queen ?? 0,
-              feedCountPrince: remote.pet.feed_count_prince ?? 0,
-              lastFedBy: remote.pet.last_fed_by,
-              // C1 新欄位（舊 row 沒有就 undefined，views 端已有 default）
-              species: remote.pet.species ?? get().pet.species,
-              rarity: remote.pet.rarity ?? get().pet.rarity,
+              ...local,
+              name: remote.pet.name ?? local.name,
+              stage: remote.pet.stage ?? local.stage,
+              attrs: remote.pet.attrs ?? local.attrs,
+              lastFedAt: remote.pet.last_fed_at ?? local.lastFedAt,
+              bondQueen: remote.pet.bond_queen ?? local.bondQueen ?? 0,
+              bondPrince: remote.pet.bond_prince ?? local.bondPrince ?? 0,
+              feedCountQueen: remote.pet.feed_count_queen ?? local.feedCountQueen ?? 0,
+              feedCountPrince: remote.pet.feed_count_prince ?? local.feedCountPrince ?? 0,
+              lastFedBy: remote.pet.last_fed_by ?? local.lastFedBy,
+              species: remote.pet.species ?? local.species,
+              rarity: remote.pet.rarity ?? local.rarity,
               gene: {
-                color: remote.pet.gene_color ?? get().pet.gene?.color,
-                pattern: remote.pet.gene_pattern ?? get().pet.gene?.pattern,
-                face: remote.pet.gene_face ?? get().pet.gene?.face,
-                accessory: remote.pet.gene_accessory ?? get().pet.gene?.accessory,
+                color: remote.pet.gene_color ?? local.gene?.color,
+                pattern: remote.pet.gene_pattern ?? local.gene?.pattern,
+                face: remote.pet.gene_face ?? local.gene?.face,
+                accessory: remote.pet.gene_accessory ?? local.gene?.accessory,
               },
-              mintCount: remote.pet.mint_count ?? get().pet.mintCount ?? 0,
-              isFounder: remote.pet.is_founder ?? get().pet.isFounder ?? false,
+              mintCount: remote.pet.mint_count ?? local.mintCount ?? 0,
+              isFounder: remote.pet.is_founder ?? local.isFounder ?? false,
             };
           })(),
           // 圖鑑：合併 catalog 定義 + 已擁有卡片
@@ -1327,7 +1330,11 @@ export const useGame = create<State>()(
       feedPet: (attr) => {
         const prev = get().pet;
         const role = get().role;
-        const nextAttrVal = Math.min(100, prev.attrs[attr] + 5);
+        // 種系屬性偏向加成（如 Nuzzle intimacy +30%）+ 稀有度 attr cap（N 60 / R 75 / SR 85 / SSR 95 / UR 100）
+        const bonus = attrBonusMultiplier(prev.species, attr);
+        const attrDelta = Math.round(5 * bonus);
+        const cap = PET_RARITY[resolvePetRarity(prev.rarity)].attrCap;
+        const nextAttrVal = Math.min(cap, prev.attrs[attr] + attrDelta);
         const nextAttrs = { ...prev.attrs, [attr]: nextAttrVal };
         const avg = Object.values(nextAttrs).reduce((a, b) => a + b, 0) / 5;
 
@@ -1414,6 +1421,9 @@ export const useGame = create<State>()(
 
         const bondQueen = Math.min(100, (prev.bondQueen ?? 0) + (role === "queen" ? bondDelta : 0));
         const bondPrince = Math.min(100, (prev.bondPrince ?? 0) + (role === "prince" ? bondDelta : 0));
+        // 餵零食 & 撫摸 & 聊天都算一次互動 — 累加到對應主人的 feedCount
+        const feedCountQueen = (prev.feedCountQueen ?? 0) + (role === "queen" ? 1 : 0);
+        const feedCountPrince = (prev.feedCountPrince ?? 0) + (role === "prince" ? 1 : 0);
 
         const nextPet: Pet = {
           ...prev,
@@ -1421,12 +1431,15 @@ export const useGame = create<State>()(
           lastFedAt: new Date().toISOString(),
           bondQueen,
           bondPrince,
+          feedCountQueen,
+          feedCountPrince,
           lastFedBy: role,
         };
         const nextCoupleCoins = get().couple.coins - coinCost;
 
         set({
           pet: nextPet,
+          pets: syncActivePetInArray(get().pets, nextPet), // C2 多寵容器同步
           couple: { ...get().couple, coins: nextCoupleCoins },
         });
         mirrorPet(get().couple.id, nextPet);
