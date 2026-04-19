@@ -7,14 +7,23 @@ import { PageBanner } from "@/components/PageBanner";
 
 type Phase = "pick" | "charging" | "reveal" | "done";
 
+const DAILY_PK_LIMIT = 3;
+
 export default function PkPage() {
   const couple = useGame((s) => s.couple);
   const streak = useGame((s) => s.streak);
   const leaderboard = useGame((s) => s.leaderboard);
   const addMoment = useGame((s) => s.addMoment);
   const recordPkWin = useGame((s) => s.recordPkWin);
+  const consumePkQuota = useGame((s) => s.consumePkQuota);
   const checkAchievements = useGame((s) => s.checkAchievements);
   const pkWins = useGame((s) => s.pkWins);
+  const pkQuota = useGame((s) => s.pkQuota);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const usedToday = pkQuota.date === today ? pkQuota.used : 0;
+  const remaining = Math.max(0, DAILY_PK_LIMIT - usedToday);
+  const outOfQuota = remaining === 0;
 
   const searchParams = useSearchParams();
   const initialTarget = searchParams.get("target") ?? "";
@@ -38,7 +47,8 @@ export default function PkPage() {
   }, [initialTarget]);
 
   const handleFight = () => {
-    if (!opp) return;
+    if (!opp || outOfQuota) return;
+    consumePkQuota();
     setPhase("charging");
     setResult(null);
     // 蓄力 1.2s → 揭曉
@@ -80,16 +90,25 @@ export default function PkPage() {
   return (
     <div className="space-y-4">
       <PageBanner
-        title="情侶 PK"
-        subtitle={`已勝 ${pkWins} 場 · 愛意 + 連擊 + 等級 + 運氣 決定勝負`}
+        title="情侶對戰"
+        subtitle={`挑另一對情侶比實力 · 每日 ${DAILY_PK_LIMIT} 場 · 今日還剩 ${remaining} 場`}
         emoji="⚔️"
         gradient="rose"
         stats={[
-          { label: "我方愛意", value: couple.loveIndex.toLocaleString() },
-          { label: "連擊", value: `${streak.current}天` },
-          { label: "等級", value: `Lv.${couple.kingdomLevel}` },
+          { label: "累積勝場", value: pkWins },
+          { label: "今日剩餘", value: `${remaining}/${DAILY_PK_LIMIT}` },
+          { label: "實力分", value: (couple.loveIndex + streak.current * 10 + couple.kingdomLevel * 20).toLocaleString() },
         ]}
       />
+
+      <div className="card p-4 bg-gradient-to-br from-rose-50 to-amber-50 border-l-4 border-empire-berry">
+        <h4 className="font-bold text-sm mb-1">⚔️ 什麼是情侶對戰？</h4>
+        <p className="text-xs text-empire-mute leading-relaxed">
+          跟別對情侶比一場 <b className="text-empire-ink">實力分</b>（愛意指數 + 連擊天數×10 + 王國等級×20 + 隨機運氣）。
+          <br />勝者獲 <span className="text-empire-gold font-semibold">30-70 金 + 15 愛意</span>；平手 +10 金；敗者不損失任何東西。
+          <br />每天最多 {DAILY_PK_LIMIT} 場，隔日凌晨重置 — 想爭取更多勝場，先去做任務、儀式、餵寵物拉高實力分。
+        </p>
+      </div>
 
       {phase === "pick" && (
         <>
@@ -125,12 +144,14 @@ export default function PkPage() {
 
             <button
               onClick={handleFight}
-              disabled={!opponent}
+              disabled={!opponent || outOfQuota}
               className="mt-4 btn-pink w-full py-3.5 font-bold text-lg disabled:opacity-40"
             >
-              🔥 開戰
+              {outOfQuota ? "今日配額用完，明天再來" : `🔥 開戰 (剩 ${remaining} 場)`}
             </button>
-            <p className="text-[10px] text-empire-mute text-center mt-2">勝者 +30~70 金 + 15 愛意 · 平手 +10 金 · 敗者不損失</p>
+            <p className="text-[10px] text-empire-mute text-center mt-2">
+              {outOfQuota ? "隔日凌晨會重置 · 趁空檔拉高實力分" : "勝者 +30~70 金 + 15 愛意 · 平手 +10 金 · 敗者不損失"}
+            </p>
           </div>
 
           {opp && (

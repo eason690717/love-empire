@@ -55,7 +55,7 @@ export default function IslandPage() {
     try {
       const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(islandRef.current, { cacheBust: true, pixelRatio: 2 });
-      const text = `✨ ${couple.name} 的島嶼 · Lv.${couple.kingdomLevel} ${couple.title}`;
+      const text = `✨ ${couple.name} 的小窩 · Lv.${couple.kingdomLevel} ${couple.title}`;
 
       // 嘗試 Web Share with file
       if (typeof navigator !== "undefined" && (navigator as any).canShare) {
@@ -89,7 +89,7 @@ export default function IslandPage() {
     <div className="space-y-4">
       <div className="card p-4 flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h2 className="font-bold">🏝️ 帝國島嶼</h2>
+          <h2 className="font-bold">🏡 我們的小窩</h2>
           <p className="text-xs text-empire-mute mt-0.5">
             {SEASON_LABEL[currentSeason]} · 💰 {couple.coins} · 拖曳移動 / 雙擊移除
             {festival && <span className="ml-2 text-empire-berry font-semibold">· {festival.emoji} {festival.label}</span>}

@@ -22,7 +22,7 @@ export default function FriendsPage() {
     <div className="space-y-4">
       <PageBanner
         title="好友情侶"
-        subtitle="加好友、送卡、參觀島嶼、PK 對戰"
+        subtitle="加好友、送卡、參觀小窩、PK 對戰"
         emoji="👫"
         gradient="rose"
         stats={[

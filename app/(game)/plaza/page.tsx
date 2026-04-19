@@ -75,10 +75,10 @@ export default function PlazaPage() {
         </div>
       </div>
 
-      {/* 公開島嶼精選輪播 */}
+      {/* 公開小窩精選輪播 */}
       <div className="card p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-sm">🏝️ 本週精選島嶼</h3>
+          <h3 className="font-bold text-sm">🏡 本週精選小窩</h3>
           <span className="text-[10px] text-empire-mute">點選參觀</span>
         </div>
         <div className="flex gap-2 overflow-x-auto">

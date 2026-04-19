@@ -45,7 +45,7 @@ export default function AlliancePage() {
     <div className="space-y-4">
       <PageBanner
         title="情侶聯盟"
-        subtitle="2-5 對情侶組隊 · 週任務 · BOSS 戰 · 共同島嶼"
+        subtitle="2-5 對情侶組隊 · 週任務 · BOSS 戰 · 共同小窩"
         emoji="🤝"
         gradient="amber"
         stats={[
@@ -133,10 +133,10 @@ export default function AlliancePage() {
             </div>
           )}
 
-          {/* 聯盟共同島嶼 */}
+          {/* 聯盟共同小窩 */}
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold">🏝️ 聯盟共同島嶼</h3>
+              <h3 className="font-bold">🏡 聯盟共同小窩</h3>
               <button onClick={() => setShopOpen((v) => !v)} className="btn-ghost px-3 py-1.5 text-xs">
                 {shopOpen ? "關閉" : "🏗️ 捐家具"}
               </button>
@@ -189,7 +189,7 @@ export default function AlliancePage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold">聯盟成員 ({myAlliance.members.length})</h3>
               <button
-                onClick={() => { if (confirm(`確定離開「${myAlliance.name}」？共同島嶼的貢獻會留下。`)) leaveAlliance(myAlliance.id); }}
+                onClick={() => { if (confirm(`確定離開「${myAlliance.name}」？共同小窩的貢獻會留下。`)) leaveAlliance(myAlliance.id); }}
                 className="text-xs text-empire-mute hover:text-rose-600"
               >
                 離開聯盟

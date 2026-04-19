@@ -62,6 +62,7 @@ interface State {
   notifications: NotificationItem[];
   achievements: string[];
   pkWins: number;
+  pkQuota: { date: string; used: number }; // 每日 3 場
   visitsSent: number;
   dailyLoginDay: number;
   lastLoginDate: string;
@@ -91,6 +92,7 @@ interface State {
   checkAchievements: () => void;
   applyRemoteState: (remote: any) => void;
   recordPkWin: () => void;
+  consumePkQuota: () => void;
   recordVisit: () => void;
   claimDailyBonus: () => { claimed: boolean; day?: number; reward?: string };
   addAnniversary: (label: string, date: string, recurring: boolean, emoji: string) => void;
@@ -170,6 +172,7 @@ export const useGame = create<State>()(
       notifications: [],
       achievements: [],
       pkWins: 0,
+      pkQuota: { date: "", used: 0 },
       visitsSent: 0,
       dailyLoginDay: 0,
       lastLoginDate: "",
@@ -532,6 +535,13 @@ export const useGame = create<State>()(
           pkWins: s.pkWins + 1,
           couple: { ...s.couple, coins: s.couple.coins + reward, loveIndex: s.couple.loveIndex + 15 },
         });
+      },
+
+      consumePkQuota: () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const q = get().pkQuota;
+        const used = q.date === today ? q.used + 1 : 1;
+        set({ pkQuota: { date: today, used } });
       },
       recordVisit: () => set({ visitsSent: get().visitsSent + 1 }),
 
@@ -922,11 +932,16 @@ export const useGame = create<State>()(
         const nextAttrVal = Math.min(100, prev.attrs[attr] + 5);
         const nextAttrs = { ...prev.attrs, [attr]: nextAttrVal };
         const avg = Object.values(nextAttrs).reduce((a, b) => a + b, 0) / 5;
+        // 新手友善曲線：前兩階段超快達成，後兩階段慢慢磨
+        //   stage 1 (幼體) 15  → 只要餵 ~3 次就孵化
+        //   stage 2 (成型) 35  → 餵 ~7 次
+        //   stage 3 (傳說) 65  → 餵 ~13 次（穩定玩家兩週內可達）
+        //   stage 4 (神話) 90  → 餵 ~18 次（長期目標）
         let nextStage: Pet["stage"] = prev.stage;
-        if (avg >= 95) nextStage = 4;
-        else if (avg >= 85) nextStage = 3;
-        else if (avg >= 65) nextStage = 2;
-        else if (avg >= 40) nextStage = 1;
+        if (avg >= 90) nextStage = 4;
+        else if (avg >= 65) nextStage = 3;
+        else if (avg >= 35) nextStage = 2;
+        else if (avg >= 15) nextStage = 1;
         const nextPet: Pet = {
           ...prev,
           attrs: nextAttrs,
@@ -1143,7 +1158,7 @@ export const useGame = create<State>()(
         });
         get().addNotification({
           type: "system",
-          title: "🏛️ 聯盟島嶼有新裝飾",
+          title: "🏛️ 聯盟小窩有新裝飾",
           body: `「${alliance.name}」的共同空間多了 ${emoji} ${label}`,
           emoji: "🏛️",
           link: "/alliance",

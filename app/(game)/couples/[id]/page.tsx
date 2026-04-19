@@ -94,9 +94,9 @@ export default function CoupleDetailPage() {
         </div>
       </div>
 
-      {/* 參觀島嶼 — 基於 couple.id seed 生成的公開快照；真實佈置同步待 RLS 公開欄位擴充 */}
+      {/* 參觀小窩 — 基於 couple.id seed 生成的公開快照；真實佈置同步待 RLS 公開欄位擴充 */}
       <div className="card p-4">
-        <h3 className="font-bold mb-2">🏝️ 他們的島嶼</h3>
+        <h3 className="font-bold mb-2">🏡 他們的小窩</h3>
         <div
           className="relative w-full h-56 rounded-2xl overflow-hidden border-2 border-white shadow-inner"
           style={{ background: "linear-gradient(180deg, #b3d9f2 0%, #c9e6f8 55%, #cfe9b4 60%, #8ed172 100%)" }}
@@ -121,7 +121,7 @@ export default function CoupleDetailPage() {
             </>
           )}
         </div>
-        <p className="text-[10px] text-empire-mute text-center mt-2">公開島嶼快照 · 基於他們的王國識別碼生成</p>
+        <p className="text-[10px] text-empire-mute text-center mt-2">公開小窩快照 · 基於他們的王國識別碼生成</p>
       </div>
 
       <div className="card p-4">

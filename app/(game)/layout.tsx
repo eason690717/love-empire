@@ -13,10 +13,10 @@ import { MoreMenu } from "@/components/MoreMenu";
 
 // 底部 5 主 tab + 更多
 const MAIN_TABS = [
-  { href: "/dashboard", label: "儀表",   icon: "📊" },
+  { href: "/dashboard", label: "主殿",   icon: "🏛️" },
   { href: "/tasks",     label: "任務",   icon: "📜" },
   { href: "/pet",       label: "寵物",   icon: "🐣" },
-  { href: "/island",    label: "島嶼",   icon: "🏝️" },
+  { href: "/island",    label: "小窩",   icon: "🏡" },
   { href: "/plaza",     label: "廣場",   icon: "🌸" },
 ];
 
