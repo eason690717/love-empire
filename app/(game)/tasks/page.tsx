@@ -163,12 +163,12 @@ export default function TasksPage() {
 
                       <div className="shrink-0 flex items-center gap-2">
                         {alreadyPending ? (
-                          <span className="text-xs font-semibold text-empire-gold px-3 py-2 rounded-lg bg-white border border-empire-gold/40">
+                          <span className={`text-xs font-semibold px-3 py-2 rounded-lg border ${
+                            justSent === t.id
+                              ? "text-emerald-700 bg-emerald-50 border-emerald-300 animate-pop ring-2 ring-emerald-400"
+                              : "text-empire-gold bg-white border-empire-gold/40"
+                          }`}>
                             ⏳ 等 {partnerNickname} 審
-                          </span>
-                        ) : justSent === t.id ? (
-                          <span className="text-xs font-semibold text-emerald-700 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 animate-pop">
-                            ✓ 已送出！
                           </span>
                         ) : locked ? (
                           <span className="text-xs text-slate-400 px-3 py-2">尚未解鎖</span>
