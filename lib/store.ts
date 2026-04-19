@@ -813,7 +813,7 @@ export const useGame = create<State>()(
           const attr = task?.attribute ?? "intimacy";
           const baseXp = task?.systemXp ?? 5;
 
-          // 皮克敏 DNA：特別日雙倍 XP
+          // 特別日雙倍 XP
           const xpMultiplier = isSpecialDay() ? SPECIAL_DAY_MULTIPLIER : 1;
 
           // 合作任務 dual-submission bonus：若雙方今日都申報過同一合作任務 → 1.5x
@@ -1275,14 +1275,21 @@ export const useGame = create<State>()(
       },
     }),
     {
-      name: "love-empire-v3",
-      onRehydrateStorage: () => () => {
-        // 清掉舊版本的 persist key，避免使用者看到過期資料
+      name: "love-empire-v4", // bump: v3→v4 — 獎勵庫 8→36 必須重新 seed
+      onRehydrateStorage: () => (state) => {
+        // 清掉舊版本 persist key
         if (typeof window === "undefined") return;
         try {
-          const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2"];
+          const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2", "love-empire-v3"];
           OLD_KEYS.forEach((k) => localStorage.removeItem(k));
         } catch { /* ignore */ }
+        // 舊 state 若獎勵庫 < 16 個，補齊為新版 36 個（保留已有 redemptions）
+        if (state && state.rewards && state.rewards.length < 16) {
+          // 動態 import 避免循環依賴
+          import("./demoData").then(({ INITIAL_REWARDS }) => {
+            useGame.setState({ rewards: INITIAL_REWARDS });
+          }).catch(() => null);
+        }
       },
     },
   ),

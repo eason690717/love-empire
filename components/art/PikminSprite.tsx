@@ -3,8 +3,8 @@
 import type { PikminHelper } from "@/lib/types";
 
 /**
- * 皮克敏精靈 — 單一 SVG 設計 + CSS filter hue-rotate 產 5 色
- * 單純圓身 + 嫩葉/花/芽 頭飾
+ * 小精靈 SVG — 單一設計 + CSS filter hue-rotate 產 5 色
+ * 圓身 + 嫩葉/花/芽 頭飾
  */
 interface Props {
   color: PikminHelper["color"];

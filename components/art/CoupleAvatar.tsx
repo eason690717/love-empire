@@ -2,7 +2,7 @@
 
 /**
  * 情侶頭像 — 首字 + 色相 hash + 迷你皇冠 (取代 header 👑)
- * 動森粉彩 + 寶可夢徽章凸起
+ * 粉彩配色 + 徽章風凸起
  */
 interface Props {
   name: string;

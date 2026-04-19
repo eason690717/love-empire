@@ -5,21 +5,23 @@ export default function AboutPage() {
     <main className="min-h-screen px-6 py-12 max-w-2xl mx-auto">
       <Link href="/" className="text-sm text-empire-sky">← 返回首頁</Link>
       <h1 className="mt-4 font-display font-black text-3xl text-empire-ink">關於愛的帝國</h1>
-      <p className="mt-2 text-empire-mute">動森 × 寶可夢 × 皮克敏 × 波波帝國 × 雙星神話</p>
+      <p className="mt-2 text-empire-mute">把日常的溫柔 · 量化成遊戲的成就</p>
 
       <section className="card p-6 mt-6 space-y-4">
         <div>
           <h2 className="font-bold text-lg">什麼是愛的帝國？</h2>
           <p className="text-sm text-empire-mute leading-relaxed mt-2">
-            一款兩人專屬的量化戀愛遊戲。把日常的家事、情話、約會、驚喜，轉化成可視覺化的成長數據 — 寵物進化、記憶卡收集、島嶼裝飾、連擊天數、王國等級。
+            一款兩人專屬的量化戀愛遊戲。把日常的家事、情話、約會、驚喜，轉化成可視覺化的成長數據 — 寵物進化、記憶卡收集、小窩裝飾、連擊天數、王國等級。
           </p>
         </div>
         <div>
-          <h2 className="font-bold text-lg">三款遊戲 DNA</h2>
+          <h2 className="font-bold text-lg">核心設計</h2>
           <ul className="text-sm text-empire-mute leading-relaxed mt-2 space-y-1">
-            <li>· <b>動物森友會</b>：柔和粉彩、每日儀式、季節變化、島嶼裝飾</li>
-            <li>· <b>寶可夢</b>：圖鑑收集、稀有度、進化、徽章</li>
-            <li>· <b>皮克敏</b>：五屬性互補、損失厭惡、指揮/追隨</li>
+            <li>· <b>每日儀式</b>：晨/晚打卡維持連擊，節日限定獎勵</li>
+            <li>· <b>記憶圖鑑</b>：N/R/SR/SSR 稀有度收藏、節日限定卡</li>
+            <li>· <b>五屬性寵物</b>：親密 / 溝通 / 浪漫 / 照顧 / 驚喜，五維互補</li>
+            <li>· <b>深度對談</b>：410 題跨 13 主題的靈魂拷問</li>
+            <li>· <b>人生清單</b>：100 件一起做的事，畢生紀念</li>
           </ul>
         </div>
         <div>

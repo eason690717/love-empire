@@ -72,8 +72,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: "收集 3 張 SSR", check: (s) => s.cardsSSR >= 3 },
   { id: "a_coinHoard", category: "collect", emoji: "💰", title: "小富翁",
     description: "一次存 1000 金幣以上", check: (s) => s.couple.coins >= 1000 },
-  { id: "a_pikminColors", category: "collect", emoji: "🌱", title: "皮克敏隊伍",
-    description: "累積 10 隻以上皮克敏", check: (s) => s.pikminsTotal >= 10 },
+  { id: "a_pikminColors", category: "collect", emoji: "🌱", title: "小精靈隊伍",
+    description: "累積 10 隻以上小精靈助手", check: (s) => s.pikminsTotal >= 10 },
 
   // 社交 social
   { id: "a_firstFriend", category: "social", emoji: "👫", title: "結緣",

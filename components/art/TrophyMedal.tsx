@@ -60,7 +60,7 @@ export function TrophyMedal({ tier, size = 56, emoji = "⭐" }: Props) {
       >
         {emoji}
       </text>
-      {/* 頂端星點 (寶可夢徽章感) */}
+      {/* 頂端星點（徽章風裝飾） */}
       <polygon points="32,4 33.5,8 38,8 34.3,10.5 35.8,14.5 32,12 28.2,14.5 29.7,10.5 26,8 30.5,8"
         fill={t.outer} stroke={t.rim} strokeWidth="0.8" strokeLinejoin="round" />
     </svg>

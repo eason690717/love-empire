@@ -169,7 +169,7 @@ export default function IslandPage() {
           />
         ))}
 
-        {/* Pikmin 助手 */}
+        {/* 小精靈助手 */}
         {pikmins.map((p, idx) => (
           Array.from({ length: Math.min(5, p.count) }).map((_, i) => {
             const offset = (idx * 5 + i) * 37 % 90 + 5;
@@ -198,10 +198,10 @@ export default function IslandPage() {
         )}
       </div>
 
-      {/* Pikmin 統計 */}
+      {/* 小精靈統計 */}
       {pikmins.length > 0 && (
         <div className="card p-3">
-          <h3 className="font-bold text-sm mb-2">🌱 Pikmin 助手隊</h3>
+          <h3 className="font-bold text-sm mb-2">🌱 小精靈助手隊</h3>
           <div className="flex gap-3 flex-wrap items-center">
             {pikmins.map((p) => (
               <div key={p.color} className="flex items-center gap-1.5 text-sm">

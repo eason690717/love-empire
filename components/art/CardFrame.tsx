@@ -3,7 +3,7 @@
 import type { Rarity } from "@/lib/types";
 
 /**
- * 記憶卡外框 — 依稀有度不同裝飾（動森圓角 + 寶可夢徽章光暈）
+ * 記憶卡外框 — 依稀有度不同裝飾（柔和圓角 + 徽章風光暈）
  */
 interface Props {
   rarity: Rarity;
@@ -41,7 +41,7 @@ export function CardFrame({ rarity, owned, children, className = "" }: Props) {
       >
         {f.badge}
       </div>
-      {/* 四角裝飾 — 動森圓角 + 皮克敏嫩芽 */}
+      {/* 四角裝飾 — 柔和圓角 + 嫩芽點綴 */}
       {rarity !== "N" && owned && (
         <>
           <span className="absolute top-1 left-1 text-[8px] opacity-60">✦</span>

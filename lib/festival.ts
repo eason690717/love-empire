@@ -34,7 +34,7 @@ export function todaysFestival(date = new Date()): { label: string; emoji: strin
 }
 
 // ============================================================
-// NPC 訪客系統 (動森 + 皮克敏)
+// NPC 訪客系統 — 月份輪替訪客
 // ============================================================
 
 export interface NpcVisitor {
@@ -70,13 +70,13 @@ export function getTodayVisitor(date = new Date()): NpcVisitor {
 }
 
 // ============================================================
-// Pikmin 小助手 (皮克敏 DNA)
+// 小精靈助手 — 任務類別對應 5 色
 // ============================================================
 
 export const PIKMIN_BY_CATEGORY: Record<string, { color: PikminHelper["color"]; emoji: string; label: string }> = {
-  chore:    { color: "blue",   emoji: "🔵", label: "藍皮克敏" },
-  wellness: { color: "green",  emoji: "🟢", label: "綠皮克敏" },
-  romance:  { color: "red",    emoji: "🔴", label: "紅皮克敏" },
-  surprise: { color: "yellow", emoji: "🟡", label: "黃皮克敏" },
-  coop:     { color: "purple", emoji: "🟣", label: "紫皮克敏" },
+  chore:    { color: "blue",   emoji: "🔵", label: "藍苗精靈" },
+  wellness: { color: "green",  emoji: "🟢", label: "綠苗精靈" },
+  romance:  { color: "red",    emoji: "🔴", label: "紅苗精靈" },
+  surprise: { color: "yellow", emoji: "🟡", label: "黃苗精靈" },
+  coop:     { color: "purple", emoji: "🟣", label: "紫苗精靈" },
 };

@@ -96,12 +96,21 @@ export default function DashboardPage() {
     <>
       <DailyBonusModal />
 
-      {/* 未配對時顯示配對碼提示 */}
-      {couple.inviteCode && couple.prince.nickname === "阿藍" && couple.queen.nickname !== "阿紅" && (
-        <div className="mb-3">
-          <InviteCodeCard compact />
-        </div>
-      )}
+      {/* 未配對時：顯眼完整邀請卡（伴侶未加入 = 對方暱稱仍為預設） */}
+      {(() => {
+        const partnerName = role === "queen" ? couple.prince.nickname : couple.queen.nickname;
+        const partnerIsDefault = partnerName === "阿藍" || partnerName === "阿紅" || !partnerName;
+        const unpaired = !!couple.inviteCode && partnerIsDefault;
+        if (!unpaired) return null;
+        return (
+          <div className="mb-3 relative">
+            <div className="absolute -top-2 left-4 z-10 px-2.5 py-0.5 rounded-full bg-empire-berry text-white text-[10px] font-black shadow animate-pulse">
+              ⚠ 伴侶尚未加入
+            </div>
+            <InviteCodeCard />
+          </div>
+        );
+      })()}
 
       {/* 特別日橫幅 */}
       {special && (

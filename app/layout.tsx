@@ -6,7 +6,7 @@ import { AuthResume } from "@/components/AuthResume";
 
 export const metadata: Metadata = {
   title: "愛的帝國 · Love Empire",
-  description: "量化戀人互動的線上遊戲 — 動森 × 寶可夢 × 皮克敏 × 雙星神話 · 阿紅 × 阿藍",
+  description: "把日常關係量化成遊戲 — 任務、寵物、記憶卡、深度問答、人生清單，兩人專屬的愛情冒險",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
