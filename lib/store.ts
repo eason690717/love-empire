@@ -80,6 +80,9 @@ interface State {
   addCustomTask: (t: Omit<Task, "id" | "systemXp" | "custom">) => void;
   addPresetTask: (preset: Omit<Task, "id" | "custom">) => void;
   setRelationshipType: (type: "cohabit" | "nearby" | "longdistance" | "married") => void;
+  pauseKingdom: (reason?: string) => void;
+  unpauseKingdom: () => void;
+  checkKingdomStatus: () => void;  // 檢查 90 天到期自動封存
   removeTask: (id: string) => void;
   addMoment: (m: Omit<Moment, "id" | "createdAt" | "likes" | "likedByMe" | "comments" | "coupleId" | "coupleName" | "isSelf">) => void;
   likeMoment: (id: string) => void;
@@ -264,6 +267,65 @@ export const useGame = create<State>()(
         const nextCouple = { ...get().couple, relationshipType: type };
         set({ couple: nextCouple });
         mirrorCouple(nextCouple.id, { relationshipType: type } as any);
+      },
+
+      pauseKingdom: (reason) => {
+        const role = get().role;
+        const nextCouple = {
+          ...get().couple,
+          pausedAt: new Date().toISOString(),
+          pauseReason: reason?.trim() || undefined,
+          pauseInitiator: role,
+        };
+        set({ couple: nextCouple });
+        get().addNotification({
+          type: "system",
+          title: "王國已暫停",
+          body: `90 天內任一方可解除，90 天後自動封存。原因：${reason ?? "未填"}`,
+          emoji: "⏸️",
+          priority: "high",
+          fromRole: role,
+        });
+        mirrorCouple(nextCouple.id, {
+          pausedAt: nextCouple.pausedAt,
+          pauseReason: nextCouple.pauseReason,
+          pauseInitiator: nextCouple.pauseInitiator,
+        } as any);
+      },
+
+      unpauseKingdom: () => {
+        const role = get().role;
+        const nextCouple = {
+          ...get().couple,
+          pausedAt: undefined,
+          pauseReason: undefined,
+          pauseInitiator: undefined,
+        };
+        set({ couple: nextCouple });
+        get().addNotification({
+          type: "system",
+          title: "🌱 王國恢復",
+          body: `${role === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname} 解除了暫停，歡迎回來`,
+          emoji: "🌱",
+          priority: "high",
+          fromRole: role,
+        });
+        mirrorCouple(nextCouple.id, {
+          pausedAt: null,
+          pauseReason: null,
+          pauseInitiator: null,
+        } as any);
+      },
+
+      checkKingdomStatus: () => {
+        const c = get().couple;
+        if (!c.pausedAt || c.archivedAt) return;
+        const daysSince = Math.floor((Date.now() - new Date(c.pausedAt).getTime()) / 86400000);
+        if (daysSince >= 90) {
+          const nextCouple = { ...c, archivedAt: new Date().toISOString() };
+          set({ couple: nextCouple });
+          mirrorCouple(nextCouple.id, { archivedAt: nextCouple.archivedAt } as any);
+        }
       },
 
       addMoment: (m) => {

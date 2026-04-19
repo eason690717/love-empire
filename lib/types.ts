@@ -204,6 +204,24 @@ export interface Couple {
   privacy: "public" | "friends" | "private";
   loveIndex: number;
   relationshipType?: RelationshipType; // 同居 / 附近 / 遠距
+  // 王國狀態（方案 C — 暫停可回頭）
+  pausedAt?: string;            // ISO 暫停時間戳
+  pauseReason?: string;         // 暫停原因（可選短文）
+  pauseInitiator?: "queen" | "prince"; // 誰發起的
+  archivedAt?: string;          // ISO 封存時間戳（90 天後或雙方都確認）
+}
+
+export const KINGDOM_PAUSE_DAYS = 90;
+
+export function getKingdomStatus(couple: Couple): { state: "active" | "paused" | "archived"; daysLeft?: number; daysSincePaused?: number } {
+  if (couple.archivedAt) return { state: "archived" };
+  if (couple.pausedAt) {
+    const ms = Date.now() - new Date(couple.pausedAt).getTime();
+    const daysSince = Math.floor(ms / 86400000);
+    const daysLeft = Math.max(0, KINGDOM_PAUSE_DAYS - daysSince);
+    return { state: "paused", daysLeft, daysSincePaused: daysSince };
+  }
+  return { state: "active" };
 }
 
 export interface CoupleSummary {

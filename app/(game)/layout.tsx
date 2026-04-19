@@ -10,6 +10,7 @@ import { OnboardingModal } from "@/components/OnboardingModal";
 import { CoupleAvatar } from "@/components/art/CoupleAvatar";
 import { SupabaseSync } from "@/components/SupabaseSync";
 import { MoreMenu } from "@/components/MoreMenu";
+import { getKingdomStatus } from "@/lib/types";
 
 // 底部 5 主 tab + 更多
 const MAIN_TABS = [
@@ -37,10 +38,16 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   const [moreOpen, setMoreOpen] = useState(false);
 
   const [hydrated, setHydrated] = useState(false);
+  const checkKingdomStatus = useGame((s) => s.checkKingdomStatus);
   useEffect(() => { setHydrated(true); }, []);
   useEffect(() => {
     if (hydrated && !loggedIn) router.push("/login");
   }, [hydrated, loggedIn, router]);
+  useEffect(() => {
+    if (hydrated) checkKingdomStatus();
+  }, [hydrated, checkKingdomStatus]);
+
+  const status = getKingdomStatus(couple);
 
   if (!hydrated) {
     return (
@@ -61,6 +68,24 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen pb-20">
       <SupabaseSync />
       <OnboardingModal />
+
+      {/* 暫停/封存 banner — 不顯眼但常駐提醒 */}
+      {status.state === "paused" && (
+        <Link
+          href="/settings"
+          className="block px-3 py-1.5 text-center text-[11px] bg-amber-100 border-b border-amber-200 text-amber-900 font-semibold hover:bg-amber-200 transition"
+        >
+          ⏸️ 王國暫停中 · 還剩 {status.daysLeft} 天 · 點此解除或查看
+        </Link>
+      )}
+      {status.state === "archived" && (
+        <Link
+          href="/archive"
+          className="block px-3 py-1.5 text-center text-[11px] bg-slate-200 border-b border-slate-300 text-slate-700 font-semibold hover:bg-slate-300 transition"
+        >
+          📜 王國已封存 · 點此查看畢業紀念
+        </Link>
+      )}
 
       {/* 頂部資源 + avatar bar (固定, 類似 gacha 遊戲) */}
       <header

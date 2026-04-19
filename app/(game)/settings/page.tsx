@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { isSupabaseEnabled } from "@/lib/auth";
 import { PageBanner } from "@/components/PageBanner";
 import { InviteCodeCard } from "@/components/InviteCodeCard";
-import { RELATIONSHIP_LABELS } from "@/lib/types";
+import { RELATIONSHIP_LABELS, getKingdomStatus, KINGDOM_PAUSE_DAYS } from "@/lib/types";
 
 export default function SettingsPage() {
   const couple = useGame((s) => s.couple);
@@ -16,7 +17,13 @@ export default function SettingsPage() {
   const setPetName = useGame((s) => s.setPetName);
   const setPrivacy = useGame((s) => s.setPrivacy);
   const setRelationshipType = useGame((s) => s.setRelationshipType);
+  const pauseKingdom = useGame((s) => s.pauseKingdom);
+  const unpauseKingdom = useGame((s) => s.unpauseKingdom);
   const resetAllData = useGame((s) => s.resetAllData);
+  const [pauseStep, setPauseStep] = useState<"hidden" | "form" | "confirm">("hidden");
+  const [pauseReason, setPauseReason] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const status = getKingdomStatus(couple);
   const resetOnboarding = useGame((s) => s.resetOnboarding);
 
   const [kName, setKName] = useState(couple.name);
@@ -120,6 +127,126 @@ export default function SettingsPage() {
           </div>
         </div>
       </Section>
+
+      {/* 進階 — 預設摺疊，需點展開才看到（隱密） */}
+      {status.state === "active" && !advancedOpen && (
+        <div className="text-center pt-2 pb-6">
+          <button
+            onClick={() => setAdvancedOpen(true)}
+            className="text-[11px] text-empire-mute hover:text-empire-ink underline underline-offset-2"
+          >
+            進階 · 王國狀態管理
+          </button>
+        </div>
+      )}
+
+      {((status.state === "active" && advancedOpen) || status.state !== "active") && (
+      <Section title={status.state === "paused" ? "⏸️ 王國暫停中" : status.state === "archived" ? "📜 王國已封存" : "⚙️ 進階 · 王國狀態"}>
+        {status.state === "active" && (
+          <>
+            {pauseStep === "hidden" && (
+              <>
+                <p className="text-xs text-empire-mute mb-2 leading-relaxed">
+                  需要時間冷靜或不確定關係未來？「暫停王國」可以保留所有資料 {KINGDOM_PAUSE_DAYS} 天。
+                  期間任務/獎勵停止，但任一方都能解除。{KINGDOM_PAUSE_DAYS} 天無人解除 → 自動封存（仍可隨時查看紀念）。
+                </p>
+                <button
+                  onClick={() => setPauseStep("form")}
+                  className="btn w-full py-2.5 text-sm bg-amber-50 text-amber-800 border-2 border-amber-200 hover:bg-amber-100"
+                >
+                  暫停王國 {KINGDOM_PAUSE_DAYS} 天 ⏸️
+                </button>
+                <button
+                  onClick={() => setAdvancedOpen(false)}
+                  className="mt-2 w-full text-[10px] text-empire-mute hover:text-empire-ink"
+                >
+                  收起
+                </button>
+              </>
+            )}
+            {pauseStep === "form" && (
+              <div className="space-y-2">
+                <textarea
+                  value={pauseReason}
+                  onChange={(e) => setPauseReason(e.target.value.slice(0, 80))}
+                  placeholder="留下原因（可選 · 80 字內）：例如「先給彼此一點空間」"
+                  rows={3}
+                  className="w-full border-2 border-amber-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-amber-400"
+                  maxLength={80}
+                />
+                <div className="text-[10px] text-right text-empire-mute">{pauseReason.length}/80</div>
+                <div className="flex gap-2">
+                  <button onClick={() => { setPauseStep("hidden"); setPauseReason(""); }} className="btn-ghost flex-1 py-2 text-sm">取消</button>
+                  <button onClick={() => setPauseStep("confirm")} className="btn flex-1 py-2 text-sm bg-amber-500 text-white">下一步</button>
+                </div>
+              </div>
+            )}
+            {pauseStep === "confirm" && (
+              <div className="space-y-2">
+                <div className="text-xs bg-amber-50 border border-amber-200 p-3 rounded-xl text-empire-ink space-y-1">
+                  <div>📋 確認暫停？</div>
+                  <ul className="ml-4 list-disc text-empire-mute">
+                    <li>所有資料保留</li>
+                    <li>{KINGDOM_PAUSE_DAYS} 天內任一方可在此頁解除</li>
+                    <li>{KINGDOM_PAUSE_DAYS} 天到期自動封存（仍可看畢業紀念）</li>
+                    <li>對方會收到通知</li>
+                  </ul>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setPauseStep("form")} className="btn-ghost flex-1 py-2 text-sm">回去改</button>
+                  <button
+                    onClick={() => {
+                      pauseKingdom(pauseReason);
+                      setPauseStep("hidden");
+                      setPauseReason("");
+                    }}
+                    className="btn flex-1 py-2 text-sm bg-amber-600 text-white font-bold"
+                  >
+                    確認暫停
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        {status.state === "paused" && (
+          <div className="space-y-3">
+            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-amber-50 to-rose-50 border-2 border-amber-200">
+              <div className="text-4xl mb-2">⏸️</div>
+              <div className="font-bold text-empire-ink">王國暫停中</div>
+              <div className="text-sm text-empire-mute mt-1">
+                還剩 <b className="text-empire-berry text-lg">{status.daysLeft}</b> 天到期封存
+              </div>
+              {couple.pauseReason && (
+                <div className="text-xs italic text-empire-mute mt-2">「{couple.pauseReason}」</div>
+              )}
+              <div className="text-[10px] text-empire-mute mt-2">
+                由 {couple.pauseInitiator === "queen" ? couple.queen.nickname : couple.prince.nickname} 發起
+              </div>
+            </div>
+            <button
+              onClick={unpauseKingdom}
+              className="btn w-full py-2.5 text-sm bg-emerald-500 text-white font-bold"
+            >
+              🌱 解除暫停 · 我們繼續
+            </button>
+            <Link href="/archive" className="block text-center text-xs text-empire-sky hover:underline">
+              先看一下到目前為止的紀念 →
+            </Link>
+          </div>
+        )}
+        {status.state === "archived" && (
+          <div className="text-center p-4 rounded-xl bg-empire-cloud/40">
+            <div className="text-4xl">📜</div>
+            <div className="font-bold mt-2">王國已封存</div>
+            <div className="text-xs text-empire-mute mt-1">所有紀念永久保留</div>
+            <Link href="/archive" className="inline-block mt-3 btn-primary px-4 py-2 text-sm">
+              查看畢業紀念
+            </Link>
+          </div>
+        )}
+      </Section>
+      )}
 
       <Section title="🗑️ 危險區">
         {!confirmReset ? (
