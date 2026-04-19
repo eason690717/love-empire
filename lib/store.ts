@@ -549,12 +549,24 @@ export const useGame = create<State>()(
             reviewedAt: s.reviewed_at ? new Date(s.reviewed_at).toLocaleString("zh-TW") : undefined,
             note: s.note,
           })),
-          pet: remote.pet ? {
-            name: remote.pet.name,
-            stage: remote.pet.stage,
-            attrs: remote.pet.attrs,
-            lastFedAt: remote.pet.last_fed_at,
-          } : get().pet,
+          pet: (() => {
+            if (!remote.pet) return get().pet;
+            // Race condition guard：若 local 比 remote 新（剛點擊還沒 mirror 完），保留 local
+            const localTs = new Date(get().pet.lastFedAt).getTime();
+            const remoteTs = new Date(remote.pet.last_fed_at).getTime();
+            if (localTs > remoteTs + 1000) return get().pet; // +1s 容忍
+            return {
+              name: remote.pet.name,
+              stage: remote.pet.stage,
+              attrs: remote.pet.attrs,
+              lastFedAt: remote.pet.last_fed_at,
+              bondQueen: remote.pet.bond_queen ?? 0,
+              bondPrince: remote.pet.bond_prince ?? 0,
+              feedCountQueen: remote.pet.feed_count_queen ?? 0,
+              feedCountPrince: remote.pet.feed_count_prince ?? 0,
+              lastFedBy: remote.pet.last_fed_by,
+            };
+          })(),
           // 圖鑑：合併 catalog 定義 + 已擁有卡片
           codex: get().codex.map((c) => {
             const owned = (remote.codex ?? []).find((mc: any) => mc.card_id === c.id);

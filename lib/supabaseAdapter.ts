@@ -276,13 +276,20 @@ export async function upsertPet(coupleId: string, pet: Partial<Pet>): Promise<vo
   if (!sb) return;
   try {
     const client: any = sb;
-    await client.from("pets").upsert({
+    const row: any = {
       couple_id: coupleId,
       name: pet.name,
       stage: pet.stage,
       attrs: pet.attrs,
       last_fed_at: pet.lastFedAt ?? new Date().toISOString(),
-    });
+    };
+    if (pet.bondQueen !== undefined)       row.bond_queen = pet.bondQueen;
+    if (pet.bondPrince !== undefined)      row.bond_prince = pet.bondPrince;
+    if (pet.feedCountQueen !== undefined)  row.feed_count_queen = pet.feedCountQueen;
+    if (pet.feedCountPrince !== undefined) row.feed_count_prince = pet.feedCountPrince;
+    if (pet.lastFedBy !== undefined)       row.last_fed_by = pet.lastFedBy;
+    const { error } = await client.from("pets").upsert(row, { onConflict: "couple_id" });
+    if (error) console.warn("[sb] upsertPet", error);
   } catch (e) { console.warn("[sb] upsertPet", e); }
 }
 
