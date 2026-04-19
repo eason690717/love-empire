@@ -38,9 +38,10 @@ restart identity cascade;
 -- truncate table alliances restart identity cascade;
 
 -- 清 Supabase auth.users（所有匿名帳號）
--- ⚠️ 這個只能在 Supabase Dashboard → Authentication → Users 手動全選刪除
--- 或用 service_role key 執行：
--- delete from auth.users where confirmed_at is not null;
+-- ⚠️ 以下 SQL 需要 service_role 權限 — Dashboard 的 SQL Editor 用 postgres 角色可以跑：
+delete from auth.users;
+-- 若上面跑不動（權限問題），改用 Dashboard 手動：
+--   Authentication → Users → 全選 → Delete users
 
 commit;
 

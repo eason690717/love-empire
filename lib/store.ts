@@ -1572,12 +1572,14 @@ export const useGame = create<State>()(
       },
     }),
     {
-      name: "love-empire-v5", // v4→v5 — Pet 加 bond 雙主人系統
+      name: "love-empire-v6", // v5→v6 — 公測前強制清空所有舊 localStorage
       onRehydrateStorage: () => (state) => {
         if (typeof window === "undefined") return;
         try {
-          const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2", "love-empire-v3", "love-empire-v4"];
+          const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2", "love-empire-v3", "love-empire-v4", "love-empire-v5"];
           OLD_KEYS.forEach((k) => localStorage.removeItem(k));
+          // 同時清裝置綁定 — 強制重登
+          localStorage.removeItem("loveempire.device.v1");
         } catch { /* ignore */ }
         // 獎勵庫 < 16 → 補齊
         if (state && state.rewards && state.rewards.length < 16) {
