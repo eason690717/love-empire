@@ -219,6 +219,18 @@ export interface Couple {
 
 export const KINGDOM_PAUSE_DAYS = 90;
 
+/** 個人心情狀態 — 影響任務推薦、通知靜音、互動節奏 */
+export type MoodState = "default" | "busy" | "tired" | "missing" | "intimate" | "quiet";
+
+export const MOOD_LABELS: Record<MoodState, { label: string; emoji: string; desc: string; color: string }> = {
+  default:  { label: "沒特別",   emoji: "🙂",  desc: "日常狀態",                     color: "#8fcff5" },
+  busy:     { label: "忙碌中",   emoji: "💼",  desc: "工作/學業爆炸，不要太多推播",    color: "#ffd447" },
+  tired:    { label: "累癱",     emoji: "😮‍💨", desc: "只想躺平，別太用力",             color: "#b0b0c8" },
+  missing:  { label: "想你",     emoji: "💭",  desc: "希望對方知道",                  color: "#ff8eae" },
+  intimate: { label: "想親密",   emoji: "🌹",  desc: "今晚想靠近 (對方也會看到)",      color: "#e89ac7" },
+  quiet:    { label: "想獨處",   emoji: "🕯️",  desc: "需要一些空間",                  color: "#c8b8e0" },
+};
+
 export function getKingdomStatus(couple: Couple): { state: "active" | "paused" | "archived"; daysLeft?: number; daysSincePaused?: number } {
   if (couple.archivedAt) return { state: "archived" };
   if (couple.pausedAt) {

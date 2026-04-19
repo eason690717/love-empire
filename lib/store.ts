@@ -129,8 +129,12 @@ interface State {
     night?: { label: string; desc: string; emoji: string };
   };
   showAdultRewards: boolean; // 成人向獎勵顯示開關（預設關）
+  myMood?: "default" | "busy" | "tired" | "missing" | "intimate" | "quiet";
+  partnerMood?: "default" | "busy" | "tired" | "missing" | "intimate" | "quiet";
+  moodUpdatedAt?: string;
   setCustomRitual: (kind: "morning" | "night", value: { label: string; desc: string; emoji: string } | null) => void;
   setShowAdultRewards: (v: boolean) => void;
+  setMood: (mood: "default" | "busy" | "tired" | "missing" | "intimate" | "quiet") => void;
   toggleBucketItem: (id: string, note?: string) => { newlyDone: boolean; reward?: { love: number; coins: number } };
   attackBoss: (allianceId: string, damage: number) => void;
   contributeAllianceItem: (allianceId: string, catalogId: string, label: string, emoji: string, price: number) => void;
@@ -1404,6 +1408,25 @@ export const useGame = create<State>()(
       },
 
       setShowAdultRewards: (v) => set({ showAdultRewards: v }),
+
+      setMood: (mood) => {
+        const role = get().role;
+        set({ myMood: mood, moodUpdatedAt: new Date().toISOString() });
+        const senderName = role === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname;
+        // 重要 mood 通知對方
+        if (mood === "missing" || mood === "intimate" || mood === "tired") {
+          get().addNotification({
+            type: "interaction",
+            title: `💭 ${senderName} 更新了心情`,
+            body: `「${
+              mood === "missing" ? "想你" : mood === "intimate" ? "想親密" : "累癱"
+            }」`,
+            emoji: mood === "missing" ? "💭" : mood === "intimate" ? "🌹" : "😮‍💨",
+            priority: "high",
+            fromRole: role,
+          });
+        }
+      },
 
       toggleBucketItem: (id, note) => {
         const existing = get().bucketList.find((r) => r.id === id);

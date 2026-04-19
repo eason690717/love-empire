@@ -9,6 +9,7 @@ import { AttributeRadar } from "@/components/AttributeRadar";
 import { PetAvatar } from "@/components/art/PetAvatar";
 import { DailyBonusModal } from "@/components/DailyBonusModal";
 import { InviteCodeCard } from "@/components/InviteCodeCard";
+import { MOOD_LABELS, type MoodState } from "@/lib/types";
 
 /** Gacha 手遊風 — side rails + center scene + big CTA + stats */
 export default function DashboardPage() {
@@ -29,6 +30,9 @@ export default function DashboardPage() {
   const bucketList = useGame((s) => s.bucketList);
   const rewards = useGame((s) => s.rewards);
   const showAdultRewards = useGame((s) => s.showAdultRewards);
+  const myMood = useGame((s) => s.myMood) ?? "default";
+  const partnerMood = useGame((s) => s.partnerMood) ?? "default";
+  const setMood = useGame((s) => s.setMood);
   const checkKnightShield = useGame((s) => s.checkKnightShield);
   const visibleRewardCount = rewards.filter((r) => showAdultRewards || !r.adult).length;
   const affordableCount = rewards.filter((r) => (showAdultRewards || !r.adult) && couple.coins >= r.cost).length;
@@ -119,6 +123,39 @@ export default function DashboardPage() {
           <div className="text-xs opacity-90">今日愛意指數 ×{SPECIAL_DAY_MULTIPLIER}，抓緊時間累積</div>
         </div>
       )}
+
+      {/* 心情狀態 — 雙向顯示，影響通知與推薦 */}
+      <div className="mb-3 card p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs text-empire-mute">💭 今日心情</div>
+          {partnerMood !== "default" && (
+            <div className="text-[11px]">
+              對方：<span className="font-bold">{MOOD_LABELS[partnerMood].emoji} {MOOD_LABELS[partnerMood].label}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-1 overflow-x-auto">
+          {(["default", "busy", "tired", "missing", "intimate", "quiet"] as MoodState[]).map((m) => {
+            const info = MOOD_LABELS[m];
+            const selected = myMood === m;
+            return (
+              <button
+                key={m}
+                onClick={() => setMood(m)}
+                className={`shrink-0 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border-2 transition ${
+                  selected
+                    ? "text-white shadow-md"
+                    : "bg-white text-empire-mute border-empire-cloud hover:border-empire-sky/40"
+                }`}
+                style={selected ? { background: info.color, borderColor: info.color } : {}}
+                title={info.desc}
+              >
+                {info.emoji} {info.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* 今日 3 分鐘快速卡 — 零碎時間也能推進關係 */}
       <div className="mb-3 card p-3">
