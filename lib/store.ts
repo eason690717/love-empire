@@ -17,6 +17,7 @@ import { ACHIEVEMENTS } from "./achievements";
 import {
   isSupabaseEnabled,
   updateCoupleFields,
+  updateUserMood,
   insertSubmission as sbInsertSubmission,
   reviewSubmissionRemote,
   upsertPet,
@@ -471,6 +472,33 @@ export const useGame = create<State>()(
             priority: isInteraction ? "high" : "normal",
             fromRole,
           });
+        }
+
+        // 偵測「伴侶心情更新」→ 加 local notification + 更新 partnerMood
+        const partnerUser = remote.users?.find((u: any) => u.role !== selfRole);
+        if (partnerUser?.mood && partnerUser.mood !== "default") {
+          const prevPartnerMood = get().partnerMood;
+          set({ partnerMood: partnerUser.mood });
+          // mood 改變時加通知（避免首次 load 誤觸發）
+          if (prevPartnerMood !== undefined && prevPartnerMood !== partnerUser.mood) {
+            const fromName = partnerUser.nickname || (partnerUser.role === "queen" ? "阿紅" : "阿藍");
+            const moodLabel =
+              partnerUser.mood === "missing" ? "想你 💭" :
+              partnerUser.mood === "intimate" ? "想親密 🌹" :
+              partnerUser.mood === "tired" ? "累癱 😮‍💨" :
+              partnerUser.mood === "busy" ? "忙碌中 💼" :
+              partnerUser.mood === "quiet" ? "想獨處 🕯️" : "";
+            if (moodLabel) {
+              get().addNotification({
+                type: "interaction",
+                title: `💭 ${fromName} 的心情`,
+                body: moodLabel,
+                emoji: partnerUser.mood === "missing" ? "💭" : partnerUser.mood === "intimate" ? "🌹" : partnerUser.mood === "tired" ? "😮‍💨" : "💭",
+                priority: "high",
+                fromRole: partnerUser.role,
+              });
+            }
+          }
         }
 
         // 偵測「伴侶剛回的新問答」→ 加 local notification
@@ -1453,19 +1481,12 @@ export const useGame = create<State>()(
       setMood: (mood) => {
         const role = get().role;
         set({ myMood: mood, moodUpdatedAt: new Date().toISOString() });
-        const senderName = role === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname;
-        // 重要 mood 通知對方
-        if (mood === "missing" || mood === "intimate" || mood === "tired") {
-          get().addNotification({
-            type: "interaction",
-            title: `💭 ${senderName} 更新了心情`,
-            body: `「${
-              mood === "missing" ? "想你" : mood === "intimate" ? "想親密" : "累癱"
-            }」`,
-            emoji: mood === "missing" ? "💭" : mood === "intimate" ? "🌹" : "😮‍💨",
-            priority: "high",
-            fromRole: role,
-          });
+        // Mirror 到 Supabase users 表 → 對方下次 pull 會讀到
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          (async () => {
+            const u = await getCurrentUser();
+            if (u?.id) updateUserMood(u.id, mood).catch(() => null);
+          })();
         }
       },
 

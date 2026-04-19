@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { titleByLevel, PET_STAGE_LABEL, ATTR_LABEL } from "@/lib/utils";
@@ -33,6 +33,15 @@ export default function DashboardPage() {
   const myMood = useGame((s) => s.myMood) ?? "default";
   const partnerMood = useGame((s) => s.partnerMood) ?? "default";
   const setMood = useGame((s) => s.setMood);
+  const [moodRain, setMoodRain] = useState<MoodState | null>(null);
+
+  const handleSetMood = (m: MoodState) => {
+    setMood(m);
+    if (m !== "default") {
+      setMoodRain(m);
+      setTimeout(() => setMoodRain(null), 2400);
+    }
+  };
   const checkKnightShield = useGame((s) => s.checkKnightShield);
   const visibleRewardCount = rewards.filter((r) => showAdultRewards || !r.adult).length;
   const affordableCount = rewards.filter((r) => (showAdultRewards || !r.adult) && couple.coins >= r.cost).length;
@@ -141,7 +150,7 @@ export default function DashboardPage() {
             return (
               <button
                 key={m}
-                onClick={() => setMood(m)}
+                onClick={() => handleSetMood(m)}
                 className={`shrink-0 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border-2 transition ${
                   selected
                     ? "text-white shadow-md"
@@ -345,7 +354,67 @@ export default function DashboardPage() {
           <TinyStat label="圖鑑" value={`${collected}/${codex.length}`} />
         </div>
       </div>
+
+      {/* 心情更新浮誇特效 */}
+      {moodRain && <MoodRainOverlay mood={moodRain} />}
     </>
+  );
+}
+
+function MoodRainOverlay({ mood }: { mood: MoodState }) {
+  const rainEmoji: Record<MoodState, string> = {
+    default: "",
+    missing: "💭",
+    intimate: "💕",
+    tired: "💤",
+    busy: "⏰",
+    quiet: "🕯️",
+  };
+  const emoji = rainEmoji[mood];
+  if (!emoji) return null;
+
+  // 生成 24 個從上飄落的 emoji
+  const drops = Array.from({ length: 24 }).map((_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 0.8,
+    duration: 1.6 + Math.random() * 0.8,
+    size: 18 + Math.floor(Math.random() * 24),
+  }));
+
+  const centerLabel: Record<MoodState, string> = {
+    default: "",
+    missing: "💭 你想念對方了…",
+    intimate: "🌹 今晚想靠近",
+    tired: "😮‍💨 抱抱你…",
+    busy: "💼 辛苦了",
+    quiet: "🕯️ 安靜一下",
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] pointer-events-none overflow-hidden">
+      {drops.map((d) => (
+        <span
+          key={d.id}
+          className="absolute top-0"
+          style={{
+            left: `${d.left}%`,
+            fontSize: d.size,
+            animation: `mood-fall ${d.duration}s ease-in ${d.delay}s forwards`,
+            opacity: 0,
+          }}
+        >
+          {emoji}
+        </span>
+      ))}
+      <div
+        className="absolute left-1/2 top-1/3 -translate-x-1/2 text-center px-6 py-3 rounded-2xl bg-white/90 backdrop-blur border-2 border-empire-berry/40 shadow-xl"
+        style={{ animation: "mood-pop 2s ease-out forwards" }}
+      >
+        <div className="font-display font-black text-lg text-empire-ink">{centerLabel[mood]}</div>
+        <div className="text-[10px] text-empire-mute mt-1">對方會在下次打開 app 時收到 💞</div>
+      </div>
+    </div>
   );
 }
 

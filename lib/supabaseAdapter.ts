@@ -204,6 +204,18 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
 // Push — 從 Zustand 寫入 Supabase
 // =============================================================
 
+export async function updateUserMood(userId: string, mood: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("users").update({
+      mood,
+      mood_updated_at: new Date().toISOString(),
+    }).eq("id", userId);
+  } catch (e) { console.warn("[sb] updateUserMood", e); }
+}
+
 export async function updateCoupleFields(coupleId: string, fields: Partial<Couple>): Promise<void> {
   const sb = await getSupabase();
   if (!sb) return;
