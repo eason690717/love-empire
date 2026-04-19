@@ -90,7 +90,7 @@ function LoginInner() {
       setLoading(true);
       const { user, error } = await signInAnon();
       if (error || !user?.id) { setErr(error ?? "匿名登入失敗"); setLoading(false); return; }
-      const coupleId = await joinCoupleByCode(user.id, code.trim(), nickname.trim());
+      const coupleId = await joinCoupleByCode(user.id, code.trim(), nickname.trim(), role);
       setLoading(false);
       if (!coupleId) { setErr("找不到這組王國鑰匙。請確認對方分享的鑰匙正確。"); return; }
       setNickname(role, nickname);

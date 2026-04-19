@@ -98,7 +98,12 @@ export async function ensureCoupleForUser(
 }
 
 /** 透過配對碼加入既有王國（以 prince 身份） */
-export async function joinCoupleByCode(userId: string, inviteCode: string, nickname?: string): Promise<string | null> {
+export async function joinCoupleByCode(
+  userId: string,
+  inviteCode: string,
+  nickname?: string,
+  role: "queen" | "prince" = "prince",
+): Promise<string | null> {
   const sb = await getSupabase();
   if (!sb) return null;
   try {
@@ -109,11 +114,12 @@ export async function joinCoupleByCode(userId: string, inviteCode: string, nickn
       .eq("invite_code", inviteCode.toUpperCase())
       .maybeSingle();
     if (!couple) return null;
+    const defaultNickname = role === "queen" ? "阿紅" : "阿藍";
     await client.from("users").upsert({
       id: userId,
       couple_id: couple.id,
-      role: "prince",
-      nickname: nickname ?? "阿藍",
+      role,
+      nickname: nickname ?? defaultNickname,
     });
     await client.from("couples").update({ paired_at: new Date().toISOString() }).eq("id", couple.id);
     return couple.id;

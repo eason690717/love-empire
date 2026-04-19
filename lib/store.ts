@@ -38,6 +38,9 @@ import {
   INITIAL_CODEX, INITIAL_PET, INITIAL_ISLAND, INITIAL_RITUAL, INITIAL_STREAK,
   LEADERBOARD, ALLIANCES, FRIEND_COUPLES, GIFT_INBOX, NOTICE, INITIAL_MOMENTS,
 } from "./demoData";
+import { checkEligibility as mintCheckEligibility, calcCoinCost as mintCalcCoinCost, executeMint } from "./pet/mint";
+import { SPECIES as PET_SPECIES } from "./pet/species";
+import { RARITY as PET_RARITY } from "./pet/rarity";
 
 type Role = "queen" | "prince";
 
@@ -123,6 +126,8 @@ interface State {
   addPet: (pet: Partial<Pet> & { name: string }) => string;
   /** 刪除寵物（pets.length > 1 才允許） */
   removePet: (petId: string) => void;
+  /** MIT 繁殖 — 檢查資格、扣 coin、roll 子代、雙親 mintCount++ / lastMatedAt 更新 */
+  mintPet: (parentAId: string, parentBId: string, childName?: string) => { ok: boolean; reason?: string; childId?: string };
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
@@ -441,6 +446,86 @@ export const useGame = create<State>()(
           activePetId: nextActive,
           pet: next.find((p) => p.id === nextActive) ?? next[0],
         });
+      },
+
+      mintPet: (parentAId, parentBId, childName) => {
+        const petsArr = get().pets;
+        const a = petsArr.find((p) => p.id === parentAId);
+        const b = petsArr.find((p) => p.id === parentBId);
+        if (!a || !b) return { ok: false, reason: "找不到雙親" };
+
+        const elig = mintCheckEligibility(a, b);
+        if (!elig.ok) return { ok: false, reason: elig.reason };
+
+        // pets.length 上限檢查
+        if (petsArr.length >= 3) return { ok: false, reason: "每對情侶最多 3 隻寵物" };
+
+        // coin 檢查
+        const cost = mintCalcCoinCost(a, b);
+        const curCouple = get().couple;
+        if (curCouple.coins < cost) return { ok: false, reason: `金幣不足 — 需 ${cost}，目前 ${curCouple.coins}` };
+
+        // roll 子代
+        const result = executeMint(a, b);
+        const childId = "p_" + Math.random().toString(36).slice(2, 10);
+        const name = (childName ?? `${a.name.slice(0,2)}${b.name.slice(0,2)}寶寶`).slice(0, 20);
+        const child: Pet = {
+          id: childId,
+          name,
+          stage: 0,
+          attrs: { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
+          lastFedAt: new Date().toISOString(),
+          bondQueen: 0,
+          bondPrince: 0,
+          feedCountQueen: 0,
+          feedCountPrince: 0,
+          species: result.species,
+          rarity: result.rarity,
+          gene: result.gene,
+          mintCount: 0,
+          parentAId,
+          parentBId,
+          generation: Math.max((a.generation ?? 0), (b.generation ?? 0)) + 1,
+        };
+
+        // 扣 coin + 雙親 mintCount++ + lastMatedAt
+        const nowIso = new Date().toISOString();
+        const updatedPets = petsArr.map((p) => {
+          if (p.id === parentAId) return { ...p, mintCount: (p.mintCount ?? 0) + 1, lastMatedAt: nowIso };
+          if (p.id === parentBId) return { ...p, mintCount: (p.mintCount ?? 0) + 1, lastMatedAt: nowIso };
+          return p;
+        });
+        const nextCouple = { ...curCouple, coins: curCouple.coins - cost };
+        const nextPets = [...updatedPets, child];
+        // 活躍寵若是雙親之一也要同步
+        const curActive = get().pet;
+        const newActive = curActive.id === parentAId ? updatedPets.find((p) => p.id === parentAId)!
+                        : curActive.id === parentBId ? updatedPets.find((p) => p.id === parentBId)!
+                        : curActive;
+        set({ pets: nextPets, couple: nextCouple, pet: newActive });
+        mirrorCouple(nextCouple.id, { coins: nextCouple.coins });
+        // 若活躍寵是雙親 → mirror 最新 mintCount
+        if (newActive !== curActive) mirrorPet(nextCouple.id, newActive);
+
+        // 發動態「共同血脈」
+        const rrMeta = PET_RARITY[result.rarity];
+        const spMeta = PET_SPECIES[result.species];
+        get().addMoment({
+          type: "custom",
+          title: `🥚 新生命誕生：「${name}」`,
+          subtitle: `${a.name} × ${b.name} → ${spMeta.nameZh} ${rrMeta.tag}`,
+          emoji: rrMeta.emoji,
+        });
+        get().addNotification({
+          type: "pet",
+          title: `新寵物誕生！${name}`,
+          body: `${spMeta.nameZh} · ${rrMeta.tag}（${rrMeta.label}）— 去 /pets 看看`,
+          emoji: "🥚",
+          link: "/pets",
+          priority: "high",
+        });
+
+        return { ok: true, childId };
       },
 
       setPrivacy: (p) => {
@@ -1706,9 +1791,15 @@ export const useGame = create<State>()(
         if (typeof window === "undefined") return;
         try {
           const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2", "love-empire-v3", "love-empire-v4", "love-empire-v5"];
+          // 只在「真的偵測到舊 v5 key 存在」時清一次（否則每次 hydrate 都清會把使用者的裝置綁定洗掉）
+          const hasLegacy = OLD_KEYS.some((k) => {
+            try { return localStorage.getItem(k) != null; } catch { return false; }
+          });
           OLD_KEYS.forEach((k) => localStorage.removeItem(k));
-          // 同時清裝置綁定 — 強制重登
-          localStorage.removeItem("loveempire.device.v1");
+          if (hasLegacy) {
+            // 從舊版升上來時才需要強制重登（清裝置綁定 + Supabase anon session）
+            localStorage.removeItem("loveempire.device.v1");
+          }
         } catch { /* ignore */ }
         // 獎勵庫 < 16 → 補齊
         if (state && state.rewards && state.rewards.length < 16) {
