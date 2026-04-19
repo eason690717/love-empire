@@ -160,6 +160,12 @@ export interface Pet {
   stage: 0 | 1 | 2 | 3 | 4; // 蛋 → 幼 → 成 → 傳說 → 神話
   attrs: Record<Attribute, number>;
   lastFedAt: string;
+  // 雙主人親密度系統（批次 AF 加）
+  bondQueen?: number;      // 阿紅與寵物的親密度 0-100
+  bondPrince?: number;     // 阿藍與寵物的親密度 0-100
+  feedCountQueen?: number; // 阿紅累積餵食次數
+  feedCountPrince?: number;// 阿藍累積餵食次數
+  lastFedBy?: "queen" | "prince"; // 最後是誰餵的
 }
 
 export interface IslandItem {

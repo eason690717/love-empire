@@ -123,6 +123,10 @@ export const INITIAL_PET: Pet = {
   stage: 0,
   attrs: { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
   lastFedAt: new Date().toISOString(),
+  bondQueen: 0,
+  bondPrince: 0,
+  feedCountQueen: 0,
+  feedCountPrince: 0,
 };
 
 /** 圖鑑清單。festival 欄位的卡只在節日前後 N 天掉落率大幅提升 */

@@ -964,24 +964,40 @@ export const useGame = create<State>()(
 
       feedPet: (attr) => {
         const prev = get().pet;
+        const role = get().role;
         const nextAttrVal = Math.min(100, prev.attrs[attr] + 5);
         const nextAttrs = { ...prev.attrs, [attr]: nextAttrVal };
         const avg = Object.values(nextAttrs).reduce((a, b) => a + b, 0) / 5;
-        // 新手友善曲線：前兩階段超快達成，後兩階段慢慢磨
-        //   stage 1 (幼體) 15  → 只要餵 ~3 次就孵化
-        //   stage 2 (成型) 35  → 餵 ~7 次
-        //   stage 3 (傳說) 65  → 餵 ~13 次（穩定玩家兩週內可達）
-        //   stage 4 (神話) 90  → 餵 ~18 次（長期目標）
+
+        // 雙主人 bond：餵食 +5 屬性 +4 bond（自己）; 連續互動小加成
+        const bondDelta = 4;
+        const bondQueen = Math.min(100, (prev.bondQueen ?? 0) + (role === "queen" ? bondDelta : 0));
+        const bondPrince = Math.min(100, (prev.bondPrince ?? 0) + (role === "prince" ? bondDelta : 0));
+        const feedCountQueen = (prev.feedCountQueen ?? 0) + (role === "queen" ? 1 : 0);
+        const feedCountPrince = (prev.feedCountPrince ?? 0) + (role === "prince" ? 1 : 0);
+        const totalFeeds = feedCountQueen + feedCountPrince;
+
+        // 進化規則（使用者：孵化盡量簡單，成長變化才是主軸）
+        //   stage 1 (幼體) — 只要餵 2 次就破殼（任一人都算）
+        //   stage 2 (成型) — avg ≥ 30 且 兩人 bond 都 ≥ 15 (逼迫雙向互動)
+        //   stage 3 (傳說) — avg ≥ 60 且 兩人 bond 都 ≥ 50
+        //   stage 4 (神話) — avg ≥ 85 且 兩人 bond 都 ≥ 80
+        const bothBond = (min: number) => bondQueen >= min && bondPrince >= min;
         let nextStage: Pet["stage"] = prev.stage;
-        if (avg >= 90) nextStage = 4;
-        else if (avg >= 65) nextStage = 3;
-        else if (avg >= 35) nextStage = 2;
-        else if (avg >= 15) nextStage = 1;
+        if (avg >= 85 && bothBond(80)) nextStage = 4;
+        else if (avg >= 60 && bothBond(50)) nextStage = 3;
+        else if (avg >= 30 && bothBond(15)) nextStage = 2;
+        else if (totalFeeds >= 2) nextStage = Math.max(nextStage, 1) as Pet["stage"];
         const nextPet: Pet = {
           ...prev,
           attrs: nextAttrs,
           stage: nextStage,
           lastFedAt: new Date().toISOString(),
+          bondQueen,
+          bondPrince,
+          feedCountQueen,
+          feedCountPrince,
+          lastFedBy: role,
         };
         set({ pet: nextPet });
         mirrorPet(get().couple.id, nextPet);
@@ -1282,20 +1298,32 @@ export const useGame = create<State>()(
       },
     }),
     {
-      name: "love-empire-v4", // bump: v3→v4 — 獎勵庫 8→36 必須重新 seed
+      name: "love-empire-v5", // v4→v5 — Pet 加 bond 雙主人系統
       onRehydrateStorage: () => (state) => {
-        // 清掉舊版本 persist key
         if (typeof window === "undefined") return;
         try {
-          const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2", "love-empire-v3"];
+          const OLD_KEYS = ["love-empire-demo-v1", "star-tied-empire-demo-v2", "love-empire-v3", "love-empire-v4"];
           OLD_KEYS.forEach((k) => localStorage.removeItem(k));
         } catch { /* ignore */ }
-        // 舊 state 若獎勵庫 < 16 個，補齊為新版 36 個（保留已有 redemptions）
+        // 獎勵庫 < 16 → 補齊
         if (state && state.rewards && state.rewards.length < 16) {
-          // 動態 import 避免循環依賴
           import("./demoData").then(({ INITIAL_REWARDS }) => {
             useGame.setState({ rewards: INITIAL_REWARDS });
           }).catch(() => null);
+        }
+        // Pet 沒 bond 欄位 → 初始化（估算：依現有 attrs 平均值推導，讓既有玩家不用從 0 開始）
+        if (state && state.pet && state.pet.bondQueen === undefined) {
+          const avg = Object.values(state.pet.attrs ?? {}).reduce((a: number, b: any) => a + (b ?? 0), 0) / 5;
+          const baseBond = Math.floor(avg * 0.8); // 保守推估
+          useGame.setState({
+            pet: {
+              ...state.pet,
+              bondQueen: baseBond,
+              bondPrince: baseBond,
+              feedCountQueen: 0,
+              feedCountPrince: 0,
+            },
+          });
         }
       },
     },

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGame } from "@/lib/store";
 import { ATTR_LABEL, ATTR_COLOR, PET_STAGE_LABEL } from "@/lib/utils";
@@ -7,61 +8,81 @@ import { InlineRename } from "@/components/InlineRename";
 import { PetAvatar } from "@/components/art/PetAvatar";
 import { PageBanner } from "@/components/PageBanner";
 
-const STAGE_THRESHOLDS = [0, 15, 35, 65, 90]; // stage 0-4 的 avg 進入門檻
-const STAGE_HINT = [
-  "剛破殼的蛋，軟軟的、等你第一次摸摸",
-  "幼體階段，每多 1 點屬性都能看見牠變亮",
-  "成型期，個性開始顯現 — 繼續餵就會更獨特",
-  "傳說等級，身邊會散發 SSR 光暈",
-  "神話 — 你們把一隻寵物養到極致了 🌟",
+// 進化條件（新規則 — 雙主人 bond + 屬性門檻；孵化極簡）
+const STAGE_REQ = [
+  { stage: 0, name: "蛋",    attr: 0,  bond: 0,  hint: "剛送來的蛋，等你們第一次摸摸" },
+  { stage: 1, name: "幼體",  attr: 0,  bond: 0,  hint: "任一人餵 2 次即可破殼", minFeeds: 2 },
+  { stage: 2, name: "成型",  attr: 30, bond: 15, hint: "屬性 30+ 且雙方親密都 15+" },
+  { stage: 3, name: "傳說",  attr: 60, bond: 50, hint: "屬性 60+ 且雙方親密都 50+ (SSR 光暈)" },
+  { stage: 4, name: "神話",  attr: 85, bond: 80, hint: "屬性 85+ 且雙方親密都 80+ (畢生養成)" },
 ];
 
 export default function PetPage() {
   const pet = useGame((s) => s.pet);
+  const couple = useGame((s) => s.couple);
+  const role = useGame((s) => s.role);
   const feedPet = useGame((s) => s.feedPet);
   const setPetName = useGame((s) => s.setPetName);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const avg = Object.values(pet.attrs).reduce((a, b) => a + b, 0) / 5;
   const hoursSinceFed = (Date.now() - new Date(pet.lastFedAt).getTime()) / 36e5;
   const hungry = hoursSinceFed > 24;
+  const bondQueen = pet.bondQueen ?? 0;
+  const bondPrince = pet.bondPrince ?? 0;
+  const minBond = Math.min(bondQueen, bondPrince);
+  const laggingSide = bondQueen < bondPrince ? "queen" : bondQueen > bondPrince ? "prince" : null;
+  const laggingName = laggingSide === "queen" ? couple.queen.nickname : couple.prince.nickname;
 
-  // 下一階段進度
-  const nextStageIdx = Math.min(4, pet.stage + 1);
-  const nextThreshold = STAGE_THRESHOLDS[nextStageIdx] ?? 100;
-  const prevThreshold = STAGE_THRESHOLDS[pet.stage] ?? 0;
   const isMaxStage = pet.stage >= 4;
-  const progressToNext = isMaxStage
-    ? 100
-    : Math.max(0, Math.min(100, ((avg - prevThreshold) / (nextThreshold - prevThreshold)) * 100));
-  const pointsToNext = isMaxStage ? 0 : Math.max(0, Math.ceil(nextThreshold - avg));
+  const nextStageIdx = Math.min(4, pet.stage + 1);
+  const nextReq = STAGE_REQ[nextStageIdx];
+
+  // 下一階還差什麼
+  const missingAttr = isMaxStage ? 0 : Math.max(0, Math.ceil(nextReq.attr - avg));
+  const missingBondQueen = isMaxStage ? 0 : Math.max(0, nextReq.bond - bondQueen);
+  const missingBondPrince = isMaxStage ? 0 : Math.max(0, nextReq.bond - bondPrince);
+  const attrProgressPct = nextReq.attr > 0 ? Math.min(100, (avg / nextReq.attr) * 100) : 100;
 
   return (
     <div className="space-y-4">
       <PageBanner
         title="愛之寵物"
-        subtitle={isMaxStage ? "已達神話等級！🌟" : `距離下一階還差 ${pointsToNext} 點平均屬性`}
+        subtitle={isMaxStage ? "已達神話等級！🌟" : `${nextReq.hint}`}
         emoji="🐣"
         gradient="leaf"
         stats={[
           { label: "階段", value: PET_STAGE_LABEL[pet.stage] },
-          { label: "平均", value: `${avg.toFixed(0)}/100` },
-          { label: "下一階", value: isMaxStage ? "—" : PET_STAGE_LABEL[nextStageIdx] },
+          { label: "屬性", value: `${avg.toFixed(0)}` },
+          { label: "親密 min", value: minBond },
         ]}
       />
 
-      <div className="card p-8 text-center relative overflow-hidden"
-           style={{ background: "linear-gradient(180deg, #d8eefd 0%, #e7f4d5 60%, #cfe9b4 100%)" }}>
-        {/* 環繞光暈 + 浮葉 */}
+      <div
+        className="card p-8 text-center relative overflow-hidden"
+        style={{ background: "linear-gradient(180deg, #d8eefd 0%, #e7f4d5 60%, #cfe9b4 100%)" }}
+      >
         <div className="absolute -top-6 -left-4 text-4xl opacity-60 select-none">🌿</div>
         <div className="absolute -top-4 right-6 text-4xl opacity-60 animate-float-slow select-none">🌼</div>
         <div className="absolute bottom-4 left-10 text-3xl opacity-60 select-none">🌱</div>
         <div className="absolute bottom-2 right-8 text-3xl opacity-60 select-none">🍄</div>
 
-        <div className="relative inline-block">
-          <div className="absolute inset-0 -m-6 rounded-full animate-sparkle"
-               style={{ background: "radial-gradient(circle, rgba(255,212,71,0.5) 0%, transparent 65%)" }} />
+        {/* 點擊可偷看 5 階預覽 */}
+        <button
+          onClick={() => setPreviewOpen(true)}
+          className="relative inline-block cursor-pointer active:scale-95 transition"
+          aria-label="點擊看 5 階段預覽"
+        >
+          <div
+            className="absolute inset-0 -m-6 rounded-full animate-sparkle pointer-events-none"
+            style={{ background: "radial-gradient(circle, rgba(255,212,71,0.5) 0%, transparent 65%)" }}
+          />
           <PetAvatar stage={pet.stage} size={180} />
-        </div>
+          <div className="absolute -bottom-1 right-0 text-[10px] px-2 py-0.5 rounded-full bg-white/90 border border-empire-cloud font-bold text-empire-berry">
+            👁️ 偷看未來
+          </div>
+        </button>
+
         <div className="mt-4 font-display text-2xl font-black text-empire-ink text-shadow-soft">
           <InlineRename value={pet.name} onSave={setPetName} />
         </div>
@@ -75,36 +96,63 @@ export default function PetPage() {
           </div>
         )}
 
-        {/* 下一階段進度 — 鼓勵前期達成 */}
+        {/* 雙主人親密度條 */}
+        <div className="mt-6 grid grid-cols-2 gap-3 max-w-xs mx-auto">
+          <BondBar
+            label={couple.queen.nickname}
+            value={bondQueen}
+            isSelf={role === "queen"}
+            color="from-rose-400 to-empire-berry"
+          />
+          <BondBar
+            label={couple.prince.nickname}
+            value={bondPrince}
+            isSelf={role === "prince"}
+            color="from-sky-400 to-empire-sky"
+          />
+        </div>
+        {laggingSide && Math.abs(bondQueen - bondPrince) >= 20 && (
+          <div className="mt-2 text-[11px] text-empire-berry font-semibold">
+            🥺「{laggingName} 好久沒來餵我了…」
+          </div>
+        )}
+
+        {/* 下一階條件 */}
         {!isMaxStage && (
-          <div className="mt-5 mx-auto max-w-xs">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="text-xs text-empire-mute">下一階</div>
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-white/70 flex items-center justify-center ring-2 ring-empire-berry/40 overflow-hidden opacity-70 grayscale">
-                  <PetAvatar stage={nextStageIdx as 0 | 1 | 2 | 3 | 4} size={40} animate={false} />
-                </div>
-                <div className="absolute -top-1 -right-2 text-[10px] bg-empire-berry text-white px-1.5 py-0.5 rounded-full font-bold">
-                  ?
-                </div>
+          <div className="mt-5 mx-auto max-w-sm bg-white/70 rounded-2xl p-3 text-left">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs text-empire-mute">距離 <b className="text-empire-ink">{PET_STAGE_LABEL[nextStageIdx]}</b> 還差</div>
+              <div className="w-8 h-8 rounded-full bg-empire-cream ring-2 ring-empire-gold/60 overflow-hidden animate-pulse">
+                <PetAvatar stage={nextStageIdx as 0 | 1 | 2 | 3 | 4} size={32} animate={false} />
               </div>
-              <div className="text-xs font-bold text-empire-ink">{PET_STAGE_LABEL[nextStageIdx]}</div>
             </div>
-            <div className="h-2 bg-white/60 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-empire-berry to-empire-sunshine transition-all"
-                style={{ width: `${progressToNext}%` }}
-              />
-            </div>
-            <div className="text-[10px] text-empire-mute text-center mt-1">
-              還差 <b className="text-empire-ink">{pointsToNext}</b> 點平均屬性 · {STAGE_HINT[nextStageIdx]}
+            <div className="space-y-1.5 text-[11px]">
+              <ReqLine label="平均屬性" current={avg} target={nextReq.attr} unit="" />
+              {nextReq.bond > 0 && (
+                <>
+                  <ReqLine label={`${couple.queen.nickname} 的親密度`} current={bondQueen} target={nextReq.bond} unit="" />
+                  <ReqLine label={`${couple.prince.nickname} 的親密度`} current={bondPrince} target={nextReq.bond} unit="" />
+                </>
+              )}
+              {nextReq.minFeeds && (
+                <div className="text-[10px] text-empire-mute italic">
+                  · 或累積餵食 {nextReq.minFeeds} 次即可破殼 (目前 {(pet.feedCountQueen ?? 0) + (pet.feedCountPrince ?? 0)} 次)
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
 
       <div className="card p-5">
-        <h3 className="font-bold mb-3">五項屬性 · 點擊餵養 +5</h3>
+        <h3 className="font-bold mb-3">
+          五項屬性 · 點擊餵養 +5 屬性 · +4 親密
+          {pet.lastFedBy && (
+            <span className="ml-2 text-[10px] text-empire-mute font-normal">
+              最後由 {pet.lastFedBy === "queen" ? couple.queen.nickname : couple.prince.nickname} 餵
+            </span>
+          )}
+        </h3>
         <div className="space-y-3">
           {(Object.keys(pet.attrs) as Array<keyof typeof pet.attrs>).map((k) => (
             <button
@@ -136,7 +184,11 @@ export default function PetPage() {
             const active = i <= pet.stage;
             const isNext = i === nextStageIdx && !isMaxStage;
             return (
-              <div key={i} className="flex flex-col items-center gap-1">
+              <button
+                key={i}
+                onClick={() => setPreviewOpen(true)}
+                className="flex flex-col items-center gap-1"
+              >
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden transition ${
                   active ? "bg-empire-pink/20 ring-2 ring-empire-berry/40" : isNext ? "bg-empire-cream ring-2 ring-empire-gold/60 animate-pulse" : "bg-empire-cloud opacity-35 grayscale"
                 }`}>
@@ -146,16 +198,124 @@ export default function PetPage() {
                   {PET_STAGE_LABEL[i]}
                 </div>
                 <div className="text-[9px] text-empire-mute">
-                  {i === 0 ? "起點" : `平均 ${STAGE_THRESHOLDS[i]}+`}
+                  {STAGE_REQ[i].bond > 0 ? `bond ${STAGE_REQ[i].bond}+` : i === 0 ? "起點" : "餵 2 次"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-empire-mute mt-4 text-center leading-relaxed">
+          孵化極簡：餵 2 次就破殼 · 成長要雙方一起來
+          <br />
+          點上方寵物或任一階段都可以開啟完整預覽
+        </p>
+      </div>
+
+      {previewOpen && <StagePreviewModal currentStage={pet.stage} onClose={() => setPreviewOpen(false)} />}
+    </div>
+  );
+}
+
+function BondBar({ label, value, isSelf, color }: { label: string; value: number; isSelf: boolean; color: string }) {
+  return (
+    <div className={`p-2 rounded-xl ${isSelf ? "bg-white/80 ring-2 ring-empire-berry/40" : "bg-white/60"}`}>
+      <div className="flex items-center justify-between text-[11px] mb-1">
+        <span className="font-bold truncate">{label}{isSelf && " (我)"}</span>
+        <span className="text-empire-mute font-black">{value}</span>
+      </div>
+      <div className="h-2 bg-empire-cloud rounded-full overflow-hidden">
+        <div
+          className={`h-full bg-gradient-to-r ${color} transition-all`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ReqLine({ label, current, target, unit }: { label: string; current: number; target: number; unit: string }) {
+  const done = current >= target;
+  const pct = Math.min(100, (current / target) * 100);
+  return (
+    <div>
+      <div className="flex justify-between">
+        <span className={done ? "text-emerald-700 font-semibold" : "text-empire-ink"}>
+          {done && "✓ "}{label}
+        </span>
+        <span className={done ? "text-emerald-700" : "text-empire-mute"}>
+          {Math.floor(current)}{unit} / {target}{unit}
+        </span>
+      </div>
+      <div className="h-1 mt-0.5 bg-empire-cloud rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all ${done ? "bg-emerald-500" : "bg-empire-berry"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StagePreviewModal({ currentStage, onClose }: { currentStage: 0 | 1 | 2 | 3 | 4; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(20,40,70,0.55)", backdropFilter: "blur(8px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="max-w-md w-full card p-6"
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "linear-gradient(180deg, #fff9e6, #fef2ff)" }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display font-black text-lg text-empire-ink">🔮 5 階段預覽</h3>
+          <button onClick={onClose} className="text-empire-mute hover:text-empire-ink">✕</button>
+        </div>
+        <p className="text-[11px] text-empire-mute mb-4">從蛋到神話的完整旅程 · 未解鎖的半透明顯示</p>
+
+        <div className="space-y-3">
+          {([0, 1, 2, 3, 4] as const).map((i) => {
+            const unlocked = i <= currentStage;
+            const isCurrent = i === currentStage;
+            const req = STAGE_REQ[i];
+            return (
+              <div
+                key={i}
+                className={`flex items-center gap-3 p-3 rounded-xl transition ${
+                  isCurrent
+                    ? "bg-empire-cream ring-2 ring-empire-gold shadow-md"
+                    : unlocked
+                    ? "bg-white"
+                    : "bg-white/40 opacity-70"
+                }`}
+              >
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden shrink-0 ${
+                  unlocked ? "bg-empire-pink/20" : "bg-empire-cloud grayscale"
+                }`}>
+                  <PetAvatar stage={i} size={60} animate={isCurrent} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="font-display font-black text-empire-ink">{PET_STAGE_LABEL[i]}</span>
+                    {isCurrent && <span className="text-[9px] px-1.5 py-0.5 bg-empire-gold text-white rounded-full font-bold">現在</span>}
+                    {!unlocked && <span className="text-[9px] px-1.5 py-0.5 bg-empire-cloud text-empire-mute rounded-full font-bold">🔒</span>}
+                  </div>
+                  <div className="text-[11px] text-empire-mute mt-0.5">{req.hint}</div>
+                  {i > 0 && (
+                    <div className="text-[10px] text-empire-mute mt-1">
+                      {i === 1 ? `餵食 ${req.minFeeds} 次` : `屬性 ${req.attr}+ · 雙方親密 ${req.bond}+`}
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
-        <p className="text-xs text-empire-mute mt-4 text-center leading-relaxed">
-          五屬性平均達門檻就進化 · 新手友善曲線：15 / 35 / 65 / 90
-          <br />前兩階段隨便餵幾次就能看到變化 · 最終階段挑戰性高
-        </p>
+
+        <button onClick={onClose} className="mt-5 btn-primary w-full py-2.5 font-bold">
+          繼續養
+        </button>
       </div>
     </div>
   );
