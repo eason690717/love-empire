@@ -82,7 +82,7 @@ export default function ArchivePage() {
       <div className="card p-5 text-center">
         <div className="text-[10px] text-empire-mute tracking-widest">🐣 共同養大的寵物</div>
         <div className="mt-2 flex flex-col items-center">
-          <PetAvatar stage={pet.stage} size={120} animate={false} />
+          <PetAvatar stage={pet.stage} size={120} animate={false} species={pet.species ?? "nuzzle"} rarity={pet.rarity ?? "common"} />
           <div className="mt-2 font-display font-black text-lg">{pet.name}</div>
           <div className="text-xs text-empire-mute">最終形態：{PET_STAGE_LABEL[pet.stage]}</div>
           <div className="mt-2 text-[10px] text-empire-mute">

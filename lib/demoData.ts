@@ -119,6 +119,7 @@ export const INITIAL_REDEMPTIONS: Redemption[] = [];
 
 /** 新使用者的寵物：蛋階段，屬性全 0，等情侶完成任務餵養 */
 export const INITIAL_PET: Pet = {
+  id: "p_primary",
   name: "小小蛋",
   stage: 0,
   attrs: { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
@@ -127,6 +128,9 @@ export const INITIAL_PET: Pet = {
   bondPrince: 0,
   feedCountQueen: 0,
   feedCountPrince: 0,
+  species: "nuzzle",
+  rarity: "common",
+  mintCount: 0,
 };
 
 /** 圖鑑清單。festival 欄位的卡只在節日前後 N 天掉落率大幅提升

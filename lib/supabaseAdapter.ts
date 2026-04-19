@@ -288,6 +288,15 @@ export async function upsertPet(coupleId: string, pet: Partial<Pet>): Promise<vo
     if (pet.feedCountQueen !== undefined)  row.feed_count_queen = pet.feedCountQueen;
     if (pet.feedCountPrince !== undefined) row.feed_count_prince = pet.feedCountPrince;
     if (pet.lastFedBy !== undefined)       row.last_fed_by = pet.lastFedBy;
+    // C1 新欄位：species / rarity / gene / mintCount / isFounder
+    if (pet.species !== undefined)         row.species = pet.species;
+    if (pet.rarity !== undefined)          row.rarity = pet.rarity;
+    if (pet.gene?.color !== undefined)     row.gene_color = pet.gene.color;
+    if (pet.gene?.pattern !== undefined)   row.gene_pattern = pet.gene.pattern;
+    if (pet.gene?.face !== undefined)      row.gene_face = pet.gene.face;
+    if (pet.gene?.accessory !== undefined) row.gene_accessory = pet.gene.accessory;
+    if (pet.mintCount !== undefined)       row.mint_count = pet.mintCount;
+    if (pet.isFounder !== undefined)       row.is_founder = pet.isFounder;
     const { error } = await client.from("pets").upsert(row, { onConflict: "couple_id" });
     if (error) console.warn("[sb] upsertPet", error);
   } catch (e) { console.warn("[sb] upsertPet", e); }

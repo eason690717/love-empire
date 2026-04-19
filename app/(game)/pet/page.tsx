@@ -6,6 +6,9 @@ import { useGame } from "@/lib/store";
 import { ATTR_LABEL, ATTR_COLOR, PET_STAGE_LABEL } from "@/lib/utils";
 import { InlineRename } from "@/components/InlineRename";
 import { PetAvatar } from "@/components/art/PetAvatar";
+import { RarityFrame } from "@/components/art/RarityFrame";
+import { SPECIES, resolveSpecies } from "@/lib/pet/species";
+import { RARITY, resolveRarity } from "@/lib/pet/rarity";
 import { PageBanner } from "@/components/PageBanner";
 
 // 進化條件（新規則 — 雙主人 bond + 屬性門檻；孵化極簡）
@@ -102,7 +105,9 @@ export default function PetPage() {
             className="absolute inset-0 -m-6 rounded-full animate-sparkle pointer-events-none"
             style={{ background: "radial-gradient(circle, rgba(255,212,71,0.5) 0%, transparent 65%)" }}
           />
-          <PetAvatar stage={pet.stage} size={180} />
+          <RarityFrame rarity={pet.rarity ?? "common"} size={180}>
+            <PetAvatar stage={pet.stage} size={170} species={pet.species ?? "nuzzle"} rarity={pet.rarity ?? "common"} />
+          </RarityFrame>
           <div className="absolute -bottom-1 right-0 text-[10px] px-2 py-0.5 rounded-full bg-white/90 border border-empire-cloud font-bold text-empire-berry">
             👁️ 偷看未來
           </div>
@@ -111,9 +116,19 @@ export default function PetPage() {
         <div className="mt-4 font-display text-2xl font-black text-empire-ink text-shadow-soft">
           <InlineRename value={pet.name} onSave={setPetName} />
         </div>
-        <div className="text-sm text-empire-mute mt-1">
+        <div className="text-sm text-empire-mute mt-1 flex items-center justify-center gap-2 flex-wrap">
+          <span
+            className="px-2 py-0.5 rounded-full text-[11px] font-black text-white"
+            style={{
+              background: pet.rarity === "mythic"
+                ? "linear-gradient(90deg,#ff8eae,#ffb947,#8ed172,#5aa4ff,#d280ff)"
+                : RARITY[resolveRarity(pet.rarity)].primaryColor,
+            }}
+          >
+            {RARITY[resolveRarity(pet.rarity)].emoji} {RARITY[resolveRarity(pet.rarity)].tag} · {SPECIES[resolveSpecies(pet.species)].nameZh}
+          </span>
           <span className="tag rarity-sr">{PET_STAGE_LABEL[pet.stage]}</span>
-          <span className="ml-2">平均屬性 <b className="text-empire-ink">{avg.toFixed(0)}</b> / 100</span>
+          <span>平均屬性 <b className="text-empire-ink">{avg.toFixed(0)}</b> / 100</span>
         </div>
         {hungry && (
           <div className="mt-3 inline-block px-3 py-1 rounded-full bg-empire-sunshine/30 border border-empire-sunshine/60 text-empire-ink text-xs font-semibold animate-bob">
@@ -159,7 +174,7 @@ export default function PetPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs text-empire-mute">距離 <b className="text-empire-ink">{PET_STAGE_LABEL[nextStageIdx]}</b> 還差</div>
               <div className="w-8 h-8 rounded-full bg-empire-cream ring-2 ring-empire-gold/60 overflow-hidden animate-pulse">
-                <PetAvatar stage={nextStageIdx as 0 | 1 | 2 | 3 | 4} size={32} animate={false} />
+                <PetAvatar stage={nextStageIdx as 0 | 1 | 2 | 3 | 4} size={32} animate={false} species={pet.species ?? "nuzzle"} rarity={pet.rarity ?? "common"} />
               </div>
             </div>
             <div className="space-y-1.5 text-[11px]">
@@ -293,7 +308,7 @@ export default function PetPage() {
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden transition ${
                   active ? "bg-empire-pink/20 ring-2 ring-empire-berry/40" : isNext ? "bg-empire-cream ring-2 ring-empire-gold/60 animate-pulse" : "bg-empire-cloud opacity-35 grayscale"
                 }`}>
-                  <PetAvatar stage={i} size={48} animate={false} />
+                  <PetAvatar stage={i} size={48} animate={false} species={pet.species ?? "nuzzle"} rarity={pet.rarity ?? "common"} />
                 </div>
                 <div className={`text-xs ${active ? "text-empire-ink font-semibold" : isNext ? "text-empire-gold font-bold" : "text-empire-mute"}`}>
                   {PET_STAGE_LABEL[i]}
@@ -312,7 +327,7 @@ export default function PetPage() {
         </p>
       </div>
 
-      {previewOpen && <StagePreviewModal currentStage={pet.stage} onClose={() => setPreviewOpen(false)} />}
+      {previewOpen && <StagePreviewModal currentStage={pet.stage} species={pet.species} rarity={pet.rarity} onClose={() => setPreviewOpen(false)} />}
       {talkOpen && (
         <TalkModal
           petName={pet.name}
@@ -478,7 +493,9 @@ function ReqLine({ label, current, target, unit }: { label: string; current: num
   );
 }
 
-function StagePreviewModal({ currentStage, onClose }: { currentStage: 0 | 1 | 2 | 3 | 4; onClose: () => void }) {
+function StagePreviewModal({ currentStage, species, rarity, onClose }: { currentStage: 0 | 1 | 2 | 3 | 4; species?: import("@/lib/types").PetSpecies; rarity?: import("@/lib/types").PetGeneRarity; onClose: () => void }) {
+  const sp = species ?? "nuzzle";
+  const rr = rarity ?? "common";
   return (
     <div
       className="fixed inset-0 z-50 overflow-y-auto overscroll-contain"
@@ -516,7 +533,7 @@ function StagePreviewModal({ currentStage, onClose }: { currentStage: 0 | 1 | 2 
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden shrink-0 ${
                   unlocked ? "bg-empire-pink/20" : "bg-empire-cloud grayscale"
                 }`}>
-                  <PetAvatar stage={i} size={60} animate={isCurrent} />
+                  <PetAvatar stage={i} size={60} animate={isCurrent} species={sp} rarity={rr} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">

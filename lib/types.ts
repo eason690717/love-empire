@@ -168,12 +168,22 @@ export const BUCKET_REWARD: Record<BucketRarity, { love: number; coins: number; 
 // ============================================================
 // 多寵物 + 交配系統（schema 0007，UI 階段性實作中）
 // ============================================================
-export type PetSpecies = "basic";
+/** 寵物種系（吉伊卡哇風融合）
+ *  nuzzle  偎偎系（水獺，親密偏向）
+ *  spark   閃閃系（小狐，幸運偏向）
+ *  sturdy  堅堅系（麻糬熊，韌性/療癒）
+ *  glide   悠悠系（呆毛鴨，冒險/探索）
+ *  lumen   光光系（彩虹獨角獸，均衡 — 稀有限定，僅 UR 或 founder）
+ *  basic   舊版單一種系（legacy，遷移時轉為 nuzzle）
+ */
+export type PetSpecies = "basic" | "nuzzle" | "spark" | "sturdy" | "glide" | "lumen";
 export type PetGeneColor = "pink" | "blue" | "yellow" | "purple" | "green" | "rainbow";
 export type PetGenePattern = "plain" | "spot" | "star" | "heart";
 export type PetGeneFace = "smile" | "sleepy" | "shock" | "cool";
 export type PetGeneAccessory = "none" | "crown" | "ribbon" | "glasses" | "wings";
-export type PetGeneRarity = "common" | "uncommon" | "rare" | "legendary";
+/** 稀有度（N/R/SR/SSR/UR — 對應 common/uncommon/rare/legendary/mythic）
+ *  決定：屬性 cap、可 MIT 次數、配色、邊框特效 */
+export type PetGeneRarity = "common" | "uncommon" | "rare" | "legendary" | "mythic";
 
 export interface PetInstance {
   id: string;
@@ -238,6 +248,7 @@ export interface PikminHelper {
 }
 
 export interface Pet {
+  id?: string;              // 寵物唯一 id（C2 多寵容器新增，向後相容 optional）
   name: string;
   stage: 0 | 1 | 2 | 3 | 4; // 蛋 → 幼 → 成 → 傳說 → 神話
   attrs: Record<Attribute, number>;
@@ -248,6 +259,17 @@ export interface Pet {
   feedCountQueen?: number; // 阿紅累積餵食次數
   feedCountPrince?: number;// 阿藍累積餵食次數
   lastFedBy?: "queen" | "prince"; // 最後是誰餵的
+  // 種系 + 稀有度 + 基因（批次 C1 新增）
+  species?: PetSpecies;          // 未填視為 nuzzle
+  rarity?: PetGeneRarity;        // 未填視為 common
+  gene?: {                       // 顯性特徵，影響 SVG 細節
+    color?: PetGeneColor;
+    pattern?: PetGenePattern;
+    face?: PetGeneFace;
+    accessory?: PetGeneAccessory;
+  };
+  mintCount?: number;            // 已 MIT 次數（生過幾隻後代）
+  isFounder?: boolean;           // 初代玩家標記（公測前拿到的）
 }
 
 export interface IslandItem {

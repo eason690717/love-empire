@@ -1,46 +1,25 @@
 "use client";
 
-import Image from "next/image";
-import { motion } from "framer-motion";
+import { PetSprite } from "./PetSprite";
+import type { PetSpecies, PetGeneRarity } from "@/lib/types";
 
 /**
- * 寵物頭像 — 依 stage 載入對應 SVG
- * stages 0 蛋 / 1 幼體 / 2 成型 / 3 傳說 / 4 神話
+ * 寵物頭像 — 舊 API 相容層
+ *
+ * 舊版用 <Image src={`/art/pet/stage-${stage}.svg`} />；C1 批次後改走 <PetSprite />
+ * （5 系吉伊卡哇風 SVG）。所有舊呼叫點仍可用（只傳 stage），會預設 nuzzle/common。
  */
 interface Props {
   stage: 0 | 1 | 2 | 3 | 4;
   size?: number;
   animate?: boolean;
   className?: string;
+  species?: PetSpecies;
+  rarity?: PetGeneRarity;
 }
 
-const LABELS = ["蛋", "幼體", "成型", "傳說", "神話"] as const;
-
-export function PetAvatar({ stage, size = 120, animate = true, className = "" }: Props) {
-  const src = `/art/pet/stage-${stage}.svg`;
-  const content = (
-    <Image
-      src={src}
-      alt={`寵物 · ${LABELS[stage]}階段`}
-      width={size}
-      height={size}
-      priority={stage <= 1}
-      style={{ width: size, height: size }}
-      unoptimized
-    />
-  );
-
-  if (!animate) return <div className={className}>{content}</div>;
-
-  return (
-    <motion.div
-      className={`inline-block ${className}`}
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-    >
-      {content}
-    </motion.div>
-  );
+export function PetAvatar({ stage, size = 120, animate = true, className = "", species = "nuzzle", rarity = "common" }: Props) {
+  return <PetSprite species={species} stage={stage} rarity={rarity} size={size} animate={animate} className={className} />;
 }
 
-export const PET_STAGE_LABEL = LABELS;
+export const PET_STAGE_LABEL = ["蛋", "幼體", "成型", "傳說", "神話"] as const;

@@ -285,7 +285,7 @@ export default function DashboardPage() {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pb-10 flex flex-col items-center">
           <div className="absolute inset-0 -m-4 rounded-full animate-sparkle"
                style={{ background: "radial-gradient(circle, rgba(255,212,71,0.4) 0%, transparent 60%)" }} />
-          <PetAvatar stage={pet.stage} size={150} />
+          <PetAvatar stage={pet.stage} size={150} species={pet.species ?? "nuzzle"} rarity={pet.rarity ?? "common"} />
           <div className="mt-2 px-3 py-1 rounded-full bg-white/85 border-2 border-white text-xs font-black text-empire-ink">
             {pet.name} · {PET_STAGE_LABEL[pet.stage]}
           </div>

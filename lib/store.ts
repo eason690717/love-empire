@@ -51,7 +51,9 @@ interface State {
   rewards: Reward[];
   redemptions: Redemption[];
   codex: MemoryCard[];
-  pet: Pet;
+  pet: Pet;               // 目前活躍寵物（= pets 中 activePetId 對應那隻）— 保留以相容既有 UI
+  pets: Pet[];            // 多寵容器（C2），pets[0] 預設為舊單寵遷移後的首隻
+  activePetId?: string;   // 目前活躍寵物 id（未設時 = pets[0].id）
   island: IslandItem[];
   ritual: Ritual;
   streak: Streak;
@@ -115,6 +117,12 @@ interface State {
   useRedemption: (id: string, note?: string) => void;
   feedPet: (attr: keyof Pet["attrs"]) => void;
   petInteract: (kind: "pet" | "treat" | "talk", message?: string) => { ok: boolean; reason?: string };
+  /** 切換目前活躍寵物 — 把 pets 中對應 id 的 pet 提到 state.pet */
+  switchActivePet: (petId: string) => void;
+  /** 新增空白寵物（蛋階段） — 用於 MIT 或主動新增（C5 之後才開 UI 入口） */
+  addPet: (pet: Partial<Pet> & { name: string }) => string;
+  /** 刪除寵物（pets.length > 1 才允許） */
+  removePet: (petId: string) => void;
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
@@ -165,6 +173,20 @@ function mirrorPet(coupleId: string, pet: Pet) {
   upsertPet(coupleId, pet).catch(() => null);
 }
 
+/**
+ * 把 state.pet 的變動同步寫回 state.pets 陣列對應的那隻（活躍寵物）
+ * 所有 action 改 pet 後都應該呼叫這個 helper，保證 pets[] 和 pet 一致。
+ * 用法：const next = { ...get().pet, xxx }; set({ pet: next, pets: syncActivePetInArray(get().pets, next) });
+ */
+function syncActivePetInArray(pets: Pet[], active: Pet): Pet[] {
+  if (!active.id) return pets; // 還沒遷移的舊資料保底
+  const idx = pets.findIndex((p) => p.id === active.id);
+  if (idx < 0) return [...pets, active];
+  const copy = pets.slice();
+  copy[idx] = active;
+  return copy;
+}
+
 export const useGame = create<State>()(
   persist(
     (set, get) => ({
@@ -178,6 +200,8 @@ export const useGame = create<State>()(
       redemptions: INITIAL_REDEMPTIONS,
       codex: INITIAL_CODEX,
       pet: INITIAL_PET,
+      pets: [INITIAL_PET],
+      activePetId: INITIAL_PET.id,
       island: INITIAL_ISLAND,
       ritual: INITIAL_RITUAL,
       streak: INITIAL_STREAK,
@@ -377,8 +401,46 @@ export const useGame = create<State>()(
         const clean = name.trim().slice(0, 20);
         if (!clean) return;
         const nextPet = { ...get().pet, name: clean };
-        set({ pet: nextPet });
+        set({ pet: nextPet, pets: syncActivePetInArray(get().pets, nextPet) });
         mirrorPet(get().couple.id, nextPet);
+      },
+
+      switchActivePet: (petId) => {
+        const target = get().pets.find((p) => p.id === petId);
+        if (!target) return;
+        set({ pet: target, activePetId: petId });
+      },
+
+      addPet: (pet) => {
+        const id = "p_" + Math.random().toString(36).slice(2, 10);
+        const newPet: Pet = {
+          id,
+          stage: 0,
+          attrs: { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
+          lastFedAt: new Date().toISOString(),
+          bondQueen: 0,
+          bondPrince: 0,
+          feedCountQueen: 0,
+          feedCountPrince: 0,
+          species: "nuzzle",
+          rarity: "common",
+          mintCount: 0,
+          ...pet,
+        };
+        set({ pets: [...get().pets, newPet] });
+        return id;
+      },
+
+      removePet: (petId) => {
+        const pets = get().pets;
+        if (pets.length <= 1) return; // 至少留一隻
+        const next = pets.filter((p) => p.id !== petId);
+        const nextActive = get().activePetId === petId ? next[0].id : get().activePetId;
+        set({
+          pets: next,
+          activePetId: nextActive,
+          pet: next.find((p) => p.id === nextActive) ?? next[0],
+        });
       },
 
       setPrivacy: (p) => {
@@ -565,6 +627,17 @@ export const useGame = create<State>()(
               feedCountQueen: remote.pet.feed_count_queen ?? 0,
               feedCountPrince: remote.pet.feed_count_prince ?? 0,
               lastFedBy: remote.pet.last_fed_by,
+              // C1 新欄位（舊 row 沒有就 undefined，views 端已有 default）
+              species: remote.pet.species ?? get().pet.species,
+              rarity: remote.pet.rarity ?? get().pet.rarity,
+              gene: {
+                color: remote.pet.gene_color ?? get().pet.gene?.color,
+                pattern: remote.pet.gene_pattern ?? get().pet.gene?.pattern,
+                face: remote.pet.gene_face ?? get().pet.gene?.face,
+                accessory: remote.pet.gene_accessory ?? get().pet.gene?.accessory,
+              },
+              mintCount: remote.pet.mint_count ?? get().pet.mintCount ?? 0,
+              isFounder: remote.pet.is_founder ?? get().pet.isFounder ?? false,
             };
           })(),
           // 圖鑑：合併 catalog 定義 + 已擁有卡片
@@ -772,7 +845,8 @@ export const useGame = create<State>()(
           const boosted = Object.fromEntries(
             Object.entries(attrs).map(([k, v]) => [k, Math.min(100, v + bonus.petBoost!)]),
           ) as typeof attrs;
-          set({ pet: { ...get().pet, attrs: boosted } });
+          const boostedPet = { ...get().pet, attrs: boosted };
+          set({ pet: boostedPet, pets: syncActivePetInArray(get().pets, boostedPet) });
           rewardLabel.push(`寵物全屬性 +${bonus.petBoost}`);
         }
 
@@ -1055,7 +1129,7 @@ export const useGame = create<State>()(
             attrs: { ...get().pet.attrs, [attr]: Math.min(100, get().pet.attrs[attr] + 2) },
             lastFedAt: new Date().toISOString(),
           };
-          set({ couple: nextCouple, pet: nextPet });
+          set({ couple: nextCouple, pet: nextPet, pets: syncActivePetInArray(get().pets, nextPet) });
           mirrorCouple(nextCouple.id, { coins: nextCouple.coins, loveIndex: nextCouple.loveIndex, kingdomLevel: nextCouple.kingdomLevel });
           mirrorPet(nextCouple.id, nextPet);
 
@@ -1202,7 +1276,7 @@ export const useGame = create<State>()(
           feedCountPrince,
           lastFedBy: role,
         };
-        set({ pet: nextPet });
+        set({ pet: nextPet, pets: syncActivePetInArray(get().pets, nextPet) });
         mirrorPet(get().couple.id, nextPet);
         // 進化自動發動態
         if (nextStage > prev.stage) {
@@ -1654,6 +1728,34 @@ export const useGame = create<State>()(
               feedCountQueen: 0,
               feedCountPrince: 0,
             },
+          });
+        }
+        // Founder 升級：沒 species 欄位 → 直接給 Lumen UR（初代玩家專屬）
+        if (state && state.pet && (!state.pet.species || state.pet.species === "basic") && !state.pet.isFounder) {
+          const upgraded = {
+            ...useGame.getState().pet,
+            id: useGame.getState().pet.id ?? "p_primary",
+            species: "lumen" as const,
+            rarity: "mythic" as const,
+            gene: {
+              color: "rainbow" as const,
+              pattern: "star" as const,
+              face: "smile" as const,
+              accessory: "wings" as const,
+            },
+            mintCount: 0,
+            isFounder: true,
+          };
+          useGame.setState({ pet: upgraded });
+        }
+        // C2 多寵容器遷移：沒 pets[] 陣列 → 把現有 pet 包為 pets[0]
+        if (state && state.pet && (!state.pets || state.pets.length === 0)) {
+          const cur = useGame.getState().pet;
+          const petWithId = cur.id ? cur : { ...cur, id: "p_primary" };
+          useGame.setState({
+            pet: petWithId,
+            pets: [petWithId],
+            activePetId: petWithId.id,
           });
         }
       },
