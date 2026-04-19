@@ -38,17 +38,32 @@ export default function SettingsPage() {
       { okLabel: "去切換", cancelLabel: "取消" },
     );
     if (!ok) return;
-    clearDeviceBinding();
-    logout();
-    router.push("/login");
+    await hardLogout();
   }
 
   async function handleLogout() {
     const ok = await toast.confirm("確定要登出嗎？下次要用配對碼重新登入。", { okLabel: "登出", cancelLabel: "取消" });
     if (!ok) return;
+    await hardLogout();
+  }
+
+  /**
+   * 強制登出流程（防閃退：之前 logout 是非同步 fire-and-forget，AuthResume 會再把人拉回來）
+   *  1. 清 device binding（同步）
+   *  2. Zustand logout（同步）
+   *  3. await Supabase signOut（async，必須等完）
+   *  4. 用 window.location.href 硬跳 /login — 強制 AuthResume 重跑時已無 session
+   */
+  async function hardLogout() {
     clearDeviceBinding();
     logout();
-    router.push("/login");
+    try {
+      const { signOut } = await import("@/lib/auth");
+      await signOut();
+    } catch { /* ignore */ }
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
   }
 
   const [kName, setKName] = useState(couple.name);
