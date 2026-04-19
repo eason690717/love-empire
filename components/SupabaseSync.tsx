@@ -21,6 +21,7 @@ export function SupabaseSync() {
   const loggedIn = useGame((s) => s.loggedIn);
   const couple = useGame((s) => s.couple);
   const applyRemoteState = useGame((s) => s.applyRemoteState);
+  const logout = useGame((s) => s.logout);
   const subscribedRef = useRef<(() => void) | null>(null);
   const pollIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
@@ -30,25 +31,69 @@ export function SupabaseSync() {
 
     let cancelled = false;
 
+    // 偵測「Supabase 帳號/couple 已不存在」→ 強制登出，避免孤兒 session
+    const forceLogoutIfOrphan = async (reason: string) => {
+      console.warn("[SupabaseSync] orphan session detected:", reason);
+      if (typeof window !== "undefined") {
+        alert("資料已被重置或你的帳號已被清理，請重新登入。");
+      }
+      // 同時清 zustand persist 避免 state 殘留
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("love-empire-v5");
+          localStorage.removeItem("love-empire-v4");
+          localStorage.removeItem("love-empire-v3");
+        } catch { /* ignore */ }
+      }
+      logout();
+      if (typeof window !== "undefined") {
+        // 強制跳 /login
+        setTimeout(() => { window.location.href = "/login"; }, 100);
+      }
+    };
+
     (async () => {
       const user = await getCurrentUser();
-      if (cancelled || !user) return;
+      if (cancelled) return;
+      if (!user) {
+        // Supabase session 已失效 → 強制登出
+        forceLogoutIfOrphan("no current user in Supabase");
+        return;
+      }
 
       // 解析 couple_id (從 users table)
       const { getSupabase } = await import("@/lib/supabase");
       const sb = await getSupabase();
       if (!sb || cancelled) return;
       const client: any = sb;
-      const { data: urow } = await client
+      const { data: urow, error: urowErr } = await client
         .from("users")
         .select("couple_id, role, nickname")
         .eq("id", user.id)
         .maybeSingle();
-      if (cancelled || !urow?.couple_id) return;
+      if (cancelled) return;
+      if (urowErr) {
+        console.warn("[SupabaseSync] users query error", urowErr);
+        return;
+      }
+      if (!urow) {
+        // users table 找不到這個 auth.user — 代表 DB 被清了
+        forceLogoutIfOrphan("user row not found in users table");
+        return;
+      }
+      if (!urow.couple_id) {
+        // 有 user 但沒綁 couple → 可能中途被解綁，也視為需要重登
+        forceLogoutIfOrphan("user has no couple_id");
+        return;
+      }
 
       // Pull 全部狀態
       const state = await pullCoupleState(urow.couple_id);
-      if (cancelled || !state) return;
+      if (cancelled) return;
+      if (!state) {
+        forceLogoutIfOrphan("couple state returned null (couple deleted)");
+        return;
+      }
 
       applyRemoteState(state);
 
