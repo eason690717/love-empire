@@ -110,6 +110,7 @@ interface State {
   removeIslandItem: (id: string) => void;
   sendGift: (toCoupleName?: string, message?: string) => void;
   sendCardGift: (cardId: string, toCoupleId: string, toCoupleName: string, message: string) => void;
+  openGift: (giftId: string) => void;
   addFriend: (coupleId: string) => { ok: boolean; reason?: string };
   removeFriend: (coupleId: string) => void;
   joinAlliance: (id: string) => void;
@@ -1057,6 +1058,12 @@ export const useGame = create<State>()(
             ...get().gifts,
           ],
         }),
+
+      openGift: (giftId) => {
+        set({
+          gifts: get().gifts.map((g) => (g.id === giftId ? { ...g, read: true } : g)),
+        });
+      },
 
       sendCardGift: (cardId, toCoupleId, toCoupleName, message) => {
         const card = get().codex.find((c) => c.id === cardId && c.obtainedAt);

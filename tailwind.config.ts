@@ -60,6 +60,7 @@ const config: Config = {
         "rainbow": "rainbow 3.6s linear infinite",
         "pop": "pop 0.45s ease-out",
         "sparkle": "sparkle 1.6s ease-in-out infinite",
+        "shake": "shake 0.6s ease-in-out infinite",
       },
       keyframes: {
         "float-slow": {
@@ -86,6 +87,12 @@ const config: Config = {
         sparkle: {
           "0%, 100%": { opacity: "0.3", transform: "scale(0.9)" },
           "50%": { opacity: "1", transform: "scale(1.2)" },
+        },
+        shake: {
+          "0%, 100%": { transform: "rotate(0deg) translateX(0)" },
+          "20%": { transform: "rotate(-6deg) translateX(-3px)" },
+          "50%": { transform: "rotate(5deg) translateX(3px)" },
+          "80%": { transform: "rotate(-3deg) translateX(-2px)" },
         },
       },
       backgroundImage: {

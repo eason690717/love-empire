@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { CardGiftModal } from "@/components/CardGiftModal";
@@ -11,8 +11,10 @@ export default function FriendsPage() {
   const leaderboard = useGame((s) => s.leaderboard);
   const gifts = useGame((s) => s.gifts);
   const removeFriend = useGame((s) => s.removeFriend);
+  const openGift = useGame((s) => s.openGift);
   const [tab, setTab] = useState<"list" | "gifts" | "add">("list");
   const [giftTarget, setGiftTarget] = useState<{ id: string; name: string } | null>(null);
+  const [openingGiftId, setOpeningGiftId] = useState<string | null>(null);
 
   const friendCouples = friends
     .map((f) => leaderboard.find((c) => c.id === f.coupleId))
@@ -74,21 +76,50 @@ export default function FriendsPage() {
           {gifts.length === 0 && (
             <p className="card p-8 text-center text-empire-mute">禮物匣還是空的，等收到再來看看</p>
           )}
-          {gifts.map((g) => (
-            <div key={g.id} className={`card p-4 ${g.read ? "" : "border-l-4 border-empire-pink"}`}>
-              <div className="flex items-center gap-2">
-                <div className="text-2xl">{g.type === "card" ? "🎴" : g.type === "coins" ? "💰" : "📦"}</div>
-                <div className="flex-1">
-                  <div className="font-bold text-sm">來自「{g.fromCoupleName}」</div>
-                  <div className="text-xs text-slate-500">{g.receivedAt}</div>
+          {gifts.map((g) => {
+            if (!g.read) {
+              // 未拆禮物：包裝盒 + 閃光
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => setOpeningGiftId(g.id)}
+                  className="card w-full p-5 text-center relative overflow-hidden hover:shadow-lg transition group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-empire-pink/10 via-empire-sunshine/10 to-empire-sky/10 animate-pulse" />
+                  <div className="relative">
+                    <div className="text-5xl mb-2 animate-bob group-hover:scale-110 transition">🎁</div>
+                    <div className="font-bold text-sm">來自「{g.fromCoupleName}」的禮物</div>
+                    <div className="text-xs text-empire-mute">{g.receivedAt} · 點擊拆開 ✨</div>
+                    <span className="absolute -top-1 -right-1 tag bg-empire-pink text-white text-[10px] animate-pop">NEW</span>
+                  </div>
+                </button>
+              );
+            }
+            return (
+              <div key={g.id} className="card p-4">
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl">{g.type === "card" ? "🎴" : g.type === "coins" ? "💰" : "📦"}</div>
+                  <div className="flex-1">
+                    <div className="font-bold text-sm">來自「{g.fromCoupleName}」</div>
+                    <div className="text-xs text-slate-500">{g.receivedAt}</div>
+                  </div>
                 </div>
-                {!g.read && <span className="tag bg-empire-pink text-white text-[10px]">NEW</span>}
+                <div className="mt-2 text-sm">{g.content}</div>
+                {g.message && <div className="mt-1 text-xs text-slate-500 italic">&ldquo;{g.message}&rdquo;</div>}
               </div>
-              <div className="mt-2 text-sm">{g.content}</div>
-              {g.message && <div className="mt-1 text-xs text-slate-500 italic">&ldquo;{g.message}&rdquo;</div>}
-            </div>
-          ))}
+            );
+          })}
         </div>
+      )}
+
+      {openingGiftId && (
+        <GiftUnboxModal
+          gift={gifts.find((g) => g.id === openingGiftId)!}
+          onFinish={() => {
+            if (openingGiftId) openGift(openingGiftId);
+            setOpeningGiftId(null);
+          }}
+        />
       )}
 
       {giftTarget && (
@@ -199,6 +230,66 @@ function AddFriendTab() {
             <p className="text-xs text-empire-mute text-center py-4">目前沒有可加的推薦對象</p>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GiftUnboxModal({ gift, onFinish }: { gift: any; onFinish: () => void }) {
+  // 3 階段：shaking (搖動) → opening (盒子打開) → revealed (卡片浮出)
+  const [phase, setPhase] = useState<"shaking" | "opening" | "revealed">("shaking");
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase("opening"), 1100);
+    const t2 = setTimeout(() => setPhase("revealed"), 1800);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  const icon = gift.type === "card" ? "🎴" : gift.type === "coins" ? "💰" : "📦";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(20, 40, 70, 0.6)", backdropFilter: "blur(6px)" }}
+      onClick={phase === "revealed" ? onFinish : undefined}
+    >
+      <div className="max-w-sm w-full card p-7 text-center relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* 背景光暈 */}
+        <div className={`absolute inset-0 ${phase === "revealed" ? "opacity-100" : "opacity-40"} transition-opacity duration-700 pointer-events-none`}
+             style={{ background: "radial-gradient(circle at center, rgba(255,212,71,0.35) 0%, transparent 60%)" }} />
+
+        {phase === "shaking" && (
+          <div className="relative py-6">
+            <div className="text-8xl animate-shake inline-block">🎁</div>
+            <div className="mt-4 text-empire-mute text-sm">搖一搖…裡面有東西 ✨</div>
+          </div>
+        )}
+
+        {phase === "opening" && (
+          <div className="relative py-6">
+            <div className="text-8xl inline-block animate-pop">📦</div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-4xl animate-sparkle">✨</div>
+            </div>
+            <div className="mt-4 text-empire-ink font-bold">打開中…</div>
+          </div>
+        )}
+
+        {phase === "revealed" && (
+          <div className="relative py-4">
+            <div className="text-7xl mb-3 inline-block animate-pop">{icon}</div>
+            <div className="font-display font-black text-xl text-empire-ink">{gift.content}</div>
+            <div className="mt-2 text-xs text-empire-mute">來自 {gift.fromCoupleName}</div>
+            {gift.message && (
+              <div className="mt-3 p-3 rounded-xl bg-empire-cream/80 text-sm italic text-empire-ink">
+                &ldquo;{gift.message}&rdquo;
+              </div>
+            )}
+            <button onClick={onFinish} className="mt-5 btn-primary px-6 py-2 font-bold">
+              收下 💕
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
