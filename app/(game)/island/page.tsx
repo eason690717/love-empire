@@ -20,6 +20,7 @@ export default function IslandPage() {
   const [shop, setShop] = useState(false);
   const [greetResult, setGreetResult] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<"idle" | "sharing" | "ok" | "fail">("idle");
+  const [snapOn, setSnapOn] = useState(false); // 格線對齊開關
   const islandRef = useRef<HTMLDivElement>(null);
 
   const visitor = getTodayVisitor();
@@ -95,7 +96,16 @@ export default function IslandPage() {
             {festival && <span className="ml-2 text-empire-berry font-semibold">· {festival.emoji} {festival.label}</span>}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSnapOn((v) => !v)}
+            className={`px-3 py-2 text-sm rounded-lg border-2 font-semibold transition ${
+              snapOn ? "bg-empire-sky text-white border-empire-sky" : "bg-white text-empire-mute border-empire-cloud"
+            }`}
+            title="拖曳時自動對齊格線"
+          >
+            {snapOn ? "🧲 對齊 ON" : "🧲 對齊"}
+          </button>
           <button onClick={handleShare} disabled={shareStatus === "sharing"} className="btn-ghost px-3 py-2 text-sm">
             {shareStatus === "sharing" ? "截圖中…" : shareStatus === "ok" ? "✓ 已分享" : shareStatus === "fail" ? "失敗" : "📸 分享快照"}
           </button>
@@ -110,6 +120,17 @@ export default function IslandPage() {
         className="relative w-full h-[440px] rounded-[28px] overflow-hidden border-[3px] border-white shadow-lift"
         style={{ background: skyBg[currentSeason] }}
       >
+        {/* 格線 overlay（snap 開時顯示） */}
+        {snapOn && (
+          <div
+            className="absolute inset-0 pointer-events-none z-[1] opacity-40"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.8) 1px, transparent 1px)",
+              backgroundSize: "10% 10%",
+            }}
+          />
+        )}
         <div className="absolute top-5 right-8 text-5xl animate-sparkle">☀️</div>
         <div className="absolute top-6 left-10 text-3xl opacity-85 animate-float-slow">☁️</div>
         <div className="absolute top-14 left-40 text-2xl opacity-75 animate-float-slow" style={{ animationDelay: "1s" }}>☁️</div>
@@ -142,6 +163,7 @@ export default function IslandPage() {
           <DraggableItem
             key={it.id}
             item={it}
+            snap={snapOn}
             onMove={(x, y) => moveIslandItem(it.id, x, y)}
             onRemove={() => removeIslandItem(it.id)}
           />
@@ -249,19 +271,21 @@ export default function IslandPage() {
 }
 
 function DraggableItem({
-  item, onMove, onRemove,
+  item, snap, onMove, onRemove,
 }: {
   item: { id: string; emoji: string; label: string; x: number; y: number; catalogId?: string };
+  snap: boolean;
   onMove: (x: number, y: number) => void;
   onRemove: () => void;
 }) {
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const parent = (e.currentTarget.parentElement as HTMLDivElement);
     const rect = parent.getBoundingClientRect();
+    const snapTo = (v: number) => snap ? Math.round(v / 10) * 10 : v;
     const move = (ev: PointerEvent) => {
-      const x = Math.max(2, Math.min(98, ((ev.clientX - rect.left) / rect.width) * 100));
-      const y = Math.max(2, Math.min(98, ((ev.clientY - rect.top) / rect.height) * 100));
-      onMove(x, y);
+      const rawX = Math.max(2, Math.min(98, ((ev.clientX - rect.left) / rect.width) * 100));
+      const rawY = Math.max(2, Math.min(98, ((ev.clientY - rect.top) / rect.height) * 100));
+      onMove(snapTo(rawX), snapTo(rawY));
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -273,7 +297,7 @@ function DraggableItem({
 
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none hover:scale-110 transition"
+      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none hover:scale-110 transition z-[2]"
       style={{ left: `${item.x}%`, top: `${item.y}%` }}
       onPointerDown={handlePointerDown}
       onDoubleClick={onRemove}

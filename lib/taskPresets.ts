@@ -73,6 +73,26 @@ export const PRESETS_LONGDISTANCE: Preset[] = [
   { title: "買下次見面的車票/機票",             category: "surprise", reward: 500, systemXp: 15, attribute: "surprise",      direction: "together", relationshipType: "longdistance", unlockLevel: 5 },
 ];
 
+// ─────────────────────────── 已婚 (15) — parenting / 婚姻向
+// 設計原則：時間壓力大、小孩在身邊、要「重新當情侶不是爸媽」
+export const PRESETS_MARRIED: Preset[] = [
+  { title: "小孩睡後專心聊 15 分（不滑手機）",  category: "romance",  reward: 80,  systemXp: 10, attribute: "communication", direction: "together", relationshipType: "married" },
+  { title: "替對方顧小孩 1 小時（放風券）",       category: "surprise", reward: 200, systemXp: 15, attribute: "surprise",      direction: "together", relationshipType: "married" },
+  { title: "一起回憶結婚前的某件小事",             category: "romance",  reward: 50,  systemXp: 10, attribute: "communication", direction: "together", relationshipType: "married" },
+  { title: "主動排一個兩人獨處的晚上",             category: "surprise", reward: 150, systemXp: 15, attribute: "intimacy",      direction: "together", relationshipType: "married" },
+  { title: "把小孩丟給爺奶，約會 2 小時",          category: "romance",  reward: 300, systemXp: 10, attribute: "intimacy",      direction: "together", relationshipType: "married", unlockLevel: 5 },
+  { title: "睡前說一句「謝謝你今天」",             category: "romance",  reward: 15,  systemXp: 10, attribute: "communication", direction: "together", relationshipType: "married" },
+  { title: "主動做對方討厭的家務一週",             category: "chore",    reward: 200, systemXp: 5,  attribute: "care",          direction: "together", relationshipType: "married", unlockLevel: 5 },
+  { title: "在小孩面前稱讚對方一次",               category: "romance",  reward: 30,  systemXp: 10, attribute: "intimacy",      direction: "together", relationshipType: "married" },
+  { title: "一起回顧小孩成長的一張照片",           category: "coop",     reward: 40,  systemXp: 12, attribute: "communication", direction: "together", relationshipType: "married", coop: true },
+  { title: "婚後第一次一起看婚禮影片",             category: "romance",  reward: 100, systemXp: 10, attribute: "intimacy",      direction: "together", relationshipType: "married" },
+  { title: "結婚紀念日前主動規劃驚喜",             category: "surprise", reward: 500, systemXp: 15, attribute: "surprise",      direction: "together", relationshipType: "married", unlockLevel: 5 },
+  { title: "為對方打理一件他平常煩的事",           category: "chore",    reward: 80,  systemXp: 5,  attribute: "care",          direction: "together", relationshipType: "married" },
+  { title: "一起做一次原本只為小孩做的事",         category: "coop",     reward: 60,  systemXp: 12, attribute: "intimacy",      direction: "together", relationshipType: "married", coop: true },
+  { title: "睡前交換一件「今天為你感謝的事」",     category: "romance",  reward: 40,  systemXp: 10, attribute: "communication", direction: "together", relationshipType: "married" },
+  { title: "週末留一餐沒有小孩的飯局（訂餐在家）", category: "romance",  reward: 120, systemXp: 10, attribute: "intimacy",      direction: "together", relationshipType: "married" },
+];
+
 // ─────────────────────────── 通用 (15)
 export const PRESETS_ANY: Preset[] = [
   { title: "一句情話",                          category: "romance",  reward: 10,  systemXp: 10, attribute: "communication", direction: "together", relationshipType: "any" },
@@ -96,14 +116,16 @@ export const ALL_PRESETS: Preset[] = [
   ...PRESETS_COHABIT,
   ...PRESETS_NEARBY,
   ...PRESETS_LONGDISTANCE,
+  ...PRESETS_MARRIED,
   ...PRESETS_ANY,
 ];
 
 /** 根據情侶類型回傳推薦的任務模板 — 主類 15 + 通用 15 = 30 個 */
-export function getPresetsForType(type: "cohabit" | "nearby" | "longdistance"): Preset[] {
+export function getPresetsForType(type: "cohabit" | "nearby" | "longdistance" | "married"): Preset[] {
   const main =
     type === "cohabit" ? PRESETS_COHABIT :
     type === "nearby" ? PRESETS_NEARBY :
-    PRESETS_LONGDISTANCE;
+    type === "longdistance" ? PRESETS_LONGDISTANCE :
+    PRESETS_MARRIED;
   return [...main, ...PRESETS_ANY];
 }

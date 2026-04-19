@@ -76,7 +76,7 @@ interface State {
   setKingdomName: (name: string) => void;
   addCustomTask: (t: Omit<Task, "id" | "systemXp" | "custom">) => void;
   addPresetTask: (preset: Omit<Task, "id" | "custom">) => void;
-  setRelationshipType: (type: "cohabit" | "nearby" | "longdistance") => void;
+  setRelationshipType: (type: "cohabit" | "nearby" | "longdistance" | "married") => void;
   removeTask: (id: string) => void;
   addMoment: (m: Omit<Moment, "id" | "createdAt" | "likes" | "likedByMe" | "comments" | "coupleId" | "coupleName" | "isSelf">) => void;
   likeMoment: (id: string) => void;

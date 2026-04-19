@@ -16,12 +16,13 @@ export type TaskDirection = "queenToPrince" | "princeToQueen" | "together";
  *  longdistance = 遠距（不同城市/國家）
  *  any          = 所有類型都適用
  */
-export type RelationshipType = "cohabit" | "nearby" | "longdistance" | "any";
+export type RelationshipType = "cohabit" | "nearby" | "longdistance" | "married" | "any";
 
 export const RELATIONSHIP_LABELS: Record<Exclude<RelationshipType, "any">, { label: string; emoji: string; desc: string }> = {
-  cohabit:      { label: "同居",   emoji: "🏡", desc: "住在同一個屋簷下" },
-  nearby:       { label: "附近",   emoji: "🚗", desc: "不同住但住得近，常見面" },
+  cohabit:      { label: "同居",   emoji: "🏡", desc: "住在同一個屋簷下（未婚）" },
+  nearby:       { label: "附近",   emoji: "🚗", desc: "不同住但住得近、常見面（含每週一次）" },
   longdistance: { label: "遠距",   emoji: "✈️", desc: "不同城市/國家，靠訊息視訊維繫" },
+  married:      { label: "已婚",   emoji: "💍", desc: "結婚的情侶（可能有小孩、時間壓力）" },
 };
 
 export interface Task {

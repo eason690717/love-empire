@@ -50,7 +50,7 @@ export default function SettingsPage() {
           影響「任務模板庫」推薦哪類任務給你們 · 之後可隨時更改
         </p>
         <div className="space-y-2">
-          {(["cohabit", "nearby", "longdistance"] as const).map((type) => {
+          {(["cohabit", "nearby", "longdistance", "married"] as const).map((type) => {
             const info = RELATIONSHIP_LABELS[type];
             const selected = couple.relationshipType === type;
             return (

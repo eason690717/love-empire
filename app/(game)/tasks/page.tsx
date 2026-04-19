@@ -7,7 +7,7 @@ import type { Task, TaskDirection, RelationshipType } from "@/lib/types";
 import { RELATIONSHIP_LABELS } from "@/lib/types";
 import { TaskEditor } from "@/components/TaskEditor";
 import { RejectModal } from "@/components/RejectModal";
-import { PRESETS_COHABIT, PRESETS_NEARBY, PRESETS_LONGDISTANCE, PRESETS_ANY } from "@/lib/taskPresets";
+import { PRESETS_COHABIT, PRESETS_NEARBY, PRESETS_LONGDISTANCE, PRESETS_MARRIED, PRESETS_ANY } from "@/lib/taskPresets";
 
 const DIRECTION_BADGE: Record<TaskDirection, { label: string; className: string }> = {
   queenToPrince: { label: "阿紅→阿藍", className: "bg-rose-100 text-rose-700" },
@@ -263,22 +263,24 @@ function PresetsDrawer({
   currentType?: RelationshipType;
   existingTitles: Set<string>;
   onAdd: (p: any) => void;
-  onSetType: (t: "cohabit" | "nearby" | "longdistance") => void;
+  onSetType: (t: "cohabit" | "nearby" | "longdistance" | "married") => void;
   onClose: () => void;
 }) {
-  const [view, setView] = useState<"cohabit" | "nearby" | "longdistance" | "any">(
+  const [view, setView] = useState<"cohabit" | "nearby" | "longdistance" | "married" | "any">(
     currentType && currentType !== "any" ? currentType : "cohabit"
   );
   const list =
     view === "cohabit" ? PRESETS_COHABIT :
     view === "nearby" ? PRESETS_NEARBY :
     view === "longdistance" ? PRESETS_LONGDISTANCE :
+    view === "married" ? PRESETS_MARRIED :
     PRESETS_ANY;
 
-  const tabs: { key: "cohabit" | "nearby" | "longdistance" | "any"; emoji: string; label: string }[] = [
+  const tabs: { key: "cohabit" | "nearby" | "longdistance" | "married" | "any"; emoji: string; label: string }[] = [
     { key: "cohabit",      emoji: RELATIONSHIP_LABELS.cohabit.emoji,      label: RELATIONSHIP_LABELS.cohabit.label },
     { key: "nearby",       emoji: RELATIONSHIP_LABELS.nearby.emoji,       label: RELATIONSHIP_LABELS.nearby.label },
     { key: "longdistance", emoji: RELATIONSHIP_LABELS.longdistance.emoji, label: RELATIONSHIP_LABELS.longdistance.label },
+    { key: "married",      emoji: RELATIONSHIP_LABELS.married.emoji,      label: RELATIONSHIP_LABELS.married.label },
     { key: "any",          emoji: "💫",                                    label: "通用" },
   ];
 
@@ -315,6 +317,7 @@ function PresetsDrawer({
                   t.key === "cohabit" ? PRESETS_COHABIT.length :
                   t.key === "nearby" ? PRESETS_NEARBY.length :
                   t.key === "longdistance" ? PRESETS_LONGDISTANCE.length :
+                  t.key === "married" ? PRESETS_MARRIED.length :
                   PRESETS_ANY.length
                 })
               </button>
@@ -322,10 +325,10 @@ function PresetsDrawer({
           </div>
           {view !== "any" && currentType !== view && (
             <button
-              onClick={() => onSetType(view as "cohabit" | "nearby" | "longdistance")}
+              onClick={() => onSetType(view as "cohabit" | "nearby" | "longdistance" | "married")}
               className="w-full text-[11px] text-empire-sky hover:underline py-1"
             >
-              把我們設為「{RELATIONSHIP_LABELS[view as "cohabit" | "nearby" | "longdistance"].label}」情侶 →
+              把我們設為「{RELATIONSHIP_LABELS[view as "cohabit" | "nearby" | "longdistance" | "married"].label}」情侶 →
             </button>
           )}
           {currentType === view && (

@@ -21,6 +21,11 @@ export default function DashboardPage() {
   const redemptions = useGame((s) => s.redemptions);
   const moments = useGame((s) => s.moments);
   const leaderboard = useGame((s) => s.leaderboard);
+  const ritual = useGame((s) => s.ritual);
+  const questionAnswers = useGame((s) => s.questionAnswers);
+  const notifications = useGame((s) => s.notifications);
+  const gifts = useGame((s) => s.gifts);
+  const anniversaries = useGame((s) => s.anniversaries);
   const checkKnightShield = useGame((s) => s.checkKnightShield);
 
   useEffect(() => { checkKnightShield(); }, [checkKnightShield]);
@@ -54,6 +59,34 @@ export default function DashboardPage() {
 
   const avgAttr = Object.values(pet.attrs).reduce((a, b) => a + b, 0) / 5;
 
+  // 「今日 3 分鐘」快速卡 — persona 研究整合：每日瑣碎時間也能推進關係
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const ritualDone = ritual.date === todayStr && (ritual.morning || ritual.night);
+  const todayAnswered = questionAnswers.some((a) =>
+    (a.createdAt ?? "").slice(0, 10) === todayStr && a.answeredBy === role
+  );
+  const unreadCount = notifications.filter((n) => !n.read).length + gifts.filter((g) => !g.read).length;
+  const quickDoneCount = [ritualDone, todayAnswered, unreadCount === 0].filter(Boolean).length;
+
+  // 最近紀念日倒數（未來 90 天內）
+  const upcomingAnniversary = (() => {
+    if (!anniversaries.length) return null;
+    const now = new Date();
+    const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const withDays = anniversaries.map((a) => {
+      const [y, m, d] = a.date.split("-").map(Number);
+      let next = new Date(y, (m ?? 1) - 1, d ?? 1);
+      if (a.recurring) {
+        next = new Date(today0.getFullYear(), (m ?? 1) - 1, d ?? 1);
+        if (next < today0) next = new Date(today0.getFullYear() + 1, (m ?? 1) - 1, d ?? 1);
+      }
+      const days = Math.round((next.getTime() - today0.getTime()) / 86400000);
+      return { ...a, daysUntil: days, nextDate: next };
+    }).filter((x) => x.daysUntil >= 0 && x.daysUntil <= 90);
+    withDays.sort((a, b) => a.daysUntil - b.daysUntil);
+    return withDays[0] ?? null;
+  })();
+
   return (
     <>
       <DailyBonusModal />
@@ -71,6 +104,61 @@ export default function DashboardPage() {
           <div className="font-black text-base">{SPECIAL_DAY_LABEL}</div>
           <div className="text-xs opacity-90">今日愛意指數 ×{SPECIAL_DAY_MULTIPLIER}，抓緊時間累積</div>
         </div>
+      )}
+
+      {/* 今日 3 分鐘快速卡 — 零碎時間也能推進關係 */}
+      <div className="mb-3 card p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⏱️</span>
+            <h3 className="font-black text-sm text-empire-ink">今日 3 分鐘</h3>
+          </div>
+          <div className="text-[11px] text-empire-mute font-bold">
+            {quickDoneCount}/3 {quickDoneCount === 3 && "✓"}
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <QuickAction
+            href="/rituals"
+            emoji="🌅"
+            label={ritualDone ? "今日已打卡" : "晨/晚打卡"}
+            done={ritualDone}
+            sub={ritualDone ? "做得好" : "30 秒"}
+          />
+          <QuickAction
+            href="/questions"
+            emoji="💭"
+            label={todayAnswered ? "今日已答" : "抽一題問答"}
+            done={todayAnswered}
+            sub={todayAnswered ? "晚點看回覆" : "90 秒"}
+          />
+          <QuickAction
+            href="/inbox"
+            emoji="💌"
+            label={unreadCount === 0 ? "都看完了" : `${unreadCount} 則未讀`}
+            done={unreadCount === 0}
+            sub={unreadCount === 0 ? "😎" : "30 秒"}
+          />
+        </div>
+      </div>
+
+      {/* 紀念日倒數 */}
+      {upcomingAnniversary && (
+        <Link href="/timeline" className="mb-3 block card p-3 bg-gradient-to-r from-empire-cream/80 to-empire-pink/20 hover:shadow-lift transition">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">{upcomingAnniversary.emoji}</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] text-empire-mute">下一個紀念日</div>
+              <div className="font-black text-sm text-empire-ink truncate">{upcomingAnniversary.label}</div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="font-display font-black text-2xl text-empire-berry leading-none">
+                {upcomingAnniversary.daysUntil === 0 ? "今天！" : `${upcomingAnniversary.daysUntil}`}
+              </div>
+              <div className="text-[10px] text-empire-mute">{upcomingAnniversary.daysUntil === 0 ? "💝" : "天後"}</div>
+            </div>
+          </div>
+        </Link>
       )}
 
       {/* 中央舞台：左右懸浮按鈕 + 寵物 scene
@@ -162,6 +250,30 @@ export default function DashboardPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function QuickAction({ href, emoji, label, done, sub }: { href: string; emoji: string; label: string; done: boolean; sub: string }) {
+  return (
+    <Link
+      href={href}
+      className={`p-2.5 rounded-xl text-center transition ${
+        done
+          ? "bg-emerald-50 border-2 border-emerald-300"
+          : "bg-empire-cream border-2 border-empire-gold/40 hover:border-empire-gold animate-pulse-slow"
+      }`}
+    >
+      <div className="text-2xl mb-0.5 relative inline-block">
+        {emoji}
+        {done && (
+          <span className="absolute -bottom-1 -right-2 text-emerald-600 text-sm font-black">✓</span>
+        )}
+      </div>
+      <div className={`text-[11px] font-bold ${done ? "text-emerald-700" : "text-empire-ink"} leading-tight`}>
+        {label}
+      </div>
+      <div className="text-[9px] text-empire-mute mt-0.5">{sub}</div>
+    </Link>
   );
 }
 
