@@ -10,9 +10,10 @@ import { RejectModal } from "@/components/RejectModal";
 import { PRESETS_COHABIT, PRESETS_NEARBY, PRESETS_LONGDISTANCE, PRESETS_MARRIED, PRESETS_ANY } from "@/lib/taskPresets";
 
 const DIRECTION_BADGE: Record<TaskDirection, { label: string; className: string }> = {
-  queenToPrince: { label: "阿紅→阿藍", className: "bg-rose-100 text-rose-700" },
-  princeToQueen: { label: "阿藍→阿紅", className: "bg-sky-100 text-sky-700" },
-  together:      { label: "一起做",    className: "bg-fuchsia-100 text-fuchsia-700" },
+  queenToPrince: { label: "對方做",  className: "bg-orange-100 text-orange-700" },
+  princeToQueen: { label: "對方做",  className: "bg-orange-100 text-orange-700" },
+  serve:         { label: "對方做",  className: "bg-orange-100 text-orange-700" },
+  together:      { label: "一起做",  className: "bg-fuchsia-100 text-fuchsia-700" },
 };
 
 export default function TasksPage() {
@@ -38,6 +39,7 @@ export default function TasksPage() {
   const canSubmit = (t: Task) => {
     if (t.unlockLevel && couple.kingdomLevel < t.unlockLevel) return false;
     if (t.direction === "together") return true;
+    if (t.direction === "serve") return true; // 對方做：任一方都可申報「我為對方做了」
     if (role === "queen" && t.direction === "queenToPrince") return true;
     if (role === "prince" && t.direction === "princeToQueen") return true;
     return false;

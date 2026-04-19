@@ -8,7 +8,13 @@ export type TaskCategory = "chore" | "romance" | "wellness" | "surprise" | "coop
  * - princeToQueen: 阿藍做、阿紅審核
  * - together: 兩人一起做，任一方都可申報，另一方審核
  */
-export type TaskDirection = "queenToPrince" | "princeToQueen" | "together";
+/**
+ * 任務方向
+ * - together    一起做：兩人共同參與的活動（一起看電影、一起運動）
+ * - serve       對方做：一方為另一方做的服務（倒垃圾、按摩、煮飯給對方；任一方都可申報）
+ * - queenToPrince / princeToQueen：精確指定方向（TaskEditor 高階模式用）
+ */
+export type TaskDirection = "queenToPrince" | "princeToQueen" | "together" | "serve";
 
 /** 情侶類型 — 決定哪些任務模板最適合這對情侶
  *  cohabit      = 同居（同一個家）

@@ -32,33 +32,33 @@ export const INITIAL_COUPLE: Couple = {
  * reward 由情侶自訂 (內部貨幣，不跨情侶比)
  */
 export const INITIAL_TASKS: Task[] = [
-  // 生活雜事類 (systemXp: 5, rewardCap: 300)
-  { id: "t1", title: "丟衣服下去洗", category: "chore", reward: 10, systemXp: 5, attribute: "care", direction: "together" },
-  { id: "t2", title: "摺被子整理床", category: "chore", reward: 10, systemXp: 5, attribute: "care", direction: "together" },
-  { id: "t3", title: "幫忙整理 & 倒垃圾", category: "chore", reward: 30, systemXp: 5, attribute: "care", direction: "together" },
-  { id: "t4", title: "幫忙拿去烘衣服", category: "chore", reward: 30, systemXp: 5, attribute: "care", direction: "together" },
-  { id: "t5", title: "幫忙煮飯/買飯/飲料", category: "chore", reward: 50, systemXp: 5, attribute: "care", direction: "together" },
-  { id: "t6", title: "載我上下班", category: "chore", reward: 200, systemXp: 5, attribute: "care", direction: "together" },
-  // 浪漫時刻 (systemXp: 10, rewardCap: 500)
-  { id: "t7", title: "說好話 / 情話一句", category: "romance", reward: 10, systemXp: 10, attribute: "communication", direction: "together" },
-  { id: "t8", title: "主動擁抱一次", category: "romance", reward: 20, systemXp: 10, attribute: "intimacy", direction: "together" },
-  { id: "t9", title: "心情不好馬上出現", category: "romance", reward: 200, systemXp: 10, attribute: "intimacy", direction: "together" },
-  // 驚喜 (systemXp: 15, rewardCap: 500)
-  { id: "t10", title: "驚喜小禮物", category: "surprise", reward: 150, systemXp: 15, attribute: "surprise", direction: "together" },
-  // 健康管理 (systemXp: 8, rewardCap: 200)
-  { id: "t11", title: "陪伴運動 30 分鐘", category: "wellness", reward: 60, systemXp: 8, attribute: "care", direction: "together" },
+  // 生活雜事類 — 多為「對方做」(serve)，任一方都能申報
+  { id: "t1", title: "丟衣服下去洗", category: "chore", reward: 10, systemXp: 5, attribute: "care", direction: "serve" },
+  { id: "t2", title: "摺被子整理床", category: "chore", reward: 10, systemXp: 5, attribute: "care", direction: "serve" },
+  { id: "t3", title: "倒垃圾", category: "chore", reward: 30, systemXp: 5, attribute: "care", direction: "serve" },
+  { id: "t4", title: "幫忙拿去烘衣服", category: "chore", reward: 30, systemXp: 5, attribute: "care", direction: "serve" },
+  { id: "t5", title: "幫忙煮飯/買飯/飲料", category: "chore", reward: 50, systemXp: 5, attribute: "care", direction: "serve" },
+  { id: "t6", title: "載對方上下班", category: "chore", reward: 200, systemXp: 5, attribute: "care", direction: "serve" },
+  // 浪漫時刻 — 多為「對方做」
+  { id: "t7", title: "說好話 / 情話一句", category: "romance", reward: 10, systemXp: 10, attribute: "communication", direction: "serve" },
+  { id: "t8", title: "主動擁抱一次", category: "romance", reward: 20, systemXp: 10, attribute: "intimacy", direction: "serve" },
+  { id: "t9", title: "心情不好馬上出現", category: "romance", reward: 200, systemXp: 10, attribute: "intimacy", direction: "serve" },
+  // 驚喜 — 對方做
+  { id: "t10", title: "驚喜小禮物", category: "surprise", reward: 150, systemXp: 15, attribute: "surprise", direction: "serve" },
+  // 健康管理 — 一起做
+  { id: "t11", title: "一起運動 30 分鐘", category: "wellness", reward: 60, systemXp: 8, attribute: "care", direction: "together" },
   { id: "t12", title: "一起睡前閱讀", category: "wellness", reward: 30, systemXp: 8, attribute: "communication", direction: "together" },
-  // 合作任務 (systemXp: 12, rewardCap: 300)
+  // 合作任務 — 一起做
   { id: "t13", title: "一起看一部電影 🎬", category: "coop", reward: 80, systemXp: 12, attribute: "intimacy", direction: "together", coop: true },
   { id: "t14", title: "互相讚美 10 句 💕", category: "coop", reward: 100, systemXp: 12, attribute: "communication", direction: "together", coop: true },
   // 等級解鎖任務 (Lv.5+)
   { id: "t15", title: "深度談心 1 小時", category: "romance", reward: 150, systemXp: 10, attribute: "communication", direction: "together", unlockLevel: 5 },
-  { id: "t16", title: "手寫信一封", category: "romance", reward: 200, systemXp: 10, attribute: "communication", direction: "together", unlockLevel: 5 },
+  { id: "t16", title: "手寫信一封", category: "romance", reward: 200, systemXp: 10, attribute: "communication", direction: "serve", unlockLevel: 5 },
   // 等級解鎖任務 (Lv.15+)
   { id: "t17", title: "週末小旅行", category: "coop", reward: 300, systemXp: 12, attribute: "intimacy", direction: "together", coop: true, unlockLevel: 15 },
   { id: "t18", title: "一起做早餐", category: "coop", reward: 120, systemXp: 12, attribute: "care", direction: "together", coop: true, unlockLevel: 15 },
   // 等級解鎖任務 (Lv.30+)
-  { id: "t19", title: "年度浪漫計畫", category: "surprise", reward: 500, systemXp: 15, attribute: "surprise", direction: "together", unlockLevel: 30 },
+  { id: "t19", title: "年度浪漫計畫", category: "surprise", reward: 500, systemXp: 15, attribute: "surprise", direction: "serve", unlockLevel: 30 },
 ];
 
 /** 新使用者的申報紀錄：空的 */

@@ -469,6 +469,27 @@ export const useGame = create<State>()(
           });
         }
 
+        // 偵測「伴侶剛回的新問答」→ 加 local notification
+        const prevQAIds = new Set(get().questionAnswers.map((a) => a.id));
+        const incomingQA = (remote.questionAnswers ?? []);
+        for (const qa of incomingQA) {
+          if (prevQAIds.has(qa.id)) continue;
+          const fromRole = qa.answered_by
+            ? remote.users?.find((u: any) => u.id === qa.answered_by)?.role
+            : null;
+          if (!fromRole || fromRole === selfRole) continue;
+          const fromName = fromRole === "queen" ? queenUser?.nickname ?? "阿紅" : princeUser?.nickname ?? "阿藍";
+          get().addNotification({
+            type: "interaction",
+            title: `💭 ${fromName} 回答了一題問答`,
+            body: "去看看並給評分",
+            emoji: "💭",
+            link: "/questions",
+            priority: "high",
+            fromRole,
+          });
+        }
+
         set({
           couple: {
             id: cr.id,
@@ -747,12 +768,15 @@ export const useGame = create<State>()(
             if (u?.id) insertQuestionAnswerRemote(nextCouple.id, u.id, questionId, clean).catch(() => null);
           })();
         }
+        const senderName = get().role === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname;
         get().addNotification({
-          type: "system",
-          title: "💬 對方有新的回答",
-          body: `${q.text}`,
-          emoji: "💬",
+          type: "interaction",
+          title: `💭 ${senderName} 回答了一題問答`,
+          body: `「${q.text.slice(0, 40)}${q.text.length > 40 ? "…" : ""}」· 去看看並給評分`,
+          emoji: "💭",
           link: "/questions",
+          priority: "high",
+          fromRole: get().role,
         });
         get().checkAchievements();
       },
@@ -793,6 +817,21 @@ export const useGame = create<State>()(
               });
             }
           }
+        }
+        // 通知答題者：你得到評分了
+        const ans = get().questionAnswers.find((a) => a.id === answerId);
+        if (ans) {
+          const raterRole = get().role;
+          const raterName = raterRole === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname;
+          get().addNotification({
+            type: "interaction",
+            title: `⭐ ${raterName} 給你的回答打了 ${clamped} 星`,
+            body: comment ? `「${comment.slice(0, 40)}」` : (clamped >= 4 ? "獎勵 XP + 有機會掉卡" : "再接再厲"),
+            emoji: clamped === 5 ? "🌟" : clamped >= 4 ? "⭐" : "💬",
+            link: "/questions",
+            priority: clamped >= 4 ? "high" : "normal",
+            fromRole: raterRole,
+          });
         }
         get().checkAchievements();
       },
