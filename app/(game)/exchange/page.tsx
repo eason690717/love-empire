@@ -4,6 +4,7 @@ import { useGame } from "@/lib/store";
 import { useMemo, useState } from "react";
 import { PageBanner } from "@/components/PageBanner";
 import { REWARD_CATEGORY_LABELS, type RewardCategory } from "@/lib/types";
+import { toast } from "@/components/Toast";
 
 const CATEGORY_ORDER: RewardCategory[] = ["daily", "date", "intimacy", "control", "indulge", "cash"];
 
@@ -31,7 +32,14 @@ export default function ExchangePage() {
   const affordableCount = visibleRewards.filter((r) => couple.coins >= r.cost).length;
 
   const doRedeem = (id: string) => {
+    const reward = visibleRewards.find((r) => r.id === id);
+    if (!reward) return;
+    if (couple.coins < reward.cost) {
+      toast.error(`金幣不足 — 需 ${reward.cost}，目前 ${couple.coins}`);
+      return;
+    }
     redeem(id);
+    toast.success(`🎁 已兌換「${reward.title}」 · -${reward.cost} 金`);
     setJust(id);
     setTimeout(() => setJust(null), 1500);
   };
