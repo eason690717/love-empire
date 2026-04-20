@@ -2014,6 +2014,17 @@ export const useGame = create<State>()(
             useGame.setState({ rewards: INITIAL_REWARDS });
           }).catch(() => null);
         }
+        // 記憶圖鑑：新卡擴充時合併（保留已取得的 obtainedAt，補上新的未取得卡）
+        if (state && state.codex) {
+          import("./demoData").then(({ INITIAL_CODEX }) => {
+            const current = useGame.getState().codex;
+            const currentIds = new Set(current.map((c) => c.id));
+            const missing = INITIAL_CODEX.filter((c) => !currentIds.has(c.id));
+            if (missing.length > 0) {
+              useGame.setState({ codex: [...current, ...missing] });
+            }
+          }).catch(() => null);
+        }
         // Pet 沒 bond 欄位 → 初始化（估算：依現有 attrs 平均值推導，讓既有玩家不用從 0 開始）
         if (state && state.pet && state.pet.bondQueen === undefined) {
           const avg = Object.values(state.pet.attrs ?? {}).reduce((a: number, b: any) => a + (b ?? 0), 0) / 5;

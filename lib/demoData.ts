@@ -244,6 +244,63 @@ export const INITIAL_CODEX: MemoryCard[] = [
     festival: { month: 4,  day: 5,  window: 3, label: "清明節" } },
   { id: "c92", name: "秋分賞菊",     rarity: "N",   theme: "festival", emoji: "🌼", obtainedAt: null,
     festival: { month: 9,  day: 23, window: 3, label: "秋分" } },
+
+  // ============ 2026-04-20 擴充 40 張 (80→120) ============
+  // daily (+12)
+  { id: "c100", name: "晚安吻",           rarity: "N",   theme: "daily", emoji: "😘", obtainedAt: null },
+  { id: "c101", name: "早安擁抱",         rarity: "N",   theme: "daily", emoji: "🤗", obtainedAt: null },
+  { id: "c102", name: "一起刷牙",         rarity: "N",   theme: "daily", emoji: "🪥", obtainedAt: null },
+  { id: "c103", name: "給對方夾菜",       rarity: "R",   theme: "daily", emoji: "🥢", obtainedAt: null },
+  { id: "c104", name: "共用一副耳機",     rarity: "R",   theme: "daily", emoji: "🎧", obtainedAt: null },
+  { id: "c105", name: "被窩大作戰",       rarity: "R",   theme: "daily", emoji: "🛏️", obtainedAt: null },
+  { id: "c106", name: "一起追劇到天亮",   rarity: "SR",  theme: "daily", emoji: "📺", obtainedAt: null },
+  { id: "c107", name: "生病時的陪伴",     rarity: "SR",  theme: "daily", emoji: "🤒", obtainedAt: null },
+  { id: "c108", name: "下班接送",         rarity: "R",   theme: "daily", emoji: "🚗", obtainedAt: null },
+  { id: "c109", name: "自拍留念",         rarity: "N",   theme: "daily", emoji: "🤳", obtainedAt: null },
+  { id: "c110", name: "做菜失敗日",       rarity: "N",   theme: "daily", emoji: "🍳", obtainedAt: null },
+  { id: "c111", name: "一起打掃",         rarity: "N",   theme: "daily", emoji: "🧹", obtainedAt: null },
+
+  // romance (+10)
+  { id: "c120", name: "深夜告白",         rarity: "SR",  theme: "romance", emoji: "🌙", obtainedAt: null },
+  { id: "c121", name: "一封手寫信",       rarity: "SSR", theme: "romance", emoji: "💌", obtainedAt: null },
+  { id: "c122", name: "陽台看日落",       rarity: "SR",  theme: "romance", emoji: "🌇", obtainedAt: null },
+  { id: "c123", name: "共跳一支舞",       rarity: "SR",  theme: "romance", emoji: "💃", obtainedAt: null },
+  { id: "c124", name: "未寄出的告白",     rarity: "SSR", theme: "romance", emoji: "📝", obtainedAt: null },
+  { id: "c125", name: "雨中躲雨一起笑",   rarity: "R",   theme: "romance", emoji: "☔", obtainedAt: null },
+  { id: "c126", name: "電梯裡的親吻",     rarity: "R",   theme: "romance", emoji: "💋", obtainedAt: null },
+  { id: "c127", name: "預約的餐桌燭光",   rarity: "SR",  theme: "romance", emoji: "🕯️", obtainedAt: null },
+  { id: "c128", name: "指定歌單交換",     rarity: "R",   theme: "romance", emoji: "🎵", obtainedAt: null },
+  { id: "c129", name: "說好一輩子",       rarity: "SSR", theme: "romance", emoji: "💍", obtainedAt: null },
+
+  // travel (+10)
+  { id: "c140", name: "海邊看星星",       rarity: "SR",  theme: "travel", emoji: "🌌", obtainedAt: null },
+  { id: "c141", name: "鐵路便當",         rarity: "N",   theme: "travel", emoji: "🍱", obtainedAt: null },
+  { id: "c142", name: "山上看雲海",       rarity: "SR",  theme: "travel", emoji: "⛰️", obtainedAt: null },
+  { id: "c143", name: "露營煮泡麵",       rarity: "R",   theme: "travel", emoji: "🏕️", obtainedAt: null },
+  { id: "c144", name: "機場送機",         rarity: "SR",  theme: "travel", emoji: "✈️", obtainedAt: null },
+  { id: "c145", name: "異國街頭迷路",     rarity: "R",   theme: "travel", emoji: "🗺️", obtainedAt: null },
+  { id: "c146", name: "泡湯放空日",       rarity: "R",   theme: "travel", emoji: "♨️", obtainedAt: null },
+  { id: "c147", name: "第一次出國",       rarity: "SSR", theme: "travel", emoji: "🛂", obtainedAt: null },
+  { id: "c148", name: "公路旅行",         rarity: "SR",  theme: "travel", emoji: "🛣️", obtainedAt: null },
+  { id: "c149", name: "日出看極光",       rarity: "SSR", theme: "travel", emoji: "🌠", obtainedAt: null },
+
+  // festival (+8)
+  { id: "c160", name: "交往一週年",       rarity: "SSR", theme: "festival", emoji: "💐", obtainedAt: null,
+    festival: { month: 1, day: 1, window: 0, label: "一週年（依交往日）" } },
+  { id: "c161", name: "小年夜圍爐",       rarity: "SR",  theme: "festival", emoji: "🍲", obtainedAt: null,
+    festival: { month: 1, day: 28, window: 3, label: "除夕前" } },
+  { id: "c162", name: "元宵提燈",         rarity: "R",   theme: "festival", emoji: "🏮", obtainedAt: null,
+    festival: { month: 2, day: 11, window: 2, label: "元宵節" } },
+  { id: "c163", name: "母親節感恩",       rarity: "SR",  theme: "festival", emoji: "🌷", obtainedAt: null,
+    festival: { month: 5, day: 11, window: 3, label: "母親節" } },
+  { id: "c164", name: "父親節感恩",       rarity: "SR",  theme: "festival", emoji: "🎩", obtainedAt: null,
+    festival: { month: 8, day: 8, window: 3, label: "父親節" } },
+  { id: "c165", name: "七夕銀河",         rarity: "SSR", theme: "festival", emoji: "🌌", obtainedAt: null,
+    festival: { month: 8, day: 22, window: 2, label: "七夕" } },
+  { id: "c166", name: "感恩節火雞",       rarity: "R",   theme: "festival", emoji: "🦃", obtainedAt: null,
+    festival: { month: 11, day: 25, window: 3, label: "感恩節" } },
+  { id: "c167", name: "跨年煙火",         rarity: "SR",  theme: "festival", emoji: "🎆", obtainedAt: null,
+    festival: { month: 12, day: 31, window: 1, label: "跨年" } },
 ];
 
 /** 新使用者的島嶼：只有一座城堡 + 一隻貓咪 (新手禮物)，其他家具要自己買 */
