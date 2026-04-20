@@ -110,6 +110,7 @@ export default function DashboardPage() {
   return (
     <>
       <DailyBonusModal />
+      <ActiveEventsBanner />
 
       {/* 未配對時：顯眼完整邀請卡（伴侶未加入 = 對方暱稱仍為預設） */}
       {(() => {
@@ -490,6 +491,30 @@ function TinyStat({ label, value }: { label: string; value: string | number }) {
     <div className="rounded-xl p-2 bg-empire-mist text-center">
       <div className="text-[10px] text-empire-mute">{label}</div>
       <div className="font-black text-empire-ink">{value}</div>
+    </div>
+  );
+}
+
+function ActiveEventsBanner() {
+  const [events, setEvents] = useState<ReturnType<typeof import("@/lib/event").getActiveEvents>>([]);
+  useEffect(() => {
+    import("@/lib/event").then(({ getActiveEvents }) => setEvents(getActiveEvents())).catch(() => null);
+  }, []);
+  if (events.length === 0) return null;
+  return (
+    <div className="space-y-1.5 mb-3">
+      {events.map((e) => {
+        const endsIn = Math.max(0, Math.floor((new Date(e.endsAt).getTime() - Date.now()) / 3600000));
+        return (
+          <div key={e.id} className="p-2.5 rounded-2xl flex items-center gap-2 shadow-md" style={{ background: `linear-gradient(135deg, ${e.color}33, ${e.color}11)`, border: `1.5px solid ${e.color}88` }}>
+            <span className="text-2xl">{e.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-black text-empire-ink">{e.title}</div>
+              <div className="text-[10px] text-empire-mute">{e.subtitle} · 還剩 {endsIn}h</div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
