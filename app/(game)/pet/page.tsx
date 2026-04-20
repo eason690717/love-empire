@@ -84,6 +84,7 @@ export default function PetPage() {
           { label: "親密 min", value: minBond },
         ]}
       />
+      <OtherPetsRail />
       <div className="flex justify-end">
         <a href="/pets" className="text-xs text-empire-sky hover:text-empire-berry underline px-2 py-1 rounded bg-white/60">
           🐾 所有寵物 / MIT 繁殖 →
@@ -576,6 +577,47 @@ function StagePreviewModal({ currentStage, species, rarity, onClose }: { current
         </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** /pet 頁頂：其他寵物快速切換 rail（只在有多隻寵物時顯示） */
+function OtherPetsRail() {
+  const pets = useGame((s) => s.pets);
+  const activePetId = useGame((s) => s.activePetId);
+  const switchActivePet = useGame((s) => s.switchActivePet);
+  if (!pets || pets.length <= 1) return null;
+  return (
+    <div className="card p-2 flex items-center gap-2 overflow-x-auto">
+      <div className="text-[10px] text-empire-mute font-bold shrink-0 px-1">切換寵物</div>
+      {pets.map((p) => {
+        const isActive = p.id === activePetId;
+        const sp = SPECIES[resolveSpecies(p.species)];
+        const rr = RARITY[resolveRarity(p.rarity)];
+        return (
+          <button
+            key={p.id ?? p.name}
+            onClick={() => p.id && !isActive && switchActivePet(p.id)}
+            className={`shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full transition ${
+              isActive
+                ? "bg-empire-gold/25 ring-2 ring-empire-gold"
+                : "bg-empire-cream hover:bg-empire-mist active:scale-95"
+            }`}
+            aria-label={`切換到 ${p.name}`}
+          >
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0"
+              style={{ background: sp.baseColor }}
+            >
+              {sp.signatureEmoji}
+            </div>
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-[11px] font-bold text-empire-ink max-w-[60px] truncate">{p.name}</span>
+              <span className="text-[9px] text-empire-mute">{rr.tag} · stage {p.stage}</span>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }

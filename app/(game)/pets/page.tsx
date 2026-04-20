@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useGame } from "@/lib/store";
 import { PetAvatar } from "@/components/art/PetAvatar";
 import { RarityFrame } from "@/components/art/RarityFrame";
@@ -20,6 +21,13 @@ export default function PetsPage() {
   const removePet = useGame((s) => s.removePet);
   const mintPet = useGame((s) => s.mintPet);
   const [mintOpen, setMintOpen] = useState(false);
+  const router = useRouter();
+
+  function selectAndGoTo(id?: string) {
+    if (!id) return;
+    switchActivePet(id);
+    router.push("/pet");
+  }
 
   async function handleRemove(id: string, name: string) {
     const ok = await toast.confirm(`確定要放走「${name}」嗎？放走後無法復原。`, { okLabel: "放走", cancelLabel: "取消" });
@@ -49,6 +57,11 @@ export default function PetsPage() {
                 isActive ? "ring-2 ring-empire-gold shadow-lg" : "opacity-80 hover:opacity-100"
               }`}
             >
+              <button
+                onClick={() => selectAndGoTo(pet.id)}
+                className="flex flex-col items-center gap-2 w-full active:scale-95 transition"
+                aria-label={`查看 ${pet.name}`}
+              >
               <RarityFrame rarity={pet.rarity ?? "common"} size={120} showTag>
                 <PetAvatar
                   stage={pet.stage}
@@ -66,32 +79,34 @@ export default function PetsPage() {
                   stage {pet.stage} · MIT {pet.mintCount ?? 0}/{rr.mintLimit === Infinity ? "∞" : rr.mintLimit}
                   {pet.generation && pet.generation > 0 && <span className="ml-1">· Gen {pet.generation}</span>}
                 </div>
-                {pet.id && (pet.generation ?? 0) > 0 && (
-                  <Link href={`/pet/${pet.id}/lineage`} className="text-[10px] text-empire-sky underline mt-0.5 inline-block">
-                    🌳 血統樹
-                  </Link>
-                )}
               </div>
+              </button>
+
+              {pet.id && (pet.generation ?? 0) > 0 && (
+                <Link
+                  href={`/pet/${pet.id}/lineage`}
+                  className="text-[10px] text-empire-sky underline inline-block"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  🌳 血統樹
+                </Link>
+              )}
 
               <div className="flex gap-1 w-full">
-                {isActive ? (
-                  <Link
-                    href="/pet"
-                    className="flex-1 text-center text-[11px] py-1.5 rounded-full bg-empire-gold/20 text-empire-berry font-bold border border-empire-gold/60"
-                  >
-                    ✨ 目前活躍
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => pet.id && switchActivePet(pet.id)}
-                    className="flex-1 text-[11px] py-1.5 rounded-full bg-empire-sky/15 text-empire-sky font-bold hover:bg-empire-sky/25 transition"
-                  >
-                    切換活躍
-                  </button>
-                )}
+                <Link
+                  href="/pet"
+                  onClick={() => pet.id && switchActivePet(pet.id)}
+                  className={`flex-1 text-center text-[11px] py-1.5 rounded-full font-bold transition ${
+                    isActive
+                      ? "bg-empire-gold/20 text-empire-berry border border-empire-gold/60"
+                      : "bg-empire-sky/15 text-empire-sky hover:bg-empire-sky/25"
+                  }`}
+                >
+                  {isActive ? "✨ 去照顧 TA" : "切換並進入"}
+                </Link>
                 {pets.length > 1 && !isActive && (
                   <button
-                    onClick={() => pet.id && handleRemove(pet.id, pet.name)}
+                    onClick={(e) => { e.stopPropagation(); pet.id && handleRemove(pet.id, pet.name); }}
                     className="text-[11px] py-1.5 px-2 rounded-full bg-empire-cloud/60 text-empire-mute hover:bg-red-100 hover:text-red-600 transition"
                     aria-label="放走"
                   >
