@@ -13,6 +13,7 @@ export function MoreMenu({ onClose }: { onClose: () => void }) {
     { href: "/market",       emoji: "💞", label: "繁殖市集",   tint: "from-pink-100 to-rose-200" },
     { href: "/insights",     emoji: "📊", label: "關係儀表板", tint: "from-violet-100 to-purple-100" },
     { href: "/story",        emoji: "📜", label: "愛的帝國神話", tint: "from-indigo-100 to-violet-100" },
+    { href: "/premium",      emoji: "👑", label: "情侶 Premium",  tint: "from-amber-100 to-rose-100" },
     { href: "/codex",        emoji: "🎴", label: "記憶圖鑑",   tint: "from-fuchsia-100 to-pink-100" },
     { href: "/questions",    emoji: "💬", label: "深度問答",   tint: "from-sky-100 to-cyan-100" },
     { href: "/achievements", emoji: "🏅", label: "獎盃",        tint: "from-amber-100 to-yellow-100" },
