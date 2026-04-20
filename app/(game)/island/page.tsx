@@ -8,6 +8,7 @@ import { getTodayVisitor, todaysFestival } from "@/lib/festival";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PikminSprite } from "@/components/art/PikminSprite";
+import { toast } from "@/components/Toast";
 import { ItemIcon } from "@/components/art/ItemIcon";
 
 export default function IslandPage() {
@@ -322,7 +323,7 @@ export default function IslandPage() {
                   <button
                     key={item.id}
                     disabled={!afford}
-                    onClick={() => buyIslandItem(item.id, item.label, item.emoji, item.price)}
+                    onClick={() => { buyIslandItem(item.id, item.label, item.emoji, item.price); toast.success(`${item.emoji} 已擺進小窩「${item.label}」 -${item.price} 金`); }}
                     className={`p-4 rounded-xl border-2 text-center ${
                       afford ? "border-empire-gold hover:bg-empire-cream" : "border-slate-200 opacity-50 cursor-not-allowed"
                     }`}
@@ -379,7 +380,7 @@ function ShopByRoom({ couple, buyIslandItem }: { couple: any; buyIslandItem: any
             <button
               key={item.id}
               disabled={!afford}
-              onClick={() => buyIslandItem(item.id, item.label, item.emoji, item.price)}
+              onClick={() => { buyIslandItem(item.id, item.label, item.emoji, item.price); toast.success(`${item.emoji} 已擺進小窩「${item.label}」 -${item.price} 金`); }}
               className={`p-3 rounded-xl border text-center transition ${
                 afford ? "border-empire-sky hover:bg-empire-cloud" : "border-slate-200 opacity-50 cursor-not-allowed"
               }`}
