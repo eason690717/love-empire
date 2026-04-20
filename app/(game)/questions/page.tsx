@@ -7,6 +7,7 @@ import {
   type Question, type QuestionCategory, type QuestionDepth, getQuestionById,
 } from "@/lib/questions";
 import { PageBanner } from "@/components/PageBanner";
+import { toast } from "@/components/Toast";
 
 export default function QuestionsPage() {
   const role = useGame((s) => s.role);
@@ -40,8 +41,11 @@ export default function QuestionsPage() {
   };
 
   const handleSubmit = () => {
-    if (!picked || !answerDraft.trim()) return;
-    submitAnswer(picked.id, answerDraft);
+    if (!picked) return;
+    const text = answerDraft.trim();
+    if (!text) { toast.error("寫點什麼再送出吧"); return; }
+    submitAnswer(picked.id, text);
+    toast.success("答案已送出，等對方來看 💌");
     setPicked(null);
     setAnswerDraft("");
   };
