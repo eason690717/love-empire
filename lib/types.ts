@@ -282,6 +282,10 @@ export interface Pet {
   parentAId?: string;
   parentBId?: string;
   generation?: number;           // 0 = 初代 / >0 = 後代
+  // Supabase pet_instances 的 uuid（pets[] 多寵跨裝置同步用）
+  remoteId?: string;
+  // 48h 餓肚子衰減起算時間（pet interaction 記錄）
+  lastInteractionAt?: string;
 }
 
 export interface IslandItem {

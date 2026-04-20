@@ -9,6 +9,7 @@ import { PetAvatar } from "@/components/art/PetAvatar";
 import { RarityFrame } from "@/components/art/RarityFrame";
 import { SPECIES, resolveSpecies } from "@/lib/pet/species";
 import { RARITY, resolveRarity } from "@/lib/pet/rarity";
+import { calcMood } from "@/lib/pet/mood";
 import { PageBanner } from "@/components/PageBanner";
 
 // 進化條件（新規則 — 雙主人 bond + 屬性門檻；孵化極簡）
@@ -117,6 +118,9 @@ export default function PetPage() {
           <div className="absolute -bottom-1 right-0 text-[10px] px-2 py-0.5 rounded-full bg-white/90 border border-empire-cloud font-bold text-empire-berry">
             👁️ 偷看未來
           </div>
+
+          {/* 互動動畫特效 — 從中心往上飄的 emoji 粒子 */}
+          {fx && <InteractionFx kind={fx} />}
         </button>
 
         <div className="mt-4 font-display text-2xl font-black text-empire-ink text-shadow-soft">
@@ -145,6 +149,22 @@ export default function PetPage() {
           return (
             <div className="mt-2 inline-block px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800">
               {sp.nickname} 專長：{bonusEntries.map(([k, v]) => `${k} +${v}%`).join(" / ")}
+            </div>
+          );
+        })()}
+
+        {/* 寵物情緒狀態 */}
+        {(() => {
+          const info = calcMood(pet);
+          return (
+            <div
+              className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold"
+              style={{ background: info.color + "22", color: info.color, border: `1px solid ${info.color}55` }}
+              title={info.desc}
+            >
+              <span className="text-base">{info.emoji}</span>
+              <span>{info.label}</span>
+              <span className="opacity-70 font-normal">· {info.desc}</span>
             </div>
           );
         })()}
@@ -577,6 +597,50 @@ function StagePreviewModal({ currentStage, species, rarity, onClose }: { current
         </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** 互動動畫特效 — 4 種 kind 的浮動 emoji 粒子 */
+function InteractionFx({ kind }: { kind: "pet" | "treat" | "talk" | "feed" }) {
+  const EMOJI_MAP = {
+    pet:   ["❤️", "💕", "💗"],
+    treat: ["🍬", "✨", "🍪"],
+    talk:  ["💬", "💭", "💖"],
+    feed:  ["✨", "⭐", "🌟"],
+  } as const;
+  const emojis = EMOJI_MAP[kind];
+  // 5 個粒子從中心飄散上升
+  const particles = Array.from({ length: 6 }, (_, i) => ({
+    key: i,
+    emoji: emojis[i % emojis.length],
+    dx: (i % 3 - 1) * 40 + (Math.random() - 0.5) * 30,
+    dy: -60 - Math.random() * 80,
+    delay: i * 60,
+  }));
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-visible z-20">
+      {particles.map((p) => (
+        <span
+          key={p.key}
+          className="absolute left-1/2 top-1/2 text-2xl"
+          style={{
+            animation: `petfx-float 1.4s ease-out forwards`,
+            animationDelay: `${p.delay}ms`,
+            ["--fx-dx" as any]: `${p.dx}px`,
+            ["--fx-dy" as any]: `${p.dy}px`,
+          }}
+        >
+          {p.emoji}
+        </span>
+      ))}
+      <style jsx>{`
+        @keyframes petfx-float {
+          0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+          20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--fx-dx)), calc(-50% + var(--fx-dy))) scale(0.9); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

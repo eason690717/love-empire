@@ -38,6 +38,9 @@ import {
   insertAnniversaryRemote,
   removeAnniversaryRemote,
   upsertCustomRitualRemote,
+  insertPetInstance,
+  updatePetInstance,
+  deletePetInstance,
 } from "./supabaseAdapter";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
@@ -48,6 +51,7 @@ import {
 import { checkEligibility as mintCheckEligibility, calcCoinCost as mintCalcCoinCost, executeMint } from "./pet/mint";
 import { SPECIES as PET_SPECIES, attrBonusMultiplier } from "./pet/species";
 import { RARITY as PET_RARITY, resolveRarity as resolvePetRarity } from "./pet/rarity";
+import { applyBondDecay } from "./pet/mood";
 
 type Role = "queen" | "prince";
 
@@ -135,6 +139,8 @@ interface State {
   removePet: (petId: string) => void;
   /** MIT 繁殖 — 檢查資格、扣 coin、roll 子代、雙親 mintCount++ / lastMatedAt 更新 */
   mintPet: (parentAId: string, parentBId: string, childName?: string) => { ok: boolean; reason?: string; childId?: string };
+  /** 檢查所有寵物的 bond 衰減（layout 每次 mount 跑一次） */
+  checkPetDecay: () => void;
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
@@ -179,10 +185,28 @@ function mirrorCouple(coupleId: string, fields: Partial<Couple>) {
   updateCoupleFields(coupleId, fields).catch(() => null);
 }
 
-/** 把 pet 變動 mirror 到 Supabase */
+/** 把 pet 變動 mirror 到 Supabase
+ *  - pets 表：活躍寵物單寵（向後相容）
+ *  - pet_instances 表：多寵完整同步；首次 insert 後 remoteId 寫回 local Pet
+ */
 function mirrorPet(coupleId: string, pet: Pet) {
   if (!isSupabaseEnabled() || !coupleId || coupleId === "me") return;
+  // 1. 活躍寵物同步到 pets 表（legacy 單寵）
   upsertPet(coupleId, pet).catch(() => null);
+  // 2. 多寵 pet_instances 同步
+  if (pet.remoteId) {
+    updatePetInstance(pet.remoteId, coupleId, pet).catch(() => null);
+  } else {
+    // 首次 — insert 取回 uuid 存進 local Pet.remoteId（以 id 比對定位）
+    insertPetInstance(coupleId, pet).then((uuid) => {
+      if (!uuid) return;
+      const cur = useGame.getState();
+      const targetId = pet.id;
+      const updatedPets = cur.pets.map((p) => p.id === targetId ? { ...p, remoteId: uuid } : p);
+      const updatedActive = cur.pet.id === targetId ? { ...cur.pet, remoteId: uuid } : cur.pet;
+      useGame.setState({ pets: updatedPets, pet: updatedActive });
+    }).catch(() => null);
+  }
 }
 
 /**
@@ -455,6 +479,7 @@ export const useGame = create<State>()(
       removePet: (petId) => {
         const pets = get().pets;
         if (pets.length <= 1) return; // 至少留一隻
+        const target = pets.find((p) => p.id === petId);
         const next = pets.filter((p) => p.id !== petId);
         const nextActive = get().activePetId === petId ? next[0].id : get().activePetId;
         set({
@@ -462,6 +487,10 @@ export const useGame = create<State>()(
           activePetId: nextActive,
           pet: next.find((p) => p.id === nextActive) ?? next[0],
         });
+        // 刪除 Supabase pet_instances row
+        if (target?.remoteId && isSupabaseEnabled() && get().couple.id !== "me") {
+          deletePetInstance(target.remoteId).catch(() => null);
+        }
       },
 
       mintPet: (parentAId, parentBId, childName) => {
@@ -551,6 +580,27 @@ export const useGame = create<State>()(
       },
 
       /** 檢查是否有缺席日、是否需要消耗騎士盾 */
+      checkPetDecay: () => {
+        const petsArr = get().pets;
+        if (!petsArr || petsArr.length === 0) return;
+        let changed = false;
+        const decayed = petsArr.map((p) => {
+          const after = applyBondDecay(p);
+          if (after.bondQueen !== p.bondQueen || after.bondPrince !== p.bondPrince) {
+            changed = true;
+            return after;
+          }
+          return p;
+        });
+        if (!changed) return;
+        const activeId = get().activePetId;
+        const activeNext = decayed.find((p) => p.id === activeId) ?? decayed[0];
+        set({ pets: decayed, pet: activeNext });
+        // 衰減後 mirror 活躍寵物（其他寵物下次互動自然會 mirror）
+        const cid = get().couple.id;
+        if (cid && cid !== "me") mirrorPet(cid, activeNext);
+      },
+
       checkKnightShield: () => {
         const s = get().streak;
         if (!s.lastDate || s.current === 0) return;
@@ -765,6 +815,37 @@ export const useGame = create<State>()(
             status: r.status,
             createdAt: new Date(r.created_at).toLocaleDateString("zh-TW"),
           })),
+          // 跨裝置同步：pet_instances 多寵（若 remote 有 rows 則覆蓋 pets[]）
+          pets: (() => {
+            const rows = (remote as any).petInstances ?? [];
+            if (!Array.isArray(rows) || rows.length === 0) return get().pets;
+            return rows.map((r: any) => ({
+              id: `p_${r.id.slice(0, 8)}`, // local id 用 uuid 前 8 字當 short id
+              remoteId: r.id,
+              name: r.name,
+              stage: (r.stage ?? 0) as 0 | 1 | 2 | 3 | 4,
+              attrs: r.attrs ?? { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
+              lastFedAt: r.last_fed_at,
+              bondQueen: r.bond_queen ?? 0,
+              bondPrince: r.bond_prince ?? 0,
+              feedCountQueen: r.feed_count_queen ?? 0,
+              feedCountPrince: r.feed_count_prince ?? 0,
+              lastFedBy: r.last_fed_by,
+              species: r.species,
+              rarity: r.gene_rarity,
+              gene: {
+                color: r.gene_color,
+                pattern: r.gene_pattern,
+                face: r.gene_face,
+                accessory: r.gene_accessory,
+              },
+              mintCount: 0, // 沒單獨欄位，後續由 parent lookup 計算
+              parentAId: r.parent_a_id ?? undefined,
+              parentBId: r.parent_b_id ?? undefined,
+              generation: r.generation ?? 0,
+              lastMatedAt: r.last_mated_at ?? undefined,
+            }));
+          })(),
           // 跨裝置同步：自訂儀式
           customRituals: (() => {
             const rows = (remote as any).customRituals ?? [];

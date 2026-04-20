@@ -42,13 +42,17 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
 
   const [hydrated, setHydrated] = useState(false);
   const checkKingdomStatus = useGame((s) => s.checkKingdomStatus);
+  const checkPetDecay = useGame((s) => s.checkPetDecay);
   useEffect(() => { setHydrated(true); }, []);
   useEffect(() => {
     if (hydrated && !loggedIn) router.push("/login");
   }, [hydrated, loggedIn, router]);
   useEffect(() => {
-    if (hydrated) checkKingdomStatus();
-  }, [hydrated, checkKingdomStatus]);
+    if (hydrated) {
+      checkKingdomStatus();
+      checkPetDecay(); // 寵物 48h+ 沒互動 → bond 衰減
+    }
+  }, [hydrated, checkKingdomStatus, checkPetDecay]);
 
   const status = getKingdomStatus(couple);
 
