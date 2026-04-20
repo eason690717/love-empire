@@ -152,6 +152,7 @@ export interface FullCoupleState {
   friendships: any[];
   bucketRecords?: any[];
   anniversaries?: any[];
+  customRituals?: any[];
 }
 
 export async function pullCoupleState(coupleId: string): Promise<FullCoupleState | null> {
@@ -165,7 +166,7 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
       coupleRes, usersRes, subsRes, petRes, cardsRes, itemsRes,
       ritualRes, streakRes, redRes, momentsRes, giftsRes, qaRes,
       publicCouplesRes, alliancesRes, allianceMembersRes, friendshipsRes,
-      bucketRes, annivRes,
+      bucketRes, annivRes, customRitualsRes,
     ] = await Promise.all([
       client.from("couples").select("*").eq("id", coupleId).maybeSingle(),
       client.from("users").select("*").eq("couple_id", coupleId),
@@ -185,6 +186,7 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
       client.from("friendships").select("*").or(`couple_a_id.eq.${coupleId},couple_b_id.eq.${coupleId}`).eq("status", "accepted"),
       client.from("bucket_records").select("*").eq("couple_id", coupleId),
       client.from("anniversaries").select("*").eq("couple_id", coupleId).order("date", { ascending: true }),
+      client.from("custom_rituals").select("*").eq("couple_id", coupleId),
     ]);
 
     return {
@@ -206,6 +208,7 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
       friendships: friendshipsRes.data ?? [],
       bucketRecords: bucketRes.data ?? [],
       anniversaries: annivRes.data ?? [],
+      customRituals: customRitualsRes.data ?? [],
     };
   } catch (e) {
     console.warn("[sb] pullCoupleState", e);
@@ -399,6 +402,32 @@ export async function updateStreak(
 }
 
 // ============================================================
+// Custom rituals（自訂晨間 / 夜間儀式）
+// ============================================================
+export async function upsertCustomRitualRemote(
+  coupleId: string,
+  kind: "morning" | "night",
+  value: { label: string; description?: string; emoji?: string } | null,
+): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    if (value === null) {
+      await client.from("custom_rituals").delete().eq("couple_id", coupleId).eq("kind", kind);
+      return;
+    }
+    await client.from("custom_rituals").upsert({
+      couple_id: coupleId,
+      kind,
+      label: value.label,
+      description: value.description ?? null,
+      emoji: value.emoji ?? null,
+    }, { onConflict: "couple_id,kind" });
+  } catch { /* ignore */ }
+}
+
+// ============================================================
 // Bucket records（人生清單完成項）
 // ============================================================
 export async function upsertBucketRecordRemote(
@@ -531,7 +560,8 @@ export function subscribeCouple(
     const sb = await getSupabase();
     if (!sb || cancelled) return;
     const client: any = sb;
-    const tables = ["submissions", "pets", "memory_cards", "island_items", "rituals", "streaks", "redemptions", "moments", "gifts", "question_answers"];
+    // 注意：每個表的 RLS filter key 都是 couple_id（除了 couples 自己是 id，先不 subscribe 避免 filter 不對）
+    const tables = ["submissions", "pets", "memory_cards", "island_items", "rituals", "streaks", "redemptions", "moments", "gifts", "question_answers", "bucket_records", "anniversaries", "custom_rituals"];
     channel = client.channel(`couple:${coupleId}`);
     tables.forEach((t) => {
       channel.on("postgres_changes",

@@ -36,6 +36,7 @@ import {
   removeBucketRecordRemote,
   insertAnniversaryRemote,
   removeAnniversaryRemote,
+  upsertCustomRitualRemote,
 } from "./supabaseAdapter";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
@@ -754,6 +755,22 @@ export const useGame = create<State>()(
             status: r.status,
             createdAt: new Date(r.created_at).toLocaleDateString("zh-TW"),
           })),
+          // 跨裝置同步：自訂儀式
+          customRituals: (() => {
+            const rows = (remote as any).customRituals ?? [];
+            if (!Array.isArray(rows) || rows.length === 0) return get().customRituals;
+            const next: { morning?: { label: string; desc: string; emoji: string }; night?: { label: string; desc: string; emoji: string } } = {};
+            for (const r of rows) {
+              if (r.kind === "morning" || r.kind === "night") {
+                next[r.kind as "morning" | "night"] = {
+                  label: r.label,
+                  desc: r.description ?? "",
+                  emoji: r.emoji ?? "",
+                };
+              }
+            }
+            return next;
+          })(),
           // 跨裝置同步：紀念日
           anniversaries: (() => {
             const rows = (remote as any).anniversaries ?? [];
@@ -1737,6 +1754,13 @@ export const useGame = create<State>()(
         if (value === null) delete next[kind];
         else next[kind] = value;
         set({ customRituals: next });
+        if (isSupabaseEnabled() && get().couple.id !== "me") {
+          upsertCustomRitualRemote(
+            get().couple.id,
+            kind,
+            value === null ? null : { label: value.label, description: value.desc, emoji: value.emoji },
+          ).catch(() => null);
+        }
       },
 
       setShowAdultRewards: (v) => set({ showAdultRewards: v }),
