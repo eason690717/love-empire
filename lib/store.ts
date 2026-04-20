@@ -18,6 +18,7 @@ import {
   isSupabaseEnabled,
   updateCoupleFields,
   updateUserMood,
+  updateUserNickname,
   insertSubmission as sbInsertSubmission,
   reviewSubmissionRemote,
   upsertPet,
@@ -263,12 +264,21 @@ export const useGame = create<State>()(
             [role]: { ...couple[role], nickname: clean },
           },
         });
+        // Mirror 到 Supabase users 表（只改自己 role 的 row）
+        if (isSupabaseEnabled() && couple.id !== "me" && role === get().role) {
+          (async () => {
+            const u = await getCurrentUser();
+            if (u?.id) updateUserNickname(u.id, clean).catch(() => null);
+          })();
+        }
       },
 
       setKingdomName: (name) => {
         const clean = name.trim().slice(0, 20);
         if (!clean) return;
-        set({ couple: { ...get().couple, name: clean } });
+        const nextCouple = { ...get().couple, name: clean };
+        set({ couple: nextCouple });
+        mirrorCouple(nextCouple.id, { name: clean });
       },
 
       addCustomTask: (t) => {

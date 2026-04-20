@@ -220,6 +220,15 @@ export async function pullCoupleState(coupleId: string): Promise<FullCoupleState
 // Push — 從 Zustand 寫入 Supabase
 // =============================================================
 
+export async function updateUserNickname(userId: string, nickname: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("users").update({ nickname }).eq("id", userId);
+  } catch { /* ignore */ }
+}
+
 export async function updateUserMood(userId: string, mood: string): Promise<void> {
   const sb = await getSupabase();
   if (!sb) return;
