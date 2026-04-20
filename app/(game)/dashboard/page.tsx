@@ -205,6 +205,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* 7 日入門計畫（新手前 7 天顯示） */}
+      <OnboardingDayPanel />
+
       {/* 今日任務 — 系統每日派送 3 個 */}
       <DailyQuestsPanel />
 
@@ -491,6 +494,38 @@ function TinyStat({ label, value }: { label: string; value: string | number }) {
     <div className="rounded-xl p-2 bg-empire-mist text-center">
       <div className="text-[10px] text-empire-mute">{label}</div>
       <div className="font-black text-empire-ink">{value}</div>
+    </div>
+  );
+}
+
+function OnboardingDayPanel() {
+  const firstLoginAt = useGame((s) => s.firstLoginAt);
+  const [today, setToday] = useState<import("@/lib/onboarding7days").OnboardDay | null>(null);
+  useEffect(() => {
+    import("@/lib/onboarding7days").then(({ getTodayPlan }) => setToday(getTodayPlan(firstLoginAt))).catch(() => null);
+  }, [firstLoginAt]);
+  if (!today) return null;
+  return (
+    <div className="card p-4 mb-3 bg-gradient-to-br from-sky-50 via-cyan-50 to-emerald-50 border-2 border-empire-sky/40">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="text-3xl">{today.emoji}</div>
+        <div className="flex-1">
+          <div className="text-[10px] text-empire-sky font-black tracking-widest">7 日入門 · DAY {today.day}/7</div>
+          <div className="font-display font-black text-empire-ink">{today.title}</div>
+          <div className="text-[11px] text-empire-mute">{today.subtitle}</div>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {today.tasks.map((t, i) => (
+          <div key={i} className="flex items-center gap-2 text-[12px] text-empire-ink">
+            <span className="w-5 h-5 rounded-full bg-white border-2 border-empire-sky/60 flex items-center justify-center text-[10px] font-bold text-empire-sky">{i + 1}</span>
+            <span>{t}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 text-[10px] text-empire-mute italic border-t border-empire-cloud/60 pt-1.5">
+        💡 {today.reward.hint ?? "完成就有獎勵"} · 完成全部 +{today.reward.coins} 金 / +{today.reward.loveXp} 愛意
+      </div>
     </div>
   );
 }

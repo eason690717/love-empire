@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { VERSION_STRING } from "@/lib/version";
+import { VERSION_STRING, FEATURE_PREMIUM_ENABLED } from "@/lib/version";
 
 /**
  * 「更多」抽屜 — 放不在底部主 tab 的次要分頁
@@ -51,7 +51,7 @@ export function MoreMenu({ onClose }: { onClose: () => void }) {
     {
       title: "帳號 & 系統", emoji: "⚙️",
       items: [
-        { href: "/premium",      emoji: "👑", label: "情侶 Premium",  tint: "from-amber-100 to-rose-100" },
+        ...(FEATURE_PREMIUM_ENABLED ? [{ href: "/premium", emoji: "👑", label: "情侶 Premium", tint: "from-amber-100 to-rose-100" }] : []),
         { href: "/inbox",        emoji: "🔔", label: "通知",        tint: "from-pink-100 to-rose-100" },
         { href: "/settings",     emoji: "⚙️", label: "設定",        tint: "from-slate-100 to-gray-100" },
       ],

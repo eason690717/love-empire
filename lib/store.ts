@@ -160,6 +160,8 @@ interface State {
   /** 離線時長獎勵（開 app 偵測上次關閉） */
   lastOpenedAt?: string;
   claimOfflineReward: () => { ok: boolean; hours?: number; reward?: { coins: number; loveXp: number } };
+  /** 首次登入時間（Onboarding Day 1-7 起算） */
+  firstLoginAt?: string;
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
@@ -283,7 +285,11 @@ export const useGame = create<State>()(
       notice: NOTICE,
       dailyQuests: { date: "", quests: [], completed: [], comboClaimed: false },
 
-      login: (role) => set({ loggedIn: true, role }),
+      login: (role) => {
+        const next: any = { loggedIn: true, role };
+        if (!get().firstLoginAt) next.firstLoginAt = new Date().toISOString();
+        set(next);
+      },
       logout: () => {
         set({ loggedIn: false });
         // 同步清掉 Supabase anonymous session，否則 landing/login 頁會自動 resume

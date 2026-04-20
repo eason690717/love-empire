@@ -85,6 +85,9 @@ export default function RitualsPage() {
         </div>
       )}
 
+      {/* 7 日日曆視覺化 — 最近 7 天連擊狀態 */}
+      <StreakCalendar current={streak.current} lastDate={streak.lastDate} />
+
       <div className={`card p-6 text-center bg-gradient-to-br ${fire.glow}`}>
         <div className="text-sm text-slate-500">連續互動天數 · {fire.label}</div>
         <div className="text-7xl mt-2 leading-none" style={{ filter: "drop-shadow(0 4px 8px rgba(255,120,50,0.35))" }}>
@@ -193,6 +196,55 @@ export default function RitualsPage() {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function StreakCalendar({ current, lastDate }: { current: number; lastDate: string }) {
+  const today = new Date();
+  const days: Array<{ dateLabel: string; iso: string; done: boolean; isToday: boolean }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const isToday = i === 0;
+    const lastD = lastDate ? new Date(lastDate) : null;
+    const daysSinceLast = lastD ? Math.floor((today.getTime() - lastD.getTime()) / 86400000) : 999;
+    const dayIndex = 6 - i;
+    const doneForThis = dayIndex >= (7 - current) && daysSinceLast <= i;
+    days.push({
+      dateLabel: `${d.getMonth() + 1}/${d.getDate()}`,
+      iso,
+      done: doneForThis,
+      isToday,
+    });
+  }
+  return (
+    <div className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-empire-ink text-sm">📅 最近 7 天連擊</h3>
+        <div className="text-[10px] text-empire-mute">🔥 完成 / 👀 今日 / · 未完成</div>
+      </div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {days.map((d, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <div className={`w-full aspect-square rounded-xl flex items-center justify-center text-lg transition ${
+              d.done
+                ? d.isToday
+                  ? "bg-gradient-to-br from-amber-300 via-rose-300 to-fuchsia-300 text-white shadow-md scale-110"
+                  : "bg-gradient-to-br from-rose-200 to-pink-200"
+                : d.isToday
+                  ? "bg-white border-2 border-dashed border-empire-gold"
+                  : "bg-empire-mist"
+            }`}>
+              {d.done ? "🔥" : d.isToday ? "👀" : "·"}
+            </div>
+            <div className={`text-[9px] ${d.isToday ? "font-black text-empire-berry" : "text-empire-mute"}`}>
+              {d.isToday ? "今天" : d.dateLabel}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
