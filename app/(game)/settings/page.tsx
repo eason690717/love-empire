@@ -511,8 +511,10 @@ function AnniversarySection() {
       </div>
       <button
         onClick={() => {
-          if (!label || !date) return;
-          addAnniversary(label, date, recurring, emoji);
+          if (!label.trim()) { toast.error("請填寫紀念日名稱"); return; }
+          if (!date) { toast.error("請選擇日期"); return; }
+          addAnniversary(label.trim(), date, recurring, emoji);
+          toast.success(`已新增「${label.trim()}」`);
           setLabel(""); setDate("");
         }}
         className="btn-primary w-full py-2 text-sm font-semibold"

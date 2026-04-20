@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useGame } from "@/lib/store";
 import { CATEGORY_META, type Task, type TaskCategory, type TaskDirection, type Attribute } from "@/lib/types";
 import { CATEGORY_LABEL, ATTR_LABEL } from "@/lib/utils";
+import { toast } from "@/components/Toast";
 
 const CATEGORIES: TaskCategory[] = ["chore", "wellness", "romance", "surprise", "coop"];
-const ATTRS: Attribute[] = ["intimacy", "communication", "romance", "care", "surprise"];
 
 export function TaskEditor({ onClose }: { onClose: () => void }) {
   const role = useGame((s) => s.role);
@@ -15,23 +15,28 @@ export function TaskEditor({ onClose }: { onClose: () => void }) {
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<TaskCategory>("chore");
-  const [attr, setAttr] = useState<Attribute>("care");
   const [reward, setReward] = useState(20);
   const [direction, setDirection] = useState<TaskDirection>("together");
 
   const meta = CATEGORY_META[category];
+  const attr: Attribute = meta.defaultAttr; // 屬性鎖定隨類別變動（1:1 呼應）
   const queenName = couple.queen.nickname;
   const princeName = couple.prince.nickname;
 
   const handleSave = () => {
-    if (!title.trim()) return;
+    const name = title.trim();
+    if (!name) {
+      toast.error("請先輸入任務名稱");
+      return;
+    }
     addCustomTask({
-      title,
+      title: name,
       category,
       attribute: attr,
       reward,
       direction,
     } as Omit<Task, "id" | "systemXp" | "custom">);
+    toast.success(`已新增「${name}」`);
     onClose();
   };
 
@@ -59,27 +64,28 @@ export function TaskEditor({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        {/* 分類 */}
+        {/* 分類（選了類別就會自動鎖定對應屬性） */}
         <div className="mb-3">
-          <label className="text-xs text-empire-mute">分類</label>
+          <label className="text-xs text-empire-mute">分類（決定對應屬性）</label>
           <div className="mt-1 grid grid-cols-3 gap-1.5">
             {CATEGORIES.map((c) => {
               const m = CATEGORY_META[c];
               return (
                 <button
                   key={c}
-                  onClick={() => { setCategory(c); setAttr(m.defaultAttr); if (reward > m.rewardCap) setReward(Math.min(reward, m.rewardCap)); }}
+                  onClick={() => { setCategory(c); if (reward > m.rewardCap) setReward(Math.min(reward, m.rewardCap)); }}
                   className={`px-2 py-2 rounded-lg text-xs font-medium border-2 transition ${
                     category === c ? "bg-empire-sky text-white border-empire-sky" : "bg-white border-empire-cloud"
                   }`}
                 >
-                  {CATEGORY_LABEL[c]}
+                  <div>{CATEGORY_LABEL[c]}</div>
+                  <div className="text-[9px] opacity-80 mt-0.5">→ {ATTR_LABEL[m.defaultAttr]}</div>
                 </button>
               );
             })}
           </div>
           <p className="text-[10px] text-empire-mute mt-1">
-            系統 XP：{meta.xp} · 金幣上限：{meta.rewardCap}
+            系統 XP：{meta.xp} · 金幣上限：{meta.rewardCap} · 加屬性：<b>{ATTR_LABEL[attr]}</b>
           </p>
         </div>
 
@@ -105,21 +111,12 @@ export function TaskEditor({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* 屬性 */}
-        <div className="mb-3">
-          <label className="text-xs text-empire-mute">加哪個屬性？</label>
-          <div className="mt-1 flex gap-1.5 flex-wrap">
-            {ATTRS.map((a) => (
-              <button
-                key={a}
-                onClick={() => setAttr(a)}
-                className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                  attr === a ? "bg-empire-pink/40 border-empire-pink" : "bg-white border-empire-cloud"
-                }`}
-              >
-                {ATTR_LABEL[a]}
-              </button>
-            ))}
+        {/* 屬性（由分類決定，不可獨立改） */}
+        <div className="mb-3 p-2.5 rounded-xl bg-empire-cream/70 border border-empire-cloud">
+          <div className="text-[11px] text-empire-mute">加哪個屬性</div>
+          <div className="mt-0.5 flex items-center gap-2">
+            <span className="text-sm font-bold text-empire-ink">🔒 {ATTR_LABEL[attr]}</span>
+            <span className="text-[10px] text-empire-mute">（由分類「{CATEGORY_LABEL[category]}」決定，確保公平性）</span>
           </div>
         </div>
 

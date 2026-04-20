@@ -45,11 +45,18 @@ export interface Task {
   relationshipType?: RelationshipType; // 此任務最適合的情侶類型
 }
 
-/** 每個分類的系統預設 XP 與 reward 上限（公平性護欄） */
+/** 每個分類的系統預設 XP 與 reward 上限 + 對應屬性（1:1 呼應）
+ *  5 類別 ↔ 5 屬性 一對一鎖定：
+ *    chore    → care         家事 = 照顧
+ *    wellness → intimacy     健康 = 身心親密
+ *    romance  → romance      浪漫 = 浪漫
+ *    surprise → surprise     驚喜 = 驚喜
+ *    coop     → communication 合作 = 溝通
+ */
 export const CATEGORY_META: Record<TaskCategory, { xp: number; rewardCap: number; color: string; defaultAttr: Attribute }> = {
   chore:    { xp: 5,  rewardCap: 300, color: "#8ed172", defaultAttr: "care" },
-  wellness: { xp: 8,  rewardCap: 200, color: "#5aa4ff", defaultAttr: "care" },
-  romance:  { xp: 10, rewardCap: 500, color: "#ff7fa1", defaultAttr: "intimacy" },
+  wellness: { xp: 8,  rewardCap: 200, color: "#5aa4ff", defaultAttr: "intimacy" },
+  romance:  { xp: 10, rewardCap: 500, color: "#ff7fa1", defaultAttr: "romance" },
   surprise: { xp: 15, rewardCap: 500, color: "#ffd447", defaultAttr: "surprise" },
   coop:     { xp: 12, rewardCap: 300, color: "#d280ff", defaultAttr: "communication" },
 };
