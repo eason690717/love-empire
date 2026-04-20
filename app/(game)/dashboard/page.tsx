@@ -500,11 +500,14 @@ function TinyStat({ label, value }: { label: string; value: string | number }) {
 
 function OnboardingDayPanel() {
   const firstLoginAt = useGame((s) => s.firstLoginAt);
+  const onboardingClaimed = useGame((s) => s.onboardingClaimed);
+  const claim = useGame((s) => s.claimOnboardingReward);
   const [today, setToday] = useState<import("@/lib/onboarding7days").OnboardDay | null>(null);
   useEffect(() => {
     import("@/lib/onboarding7days").then(({ getTodayPlan }) => setToday(getTodayPlan(firstLoginAt))).catch(() => null);
   }, [firstLoginAt]);
   if (!today) return null;
+  const claimed = onboardingClaimed?.[today.day] === true;
   return (
     <div className="card p-4 mb-3 bg-gradient-to-br from-sky-50 via-cyan-50 to-emerald-50 border-2 border-empire-sky/40">
       <div className="flex items-center gap-2 mb-2">
@@ -526,6 +529,24 @@ function OnboardingDayPanel() {
       <div className="mt-2 text-[10px] text-empire-mute italic border-t border-empire-cloud/60 pt-1.5">
         💡 {today.reward.hint ?? "完成就有獎勵"} · 完成全部 +{today.reward.coins} 金 / +{today.reward.loveXp} 愛意
       </div>
+      {claimed ? (
+        <div className="mt-2 py-2 text-center rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold">
+          ✓ 今日獎勵已領取
+        </div>
+      ) : (
+        <button
+          onClick={async () => {
+            const { toast } = await import("@/components/Toast");
+            const ok = await toast.confirm(`確認今天 (Day ${today.day}) 3 個任務都做完了嗎？`, { okLabel: "領獎", cancelLabel: "還沒" });
+            if (!ok) return;
+            const r = claim(today.day);
+            if (r.ok && r.reward) toast.success(`🎁 Day ${today.day} 獎勵：+${r.reward.coins} 金 / +${r.reward.loveXp} 愛意`);
+          }}
+          className="mt-2 w-full py-2 rounded-xl bg-gradient-to-r from-sky-400 to-cyan-400 text-white text-xs font-black shadow-md active:scale-95 transition"
+        >
+          ✓ 我完成今天了 · 領獎
+        </button>
+      )}
     </div>
   );
 }

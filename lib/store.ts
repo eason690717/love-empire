@@ -163,6 +163,9 @@ interface State {
   claimOfflineReward: () => { ok: boolean; hours?: number; reward?: { coins: number; loveXp: number } };
   /** 首次登入時間（Onboarding Day 1-7 起算） */
   firstLoginAt?: string;
+  /** Onboarding 每日獎勵領取記錄 */
+  onboardingClaimed: Record<number, boolean>;
+  claimOnboardingReward: (day: number) => { ok: boolean; reward?: { coins: number; loveXp: number } };
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
@@ -285,6 +288,7 @@ export const useGame = create<State>()(
       showAdultRewards: false,
       notice: NOTICE,
       dailyQuests: { date: "", quests: [], completed: [], comboClaimed: false },
+      onboardingClaimed: {},
 
       login: (role) => {
         const next: any = { loggedIn: true, role };
@@ -776,6 +780,34 @@ export const useGame = create<State>()(
           }
         }
         return { ok: true, reward: COMBO_REWARD, cardId };
+      },
+
+      claimOnboardingReward: (day) => {
+        const claimed = get().onboardingClaimed ?? {};
+        if (claimed[day]) return { ok: false };
+        // 獎勵表對應 lib/onboarding7days.ts
+        const rewards: Record<number, { coins: number; loveXp: number }> = {
+          1: { coins: 30, loveXp: 10 },
+          2: { coins: 40, loveXp: 15 },
+          3: { coins: 50, loveXp: 20 },
+          4: { coins: 60, loveXp: 20 },
+          5: { coins: 80, loveXp: 30 },
+          6: { coins: 100, loveXp: 40 },
+          7: { coins: 200, loveXp: 100 },
+        };
+        const reward = rewards[day];
+        if (!reward) return { ok: false };
+        const nextCouple = {
+          ...get().couple,
+          coins: get().couple.coins + reward.coins,
+          loveIndex: get().couple.loveIndex + reward.loveXp,
+        };
+        set({
+          couple: nextCouple,
+          onboardingClaimed: { ...claimed, [day]: true },
+        });
+        mirrorCouple(nextCouple.id, { coins: nextCouple.coins, loveIndex: nextCouple.loveIndex });
+        return { ok: true, reward };
       },
 
       claimOfflineReward: () => {
