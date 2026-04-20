@@ -338,9 +338,11 @@ export default function DashboardPage() {
       {/* 本週挑戰 / 連擊 / 里程碑 */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         <MiniCard href="/rituals"   icon="🔥" label="連擊"      value={`${streak.current} 天`}     sub={`歷史 ${streak.longest}`} />
+        <MiniCard href="/insights"  icon="📊" label="關係健康"  value="儀表板"                      sub="愛意趨勢 / 屬性雷達" />
         <MiniCard href="/plaza"     icon="🌸" label="本月動態"  value={`${momentsThisMonth}`}      sub="本月紀念" />
         <MiniCard href="/leaderboard" icon="🏆" label="全球排行"  value={`第 ${rank} 名`}            sub={`Lv.${couple.kingdomLevel}`} />
         <MiniCard href="/vault"     icon="🎁" label="未用券"    value={`${unusedRedemptions}`}     sub="寶庫" />
+        <MiniCard href="/pets"      icon="🐾" label="我的寵物"  value="收藏館"                      sub="MIT 繁殖 / 血統" />
       </div>
 
       {/* 五屬性雷達 */}
