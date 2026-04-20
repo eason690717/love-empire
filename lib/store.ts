@@ -55,6 +55,7 @@ import { checkEligibility as mintCheckEligibility, calcCoinCost as mintCalcCoinC
 import { SPECIES as PET_SPECIES, attrBonusMultiplier } from "./pet/species";
 import { RARITY as PET_RARITY, resolveRarity as resolvePetRarity } from "./pet/rarity";
 import { applyBondDecay } from "./pet/mood";
+import { addPetXp } from "./pet/level";
 import { generateDailyQuests, todayKey as questTodayKey, COMBO_REWARD, type DailyQuest } from "./dailyQuest";
 
 type Role = "queen" | "prince";
@@ -1766,8 +1767,11 @@ export const useGame = create<State>()(
           feedCountPrince,
           lastFedBy: role,
         };
-        set({ pet: nextPet, pets: syncActivePetInArray(get().pets, nextPet) });
-        mirrorPet(get().couple.id, nextPet);
+        // 加寵物 XP（餵食 +2 XP），自動處理 level up
+        const xpRes = addPetXp(nextPet, 2);
+        const finalPet = xpRes.pet;
+        set({ pet: finalPet, pets: syncActivePetInArray(get().pets, finalPet) });
+        mirrorPet(get().couple.id, finalPet);
         // Auto quest：餵食 1 次 → 標記 dq_feedPet
         get()._autoCheckQuest(["dq_feedPet"]);
         // 進化自動發動態
@@ -1837,12 +1841,15 @@ export const useGame = create<State>()(
         };
         const nextCoupleCoins = get().couple.coins - coinCost;
 
+        // 加寵物 XP（互動 +1 XP）
+        const xpRes2 = addPetXp(nextPet, 1);
+        const finalPet2 = xpRes2.pet;
         set({
-          pet: nextPet,
-          pets: syncActivePetInArray(get().pets, nextPet), // C2 多寵容器同步
+          pet: finalPet2,
+          pets: syncActivePetInArray(get().pets, finalPet2), // C2 多寵容器同步
           couple: { ...get().couple, coins: nextCoupleCoins },
         });
-        mirrorPet(get().couple.id, nextPet);
+        mirrorPet(get().couple.id, finalPet2);
         if (coinCost > 0) mirrorCouple(get().couple.id, { coins: nextCoupleCoins });
 
         // talk 額外存訊息到動態

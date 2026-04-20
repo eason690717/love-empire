@@ -10,6 +10,7 @@ import { RarityFrame } from "@/components/art/RarityFrame";
 import { SPECIES, resolveSpecies } from "@/lib/pet/species";
 import { RARITY, resolveRarity } from "@/lib/pet/rarity";
 import { calcMood } from "@/lib/pet/mood";
+import { xpForLevel, perksUnlocked, nextPerk } from "@/lib/pet/level";
 import { PageBanner } from "@/components/PageBanner";
 
 // 進化條件（v0.9.0：依 rarity 動態調整 attr 門檻，讓每隻寵都有機會進化到神話）
@@ -175,6 +176,9 @@ export default function PetPage() {
             </div>
           );
         })()}
+
+        {/* Level + XP 進度 + 下一個 perk */}
+        <PetLevelBar pet={pet} />
 
         {hungry && (
           <div className="mt-3 inline-block px-3 py-1 rounded-full bg-empire-sunshine/30 border border-empire-sunshine/60 text-empire-ink text-xs font-semibold animate-bob">
@@ -605,6 +609,44 @@ function StagePreviewModal({ currentStage, species, rarity, onClose }: { current
         </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Pet Level 進度條 + 解鎖 perk 顯示 */
+function PetLevelBar({ pet }: { pet: import("@/lib/types").Pet }) {
+  const level = pet.level ?? 1;
+  const curXp = pet.petXp ?? 0;
+  const neededXp = xpForLevel(level);
+  const pct = Math.min(100, (curXp / neededXp) * 100);
+  const unlocked = perksUnlocked(pet);
+  const next = nextPerk(pet);
+  return (
+    <div className="mt-3 w-full max-w-xs mx-auto p-3 rounded-2xl bg-white/80 border border-empire-cloud">
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-bold text-empire-ink">Lv.{level}</span>
+        <span className="text-empire-mute">{curXp} / {neededXp} XP</span>
+      </div>
+      <div className="mt-1.5 h-2 rounded-full bg-empire-cloud overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-rose-400 via-amber-400 to-emerald-400 transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {next && (
+        <div className="mt-2 text-[10px] text-empire-mute">
+          🔒 Lv.{next.level} 解鎖：{next.emoji} {next.title}
+        </div>
+      )}
+      {unlocked.length > 0 && (
+        <div className="mt-1.5 flex gap-1 flex-wrap">
+          {unlocked.map((p) => (
+            <span key={p.level} className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700" title={p.desc}>
+              {p.emoji} Lv.{p.level}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
