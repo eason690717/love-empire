@@ -118,4 +118,55 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: "拿到第一個 5 星評分", check: (s) => s.questionsFiveStar >= 1 },
   { id: "a_tenFiveStars", category: "special", emoji: "🌟", title: "默契滿分",
     description: "累積 10 個 5 星評分", check: (s) => s.questionsFiveStar >= 10 },
+
+  // ============ v1.4.0 擴充 20 個新成就 ============
+  // 成長 growth (+4)
+  { id: "a_lv50", category: "growth", emoji: "👑", title: "帝國之主",
+    description: "王國等級達 50", check: (s) => s.couple.kingdomLevel >= 50 },
+  { id: "a_lv100", category: "growth", emoji: "🏰", title: "永恆帝國",
+    description: "王國等級達 100", check: (s) => s.couple.kingdomLevel >= 100 },
+  { id: "a_love1000", category: "growth", emoji: "💖", title: "千愛千里",
+    description: "累計愛意 1000", check: (s) => s.couple.loveIndex >= 1000 },
+  { id: "a_love10000", category: "growth", emoji: "💗", title: "萬愛成河",
+    description: "累計愛意 10000", check: (s) => s.couple.loveIndex >= 10000 },
+
+  // 收集 collect (+4)
+  { id: "a_collect30", category: "collect", emoji: "📕", title: "初成藏家",
+    description: "收集 30 張記憶卡", check: (s) => s.cardsOwned >= 30 },
+  { id: "a_collect60", category: "collect", emoji: "📚", title: "半壁江山",
+    description: "收集 60 張記憶卡", check: (s) => s.cardsOwned >= 60 },
+  { id: "a_collectAll", category: "collect", emoji: "🏛️", title: "圖鑑完成",
+    description: "收集 120 張記憶卡（全）", check: (s) => s.cardsOwned >= 120 },
+  { id: "a_ssrThree", category: "collect", emoji: "💎", title: "三連 SSR",
+    description: "收集 3 張 SSR 記憶卡", check: (s) => s.cardsSSR >= 3 },
+
+  // 社交 social (+4)
+  { id: "a_visitor5", category: "social", emoji: "🚪", title: "好客主人",
+    description: "招待 5 位訪客", check: (s) => s.visitsSent >= 5 },
+  { id: "a_pk10", category: "combat", emoji: "🥊", title: "情侶戰將",
+    description: "PK 勝利 10 次", check: (s) => s.pkWins >= 10 },
+  { id: "a_friend5", category: "social", emoji: "👯", title: "閨蜜 5 對",
+    description: "加 5 對好友情侶", check: (s) => s.friendsCount >= 5 },
+  { id: "a_alliance2", category: "social", emoji: "🤝", title: "雙聯盟",
+    description: "同時加入 2 個聯盟", check: (s) => s.alliancesJoined >= 2 },
+
+  // 連擊 combat (+3)
+  { id: "a_streak60", category: "combat", emoji: "🔥", title: "兩月連擊",
+    description: "連擊達 60 天", check: (s) => s.streak.current >= 60 },
+  { id: "a_streak180", category: "combat", emoji: "☄️", title: "半年傳奇",
+    description: "連擊達 180 天", check: (s) => s.streak.current >= 180 },
+  { id: "a_streak365", category: "combat", emoji: "🌌", title: "整年神話",
+    description: "連擊達 365 天", check: (s) => s.streak.current >= 365 },
+
+  // 特殊 special (+5)
+  { id: "a_pet_lv50", category: "special", emoji: "🦁", title: "寵物達人",
+    description: "寵物達到 stage 3（傳說）", check: (s) => s.pet.stage >= 3 },
+  { id: "a_pet_myth", category: "special", emoji: "🦄", title: "神話馴獸師",
+    description: "寵物達到 stage 4（神話）", check: (s) => s.pet.stage >= 4 },
+  { id: "a_allFiveStars", category: "special", emoji: "✨", title: "滿星情侶",
+    description: "累積 50 個 5 星評分", check: (s) => s.questionsFiveStar >= 50 },
+  { id: "a_moment50", category: "special", emoji: "📸", title: "時刻捕手",
+    description: "發佈 50 則動態", check: (s) => s.momentsSelf >= 50 },
+  { id: "a_pikmin20", category: "special", emoji: "🌱", title: "小助手軍團",
+    description: "累積 20 個小精靈助手", check: (s) => s.pikminsTotal >= 20 },
 ];
