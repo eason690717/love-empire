@@ -154,19 +154,18 @@ function LoginInner() {
         {liff.ready && !liff.inClient && (
           <div className="mt-6">
             <button
-              disabled
-              className="btn w-full py-3.5 text-base font-semibold text-slate-400 cursor-not-allowed"
-              style={{ background: "#e5e7eb", border: "2px solid #d1d5db" }}
-              title="LINE 登入功能開發中"
+              onClick={handleLineLogin}
+              className="btn w-full py-3.5 text-base font-bold text-white shadow-lg hover:shadow-xl active:scale-95 transition"
+              style={{ background: "linear-gradient(135deg, #00C300 0%, #00B900 100%)" }}
             >
-              💚 使用 LINE 登入 · 尚未完成
+              💚 使用 LINE 登入
             </button>
-            <div className="text-[11px] text-empire-mute text-center mt-1 italic">
-              LINE 綁定功能開發中，請先用王國鑰匙登入
+            <div className="text-[11px] text-empire-mute text-center mt-1.5">
+              一鍵用你的 LINE 帳號登入（會記住你的暱稱 / 大頭貼）
             </div>
             <div className="my-4 flex items-center gap-3 text-xs text-empire-mute">
               <div className="flex-1 h-px bg-empire-cloud" />
-              用王國鑰匙登入
+              或用王國鑰匙登入
               <div className="flex-1 h-px bg-empire-cloud" />
             </div>
           </div>
@@ -175,13 +174,31 @@ function LoginInner() {
         {liff.inClient && !liff.loggedIn && (
           <div className="mt-6">
             <button
-              disabled
-              className="btn w-full py-3.5 bg-slate-200 text-slate-400 cursor-not-allowed"
+              onClick={handleLineLogin}
+              className="btn w-full py-3.5 font-bold text-white shadow-lg active:scale-95 transition"
+              style={{ background: "linear-gradient(135deg, #00C300 0%, #00B900 100%)" }}
             >
-              💚 LINE 登入 · 尚未完成
+              💚 用 LINE 登入（你已在 LINE 裡）
             </button>
-            <div className="text-[11px] text-empire-mute text-center mt-1 italic">
-              LINE 綁定功能開發中
+            <div className="text-[11px] text-empire-mute text-center mt-1.5">
+              在 LINE 內打開可一鍵登入
+            </div>
+          </div>
+        )}
+
+        {liff.inClient && liff.loggedIn && liff.profile && (
+          <div className="mt-6 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-green-200">
+            <div className="flex items-center gap-3">
+              {liff.profile.pictureUrl && (
+                <img src={liff.profile.pictureUrl} alt="" className="w-12 h-12 rounded-full" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-green-700 font-bold">💚 LINE 已登入</div>
+                <div className="font-bold text-empire-ink truncate">{liff.profile.displayName}</div>
+              </div>
+            </div>
+            <div className="text-[10px] text-empire-mute mt-2">
+              繼續輸入配對碼即可加入/建立王國
             </div>
           </div>
         )}
