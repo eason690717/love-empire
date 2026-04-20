@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { VERSION_STRING } from "@/lib/version";
 
 /**
  * 「更多」抽屜 — 放不在底部主 tab 的次要分頁
@@ -63,6 +64,9 @@ export function MoreMenu({ onClose }: { onClose: () => void }) {
         >
           關閉
         </button>
+        <div className="mt-3 text-center text-[10px] text-empire-mute opacity-70 tracking-wider">
+          {VERSION_STRING}
+        </div>
       </div>
     </div>
   );

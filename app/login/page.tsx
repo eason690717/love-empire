@@ -9,6 +9,7 @@ import { loginLiff } from "@/lib/liff";
 import { signInAnon, isSupabaseEnabled } from "@/lib/auth";
 import { joinCoupleByCode } from "@/lib/supabaseAdapter";
 import { readDeviceBinding, writeDeviceBinding, clearDeviceBinding } from "@/lib/deviceBinding";
+import { VERSION_STRING } from "@/lib/version";
 
 function LoginInner() {
   const router = useRouter();
@@ -245,6 +246,9 @@ function LoginInner() {
               還沒有王國？建立一個 👑
             </Link>
           </div>
+        </div>
+        <div className="mt-5 text-center text-[10px] text-empire-mute opacity-70 tracking-wider">
+          {VERSION_STRING}
         </div>
       </div>
     </main>

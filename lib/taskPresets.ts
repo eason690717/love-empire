@@ -110,6 +110,22 @@ export const PRESETS_ANY: Preset[] = [
   { title: "說一次「對不起，我錯了」",          category: "romance",  reward: 80,  systemXp: 10, attribute: "communication", direction: "together", relationshipType: "any" },
   { title: "記住對方的夢想/目標主動問進度",     category: "romance",  reward: 60,  systemXp: 10, attribute: "communication", direction: "together", relationshipType: "any" },
   { title: "為對方拒絕一件佔掉相處時間的事",    category: "romance",  reward: 100, systemXp: 10, attribute: "intimacy",      direction: "together", relationshipType: "any", unlockLevel: 5 },
+  // 2026-04-20 擴充 +15 通用，依新類別↔屬性規則（wellness↔intimacy / romance↔romance）
+  { title: "一起冥想/呼吸練習 10 分鐘",         category: "wellness", reward: 40,  systemXp: 8,  attribute: "intimacy",      direction: "together", relationshipType: "any" },
+  { title: "今天主動擁抱對方三次",               category: "wellness", reward: 30,  systemXp: 8,  attribute: "intimacy",      direction: "together", relationshipType: "any" },
+  { title: "幫對方按摩肩頸 5 分鐘",              category: "wellness", reward: 50,  systemXp: 8,  attribute: "intimacy",      direction: "together", relationshipType: "any" },
+  { title: "說一個只有你們懂的笑話",             category: "romance",  reward: 30,  systemXp: 10, attribute: "romance",       direction: "together", relationshipType: "any" },
+  { title: "為對方寫一句現在的感受",             category: "romance",  reward: 40,  systemXp: 10, attribute: "romance",       direction: "together", relationshipType: "any" },
+  { title: "回憶第一次見面的細節",               category: "romance",  reward: 60,  systemXp: 10, attribute: "romance",       direction: "together", relationshipType: "any" },
+  { title: "一起決定一件未來的小事（下次旅行）", category: "coop",     reward: 80,  systemXp: 12, attribute: "communication", direction: "together", relationshipType: "any", coop: true },
+  { title: "分享今天最難受的一刻",               category: "coop",     reward: 70,  systemXp: 12, attribute: "communication", direction: "together", relationshipType: "any", coop: true },
+  { title: "交換今天感謝對方的一件事",           category: "coop",     reward: 50,  systemXp: 12, attribute: "communication", direction: "together", relationshipType: "any", coop: true },
+  { title: "幫對方完成他待辦清單的一項",         category: "chore",    reward: 60,  systemXp: 5,  attribute: "care",          direction: "together", relationshipType: "any" },
+  { title: "主動處理一件你平常不碰的家事",       category: "chore",    reward: 80,  systemXp: 5,  attribute: "care",          direction: "together", relationshipType: "any" },
+  { title: "意外的小禮物（<100 元）",            category: "surprise", reward: 100, systemXp: 15, attribute: "surprise",      direction: "together", relationshipType: "any" },
+  { title: "臨時改計畫帶對方去某地",             category: "surprise", reward: 200, systemXp: 15, attribute: "surprise",      direction: "together", relationshipType: "any", unlockLevel: 5 },
+  { title: "準備對方最愛的食物",                 category: "surprise", reward: 120, systemXp: 15, attribute: "surprise",      direction: "together", relationshipType: "any" },
+  { title: "今天說 3 次「我愛你」",              category: "romance",  reward: 30,  systemXp: 10, attribute: "romance",       direction: "together", relationshipType: "any" },
 ];
 
 export const ALL_PRESETS: Preset[] = [
