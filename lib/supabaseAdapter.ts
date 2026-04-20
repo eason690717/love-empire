@@ -474,6 +474,126 @@ export async function deletePetInstance(remoteId: string): Promise<void> {
 }
 
 // ============================================================
+// Cross-couple MIT 跨情侶繁殖（pet_mating_requests 表，0007 migration）
+// ============================================================
+
+/**
+ * 撈公開 couple 的可配對寵物（stage >= 3 + 公開 + 未過冷卻）
+ *  排除自己 couple
+ *  0007 RLS 已允許 read own or public，這裡用 join 過濾
+ */
+export async function fetchBreedablePublicPets(excludeCoupleId: string, limit = 30): Promise<any[]> {
+  const sb = await getSupabase();
+  if (!sb) return [];
+  try {
+    const client: any = sb;
+    // 先撈 public/friends couples
+    const { data: couples } = await client
+      .from("couples")
+      .select("id, name, kingdom_level")
+      .in("privacy", ["public", "friends"])
+      .is("archived_at", null)
+      .is("paused_at", null)
+      .neq("id", excludeCoupleId)
+      .limit(50);
+    if (!couples || couples.length === 0) return [];
+    const coupleIds = couples.map((c: any) => c.id);
+    const { data: pets } = await client
+      .from("pet_instances")
+      .select("*")
+      .in("couple_id", coupleIds)
+      .gte("stage", 3)
+      .order("gene_rarity", { ascending: false })
+      .limit(limit);
+    if (!pets) return [];
+    const coupleMap = new Map(couples.map((c: any) => [c.id, c]));
+    // 計算冷卻（lastMatedAt + 7 days）
+    const now = Date.now();
+    return pets
+      .filter((p: any) => {
+        if (!p.last_mated_at) return true;
+        const last = new Date(p.last_mated_at).getTime();
+        return (now - last) > 7 * 86400000;
+      })
+      .map((p: any) => ({
+        ...p,
+        _couple: coupleMap.get(p.couple_id),
+      }));
+  } catch (e) {
+    console.warn("[sb] fetchBreedablePublicPets", e);
+    return [];
+  }
+}
+
+export async function createMatingRequest(input: {
+  fromPetId: string;       // pet_instances.id (from couple's pet)
+  fromCoupleId: string;
+  toPetId: string;
+  toCoupleId: string;
+  message?: string;
+  byRole: "queen" | "prince"; // 發起者角色（自動同意發起方角色的一票）
+}): Promise<string | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const row: any = {
+      from_pet_id: input.fromPetId,
+      from_couple_id: input.fromCoupleId,
+      to_pet_id: input.toPetId,
+      to_couple_id: input.toCoupleId,
+      message: input.message ?? null,
+      status: "pending",
+    };
+    // 發起者那方自動同意（queen 或 prince 填 true）
+    if (input.byRole === "queen") row.from_queen_approved = true;
+    else row.from_prince_approved = true;
+    const { data, error } = await client.from("pet_mating_requests").insert(row).select("id").single();
+    if (error) { console.warn("[sb] createMatingRequest", error); return null; }
+    return data?.id ?? null;
+  } catch (e) { console.warn("[sb] createMatingRequest", e); return null; }
+}
+
+export async function approveMatingRequest(requestId: string, side: "from" | "to", role: "queen" | "prince"): Promise<boolean> {
+  const sb = await getSupabase();
+  if (!sb) return false;
+  try {
+    const client: any = sb;
+    const col = `${side}_${role}_approved`;
+    await client.from("pet_mating_requests").update({ [col]: true }).eq("id", requestId);
+    return true;
+  } catch (e) { console.warn("[sb] approveMatingRequest", e); return false; }
+}
+
+export async function listMatingRequestsForCouple(coupleId: string): Promise<any[]> {
+  const sb = await getSupabase();
+  if (!sb) return [];
+  try {
+    const client: any = sb;
+    const { data } = await client
+      .from("pet_mating_requests")
+      .select("*")
+      .or(`from_couple_id.eq.${coupleId},to_couple_id.eq.${coupleId}`)
+      .in("status", ["pending", "accepted"])
+      .order("created_at", { ascending: false });
+    return data ?? [];
+  } catch (e) { console.warn("[sb] listMatingRequests", e); return []; }
+}
+
+export async function completeMatingRequest(requestId: string, offspringId: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    await client.from("pet_mating_requests").update({
+      status: "completed",
+      offspring_id: offspringId,
+      resolved_at: new Date().toISOString(),
+    }).eq("id", requestId);
+  } catch { /* ignore */ }
+}
+
+// ============================================================
 // Custom rituals（自訂晨間 / 夜間儀式）
 // ============================================================
 export async function upsertCustomRitualRemote(
