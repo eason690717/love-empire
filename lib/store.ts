@@ -1938,6 +1938,7 @@ export const useGame = create<State>()(
           });
         }
         // Founder 升級：沒 species 欄位 → 直接給 Lumen UR（初代玩家專屬）
+        let founderUpgraded = false;
         if (state && state.pet && (!state.pet.species || state.pet.species === "basic") && !state.pet.isFounder) {
           const upgraded = {
             ...useGame.getState().pet,
@@ -1954,6 +1955,7 @@ export const useGame = create<State>()(
             isFounder: true,
           };
           useGame.setState({ pet: upgraded });
+          founderUpgraded = true;
         }
         // C2 多寵容器遷移：沒 pets[] 陣列 → 把現有 pet 包為 pets[0]
         if (state && state.pet && (!state.pets || state.pets.length === 0)) {
@@ -1964,6 +1966,17 @@ export const useGame = create<State>()(
             pets: [petWithId],
             activePetId: petWithId.id,
           });
+        }
+        // 升級後 mirror 到 Supabase（否則換裝置 pull 回來 species 還是 null）
+        if (founderUpgraded) {
+          setTimeout(() => {
+            try {
+              const s = useGame.getState();
+              if (s.couple?.id && s.couple.id !== "me" && isSupabaseEnabled()) {
+                upsertPet(s.couple.id, s.pet).catch(() => null);
+              }
+            } catch { /* ignore */ }
+          }, 600); // 等 couple.id 也 hydrate 完
         }
       },
     },
