@@ -98,6 +98,18 @@ export function GlobalCelebrations() {
         subtitle: `從 Lv.${prevLevel.current} → Lv.${kingdomLevel}`,
         emoji: "👑",
       });
+      // 主線劇情章節解鎖偵測
+      import("@/lib/story").then(({ STORY_CHAPTERS }) => {
+        const newly = STORY_CHAPTERS.find((c) => c.unlockLevel > prevLevel.current && c.unlockLevel <= kingdomLevel);
+        if (newly) {
+          enqueue({
+            kind: "achievement",
+            title: `📜 新章節解鎖：${newly.title}`,
+            subtitle: newly.subtitle,
+            emoji: newly.emoji,
+          });
+        }
+      }).catch(() => null);
     }
     prevLevel.current = kingdomLevel;
   }, [kingdomLevel]);

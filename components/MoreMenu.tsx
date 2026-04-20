@@ -8,28 +8,53 @@ import { VERSION_STRING } from "@/lib/version";
  * 「更多」抽屜 — 放不在底部主 tab 的次要分頁
  */
 export function MoreMenu({ onClose }: { onClose: () => void }) {
-  const items: Array<{ href: string; emoji: string; label: string; tint: string }> = [
-    { href: "/pets",         emoji: "🐾", label: "寵物列表",   tint: "from-rose-100 to-orange-100" },
-    { href: "/market",       emoji: "💞", label: "繁殖市集",   tint: "from-pink-100 to-rose-200" },
-    { href: "/insights",     emoji: "📊", label: "關係儀表板", tint: "from-violet-100 to-purple-100" },
-    { href: "/story",        emoji: "📜", label: "愛的帝國神話", tint: "from-indigo-100 to-violet-100" },
-    { href: "/premium",      emoji: "👑", label: "情侶 Premium",  tint: "from-amber-100 to-rose-100" },
-    { href: "/codex",        emoji: "🎴", label: "記憶圖鑑",   tint: "from-fuchsia-100 to-pink-100" },
-    { href: "/questions",    emoji: "💬", label: "深度問答",   tint: "from-sky-100 to-cyan-100" },
-    { href: "/achievements", emoji: "🏅", label: "獎盃",        tint: "from-amber-100 to-yellow-100" },
-    { href: "/rituals",      emoji: "🌅", label: "每日儀式",   tint: "from-rose-100 to-orange-100" },
-    { href: "/exchange",     emoji: "💰", label: "國庫兌換",   tint: "from-amber-100 to-yellow-100" },
-    { href: "/vault",        emoji: "🎁", label: "我的寶庫",   tint: "from-pink-100 to-rose-100" },
-    { href: "/history",      emoji: "📖", label: "歷程紀錄",   tint: "from-stone-100 to-neutral-100" },
-    { href: "/timeline",     emoji: "📅", label: "時間軸",      tint: "from-sky-100 to-blue-100" },
-    { href: "/recap",        emoji: "✨", label: "年度回顧",   tint: "from-violet-100 to-fuchsia-100" },
-    { href: "/bucket-list",  emoji: "💞", label: "人生清單",   tint: "from-pink-100 to-red-100" },
-    { href: "/alliance",     emoji: "🤝", label: "聯盟",        tint: "from-amber-100 to-orange-100" },
-    { href: "/friends",      emoji: "👫", label: "好友情侶",   tint: "from-rose-100 to-pink-100" },
-    { href: "/leaderboard",  emoji: "🏆", label: "情侶排行",   tint: "from-yellow-100 to-amber-100" },
-    { href: "/pk",           emoji: "⚔️", label: "情侶 PK",     tint: "from-red-100 to-rose-100" },
-    { href: "/inbox",        emoji: "🔔", label: "通知",        tint: "from-pink-100 to-rose-100" },
-    { href: "/settings",     emoji: "⚙️", label: "設定",        tint: "from-slate-100 to-gray-100" },
+  const groups: Array<{ title: string; emoji: string; items: Array<{ href: string; emoji: string; label: string; tint: string }> }> = [
+    {
+      title: "寵物 & 成長", emoji: "🐾",
+      items: [
+        { href: "/pets",         emoji: "🐾", label: "寵物列表",   tint: "from-rose-100 to-orange-100" },
+        { href: "/market",       emoji: "💞", label: "繁殖市集",   tint: "from-pink-100 to-rose-200" },
+        { href: "/insights",     emoji: "📊", label: "關係儀表板", tint: "from-violet-100 to-purple-100" },
+        { href: "/story",        emoji: "📜", label: "帝國神話",    tint: "from-indigo-100 to-violet-100" },
+      ],
+    },
+    {
+      title: "日常互動", emoji: "💞",
+      items: [
+        { href: "/questions",    emoji: "💬", label: "深度問答",   tint: "from-sky-100 to-cyan-100" },
+        { href: "/bucket-list",  emoji: "💞", label: "人生清單",   tint: "from-pink-100 to-red-100" },
+        { href: "/rituals",      emoji: "🌅", label: "每日儀式",   tint: "from-rose-100 to-orange-100" },
+        { href: "/codex",        emoji: "🎴", label: "記憶圖鑑",   tint: "from-fuchsia-100 to-pink-100" },
+      ],
+    },
+    {
+      title: "社交 & 排行", emoji: "🤝",
+      items: [
+        { href: "/alliance",     emoji: "🤝", label: "聯盟",        tint: "from-amber-100 to-orange-100" },
+        { href: "/friends",      emoji: "👫", label: "好友情侶",   tint: "from-rose-100 to-pink-100" },
+        { href: "/leaderboard",  emoji: "🏆", label: "情侶排行",   tint: "from-yellow-100 to-amber-100" },
+        { href: "/pk",           emoji: "⚔️", label: "情侶 PK",     tint: "from-red-100 to-rose-100" },
+      ],
+    },
+    {
+      title: "經濟 & 紀錄", emoji: "💰",
+      items: [
+        { href: "/exchange",     emoji: "💰", label: "國庫兌換",   tint: "from-amber-100 to-yellow-100" },
+        { href: "/vault",        emoji: "🎁", label: "我的寶庫",   tint: "from-pink-100 to-rose-100" },
+        { href: "/history",      emoji: "📖", label: "歷程紀錄",   tint: "from-stone-100 to-neutral-100" },
+        { href: "/timeline",     emoji: "📅", label: "時間軸",      tint: "from-sky-100 to-blue-100" },
+        { href: "/recap",        emoji: "✨", label: "年度回顧",   tint: "from-violet-100 to-fuchsia-100" },
+        { href: "/achievements", emoji: "🏅", label: "獎盃",        tint: "from-amber-100 to-yellow-100" },
+      ],
+    },
+    {
+      title: "帳號 & 系統", emoji: "⚙️",
+      items: [
+        { href: "/premium",      emoji: "👑", label: "情侶 Premium",  tint: "from-amber-100 to-rose-100" },
+        { href: "/inbox",        emoji: "🔔", label: "通知",        tint: "from-pink-100 to-rose-100" },
+        { href: "/settings",     emoji: "⚙️", label: "設定",        tint: "from-slate-100 to-gray-100" },
+      ],
+    },
   ];
 
   return (
@@ -45,19 +70,29 @@ export function MoreMenu({ onClose }: { onClose: () => void }) {
       >
         <div className="w-12 h-1.5 rounded-full bg-empire-cloud mx-auto mb-4" />
         <h3 className="font-display font-black text-xl text-empire-ink mb-1">更多功能</h3>
-        <p className="text-xs text-empire-mute mb-4">點任一功能開啟</p>
+        <p className="text-xs text-empire-mute mb-4">按類別分組 · 點任一功能開啟</p>
 
-        <div className="grid grid-cols-4 gap-3">
-          {items.map((i) => (
-            <Link
-              key={i.href}
-              href={i.href}
-              onClick={onClose}
-              className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl bg-gradient-to-br ${i.tint} border-2 border-white hover:scale-105 transition`}
-            >
-              <div className="text-3xl drop-shadow-sm">{i.emoji}</div>
-              <div className="text-[11px] font-bold text-empire-ink text-center">{i.label}</div>
-            </Link>
+        <div className="space-y-4">
+          {groups.map((g) => (
+            <div key={g.title}>
+              <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-bold text-empire-mute">
+                <span className="text-base">{g.emoji}</span>
+                <span>{g.title}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {g.items.map((i) => (
+                  <Link
+                    key={i.href}
+                    href={i.href}
+                    onClick={onClose}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-2xl bg-gradient-to-br ${i.tint} border-2 border-white hover:scale-105 transition`}
+                  >
+                    <div className="text-3xl drop-shadow-sm">{i.emoji}</div>
+                    <div className="text-[10px] font-bold text-empire-ink text-center leading-tight">{i.label}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
 

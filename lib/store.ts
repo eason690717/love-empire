@@ -142,6 +142,8 @@ interface State {
   mintPet: (parentAId: string, parentBId: string, childName?: string) => { ok: boolean; reason?: string; childId?: string };
   /** 檢查所有寵物的 bond 衰減（layout 每次 mount 跑一次） */
   checkPetDecay: () => void;
+  /** 內部 helper：auto quest 完成偵測（不對外暴露但要進 interface 讓 action 能調用） */
+  _autoCheckQuest: (triggerIds: string[]) => void;
   /** 每日任務 */
   dailyQuests: { date: string; quests: DailyQuest[]; completed: string[]; comboClaimed: boolean };
   /** 檢查/生成當日 3 個 quest（layout mount 呼叫，跨天自動 reset） */
@@ -593,6 +595,16 @@ export const useGame = create<State>()(
       },
 
       /** 檢查是否有缺席日、是否需要消耗騎士盾 */
+      /** 內部 helper：若今日 quest 中有 auto kind 匹配且未完成，自動標示完成領獎 */
+      _autoCheckQuest: (triggerIds: string[]) => {
+        const dq = get().dailyQuests;
+        if (!dq.quests || dq.quests.length === 0) return;
+        const toClaim = dq.quests.filter((q) => q.completion === "auto" && triggerIds.includes(q.id) && !dq.completed.includes(q.id));
+        for (const q of toClaim) {
+          get().claimDailyQuest(q.id);
+        }
+      },
+
       refreshDailyQuests: () => {
         const today = questTodayKey();
         const cur = get().dailyQuests;
@@ -1239,6 +1251,8 @@ export const useGame = create<State>()(
             if (u?.id) insertQuestionAnswerRemote(nextCouple.id, u.id, questionId, clean).catch(() => null);
           })();
         }
+        // Auto quest：答題 → dq_q1
+        get()._autoCheckQuest(["dq_q1"]);
         const senderName = get().role === "queen" ? get().couple.queen.nickname : get().couple.prince.nickname;
         get().addNotification({
           type: "interaction",
@@ -1436,6 +1450,13 @@ export const useGame = create<State>()(
           })();
         }
         if (approve) {
+          // Auto quest：審核 2 個 → dq_approve2（累計 check，不一次觸發）
+          const approvedToday = subs.filter((s) => s.status === "approved" && s.reviewedAt && s.reviewedAt.includes(new Date().toLocaleDateString("zh-TW").slice(0, 10))).length;
+          if (approvedToday >= 2) get()._autoCheckQuest(["dq_approve2"]);
+          // Auto quest: chore 類完成 → dq_chore
+          const task0 = get().tasks.find((t) => t.id === subs.find((x) => x.id === id)?.taskId);
+          if (task0?.category === "chore") get()._autoCheckQuest(["dq_chore"]);
+
           const s = subs.find((x) => x.id === id)!;
           const task = get().tasks.find((t) => t.id === s.taskId);
           const attr = task?.attribute ?? "intimacy";
@@ -1639,6 +1660,8 @@ export const useGame = create<State>()(
         };
         set({ pet: nextPet, pets: syncActivePetInArray(get().pets, nextPet) });
         mirrorPet(get().couple.id, nextPet);
+        // Auto quest：餵食 1 次 → 標記 dq_feedPet
+        get()._autoCheckQuest(["dq_feedPet"]);
         // 進化自動發動態
         if (nextStage > prev.stage) {
           const stageName = ["蛋", "幼體", "成型", "傳說", "神話"][nextStage];
@@ -1739,6 +1762,8 @@ export const useGame = create<State>()(
           const nextCouple = { ...get().couple, coins: get().couple.coins + 5 };
           set({ couple: nextCouple });
           mirrorCouple(nextCouple.id, { coins: nextCouple.coins });
+          // Auto quest：完成任一儀式 → dq_ritual
+          get()._autoCheckQuest(["dq_ritual"]);
         }
         // 早晚儀式都達成 + 今天第一次完成 → 連擊 +1 + 里程碑檢查
         if (next.morning && next.night) {
@@ -2041,6 +2066,8 @@ export const useGame = create<State>()(
           });
         }
         get().checkAchievements();
+        // Auto quest：勾人生清單 → dq_bucket
+        get()._autoCheckQuest(["dq_bucket"]);
         return { newlyDone: true, reward: { love: reward.love, coins: reward.coins } };
       },
 
