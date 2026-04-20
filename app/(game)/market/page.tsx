@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { PageBanner } from "@/components/PageBanner";
@@ -212,6 +212,28 @@ function RequestCard({ request, myCoupleId, myRole, onRefresh, mintPet: _mintPet
     request.from_queen_approved, request.from_prince_approved,
     request.to_queen_approved, request.to_prince_approved,
   ].filter(Boolean).length;
+  const executeCrossCoupleMating = useGame((s) => s.executeCrossCoupleMating);
+  const executedRef = useRef(false);
+
+  // 4 簽齊時：只有發起方（from_couple）的 queen 那一個 client 觸發執行（避免雙 client race）
+  useEffect(() => {
+    if (executedRef.current) return;
+    if (totalApproved < 4) return;
+    if (request.status !== "pending") return;
+    if (!isFromMe) return;           // 只發起方執行
+    if (myRole !== "queen") return;  // queen 負責觸發，避免雙端 race
+    executedRef.current = true;
+    (async () => {
+      toast.info("💫 4 簽齊！正在生成子代...");
+      const r = await executeCrossCoupleMating(request.id, request.from_pet_id, request.to_pet_id);
+      if (r.ok) {
+        toast.success("🌈 跨情侶新生命誕生！去 /pets 看看");
+        onRefresh();
+      } else {
+        toast.error("子代生成失敗，請再試或聯繫客服");
+      }
+    })();
+  }, [totalApproved, request.status, isFromMe, myRole, executeCrossCoupleMating, request.id, request.from_pet_id, request.to_pet_id, onRefresh]);
 
   async function handleApprove() {
     const ok = await approveMatingRequest(request.id, mySide, myRole);
@@ -246,9 +268,14 @@ function RequestCard({ request, myCoupleId, myRole, onRefresh, mintPet: _mintPet
         <Check label="B 藍" on={request.to_prince_approved} />
       </div>
       {totalApproved === 4 && request.status === "pending" && (
-        <div className="mt-2 p-2 rounded-lg bg-amber-50 text-[10px] text-amber-900">
-          4 票齊 ✨ 正在生成子代...（請稍候）
-          {/* TODO: 4 票齊時觸發 mintPet 並更新 request.status = 'completed' */}
+        <div className="mt-2 p-2 rounded-lg bg-amber-50 text-[10px] text-amber-900 flex items-center gap-1">
+          <span className="animate-spin">⏳</span>
+          4 票齊 ✨ 正在生成子代...
+        </div>
+      )}
+      {request.status === "completed" && (
+        <div className="mt-2 p-2 rounded-lg bg-emerald-50 text-[10px] text-emerald-800">
+          🌈 已完成！子代已誕生（看 /pets）
         </div>
       )}
     </div>

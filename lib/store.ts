@@ -41,6 +41,9 @@ import {
   insertPetInstance,
   updatePetInstance,
   deletePetInstance,
+  fetchPetInstance,
+  bumpPetInstanceMated,
+  completeMatingRequest,
 } from "./supabaseAdapter";
 import {
   INITIAL_COUPLE, INITIAL_TASKS, INITIAL_SUBMISSIONS, INITIAL_REWARDS, INITIAL_REDEMPTIONS,
@@ -140,6 +143,8 @@ interface State {
   removePet: (petId: string) => void;
   /** MIT 繁殖 — 檢查資格、扣 coin、roll 子代、雙親 mintCount++ / lastMatedAt 更新 */
   mintPet: (parentAId: string, parentBId: string, childName?: string) => { ok: boolean; reason?: string; childId?: string };
+  /** 跨情侶 4 簽齊後執行 MIT — fetch 對方寵物、roll 子代、通知對方、標 request completed */
+  executeCrossCoupleMating: (requestId: string, fromPetRemoteId: string, toPetRemoteId: string) => Promise<{ ok: boolean; childId?: string }>;
   /** 檢查所有寵物的 bond 衰減（layout 每次 mount 跑一次） */
   checkPetDecay: () => void;
   /** 內部 helper：auto quest 完成偵測（不對外暴露但要進 interface 讓 action 能調用） */
@@ -581,6 +586,103 @@ export const useGame = create<State>()(
           title: `新寵物誕生！${name}`,
           body: `${spMeta.nameZh} · ${rrMeta.tag}（${rrMeta.label}）— 去 /pets 看看`,
           emoji: "🥚",
+          link: "/pets",
+          priority: "high",
+        });
+
+        return { ok: true, childId };
+      },
+
+      executeCrossCoupleMating: async (requestId, fromPetRemoteId, toPetRemoteId) => {
+        // 確認本 couple 是發起方（from_couple）— 避免雙方重複執行
+        const petsArr = get().pets;
+        const myFrom = petsArr.find((p) => p.remoteId === fromPetRemoteId);
+        if (!myFrom) return { ok: false };
+
+        // Fetch 對方寵物資料（pet_instances RLS 允許公開 couple 的寵物被讀）
+        const remoteB = await fetchPetInstance(toPetRemoteId);
+        if (!remoteB) return { ok: false };
+
+        // 組成 B 寵物物件 for executeMint
+        const petB: Pet = {
+          id: "remote_" + toPetRemoteId.slice(0, 8),
+          name: remoteB.name,
+          stage: remoteB.stage,
+          attrs: remoteB.attrs ?? { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
+          lastFedAt: remoteB.last_fed_at,
+          species: remoteB.species,
+          rarity: remoteB.gene_rarity,
+          gene: {
+            color: remoteB.gene_color,
+            pattern: remoteB.gene_pattern,
+            face: remoteB.gene_face,
+            accessory: remoteB.gene_accessory,
+          },
+          mintCount: 0,
+          remoteId: remoteB.id,
+        };
+
+        // Roll 子代
+        const mintLib = await import("./pet/mint");
+        const result = mintLib.executeMint(myFrom, petB);
+
+        // 建本地子代（歸屬發起方）
+        const childId = "p_" + Math.random().toString(36).slice(2, 10);
+        const child: Pet = {
+          id: childId,
+          name: `${myFrom.name.slice(0, 2)}${remoteB.name.slice(0, 2)}寶寶`.slice(0, 20),
+          stage: 0,
+          attrs: { intimacy: 0, communication: 0, romance: 0, care: 0, surprise: 0 },
+          lastFedAt: new Date().toISOString(),
+          bondQueen: 0, bondPrince: 0,
+          feedCountQueen: 0, feedCountPrince: 0,
+          species: result.species,
+          rarity: result.rarity,
+          gene: result.gene,
+          mintCount: 0,
+          parentAId: myFrom.id,
+          parentBId: undefined, // 跨情侶父母沒有 local id
+          generation: Math.max((myFrom.generation ?? 0), (remoteB.generation ?? 0)) + 1,
+        };
+
+        // 更新本地 state：加新寵 + 雙親 mintCount + lastMatedAt
+        const nowIso = new Date().toISOString();
+        const nextPets = [
+          ...petsArr.map((p) => p.id === myFrom.id
+            ? { ...p, mintCount: (p.mintCount ?? 0) + 1, lastMatedAt: nowIso }
+            : p),
+          child,
+        ];
+        set({ pets: nextPets });
+
+        // Mirror 本地改動 + 對方寵物 last_mated_at
+        const coupleId = get().couple.id;
+        if (coupleId && coupleId !== "me" && isSupabaseEnabled()) {
+          const updatedFrom = nextPets.find((p) => p.id === myFrom.id)!;
+          mirrorPet(coupleId, updatedFrom);
+          bumpPetInstanceMated(toPetRemoteId).catch(() => null);
+          insertPetInstance(coupleId, child).then((uuid) => {
+            if (!uuid) return;
+            const cur = useGame.getState();
+            useGame.setState({
+              pets: cur.pets.map((p) => p.id === childId ? { ...p, remoteId: uuid } : p),
+            });
+            completeMatingRequest(requestId, uuid).catch(() => null);
+          }).catch(() => null);
+        }
+
+        // 發動態 + 通知
+        get().addMoment({
+          type: "custom",
+          title: `🥚 跨情侶新生命：「${child.name}」`,
+          subtitle: `${myFrom.name} × ${remoteB.name}（跨王國）`,
+          emoji: "🌈",
+        });
+        get().addNotification({
+          type: "pet",
+          title: `🌈 跨情侶 MIT 成功！`,
+          body: `「${child.name}」誕生了 — 去 /pets 看看`,
+          emoji: "🌈",
           link: "/pets",
           priority: "high",
         });

@@ -580,6 +580,28 @@ export async function listMatingRequestsForCouple(coupleId: string): Promise<any
   } catch (e) { console.warn("[sb] listMatingRequests", e); return []; }
 }
 
+/** 讀單一 pet_instance（給 MIT 4 簽齊時需要對方寵物資料）*/
+export async function fetchPetInstance(id: string): Promise<any | null> {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  try {
+    const client: any = sb;
+    const { data } = await client.from("pet_instances").select("*").eq("id", id).maybeSingle();
+    return data ?? null;
+  } catch { return null; }
+}
+
+/** 更新單隻 pet_instance 的 mintCount / lastMatedAt（MIT 完成後雙親 cooldown） */
+export async function bumpPetInstanceMated(id: string): Promise<void> {
+  const sb = await getSupabase();
+  if (!sb) return;
+  try {
+    const client: any = sb;
+    // 先讀目前 mint_count（此表沒有該欄，用 totalXp 近似；0007 未加 mintCount 欄，先只更 last_mated_at）
+    await client.from("pet_instances").update({ last_mated_at: new Date().toISOString() }).eq("id", id);
+  } catch { /* ignore */ }
+}
+
 export async function completeMatingRequest(requestId: string, offspringId: string): Promise<void> {
   const sb = await getSupabase();
   if (!sb) return;
