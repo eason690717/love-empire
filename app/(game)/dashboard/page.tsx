@@ -204,6 +204,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* 今日任務 — 系統每日派送 3 個 */}
+      <DailyQuestsPanel />
+
       {/* 兌換 CTA — 驅動「再做一個任務」的核心動機 */}
       <Link
         href="/exchange"
@@ -487,6 +490,76 @@ function TinyStat({ label, value }: { label: string; value: string | number }) {
     <div className="rounded-xl p-2 bg-empire-mist text-center">
       <div className="text-[10px] text-empire-mute">{label}</div>
       <div className="font-black text-empire-ink">{value}</div>
+    </div>
+  );
+}
+
+function DailyQuestsPanel() {
+  const dq = useGame((s) => s.dailyQuests);
+  const claim = useGame((s) => s.claimDailyQuest);
+  const claimCombo = useGame((s) => s.claimDailyCombo);
+  if (!dq.quests || dq.quests.length === 0) return null;
+  const progress = `${dq.completed.length}/3`;
+  const allDone = dq.completed.length >= 3;
+  return (
+    <div className="card p-4 mb-3 bg-gradient-to-br from-amber-50 to-rose-50">
+      <div className="flex items-center justify-between mb-2">
+        <div className="font-bold text-empire-ink flex items-center gap-1.5">
+          <span>🎯</span>今日任務
+          <span className="text-[10px] font-normal text-empire-mute">（06:00 reset）</span>
+        </div>
+        <div className="text-[11px] text-empire-gold font-black">{progress}</div>
+      </div>
+      <div className="space-y-2">
+        {dq.quests.map((q) => {
+          const done = dq.completed.includes(q.id);
+          return (
+            <button
+              key={q.id}
+              onClick={async () => {
+                if (done) return;
+                const { toast } = await import("@/components/Toast");
+                const ok = q.completion === "manual"
+                  ? await toast.confirm(`已完成「${q.title}」嗎？領取獎勵後不可撤銷`, { okLabel: "領獎", cancelLabel: "還沒" })
+                  : true;
+                if (!ok) return;
+                const r = claim(q.id);
+                if (r.ok && r.reward) toast.success(`✅ +${r.reward.coins} 金 / +${r.reward.loveXp} 愛意 / +${r.reward.petXp} 寵 XP`);
+              }}
+              disabled={done}
+              className={`w-full flex items-center gap-2 p-2 rounded-lg transition text-left ${
+                done ? "bg-emerald-100 text-emerald-800 line-through opacity-80" : "bg-white hover:bg-empire-cream active:scale-99"
+              }`}
+            >
+              <span className="text-xl shrink-0">{q.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold truncate">{q.title}</div>
+                <div className="text-[10px] text-empire-mute">
+                  {q.difficulty === "easy" ? "簡單" : q.difficulty === "medium" ? "中等" : "挑戰"} · +{q.reward.coins} 金 / +{q.reward.loveXp} 愛意
+                </div>
+              </div>
+              {done ? <span className="text-base">✓</span> : <span className="text-[10px] text-empire-sky font-bold shrink-0">領獎</span>}
+            </button>
+          );
+        })}
+      </div>
+      {allDone && !dq.comboClaimed && (
+        <button
+          onClick={async () => {
+            const { toast } = await import("@/components/Toast");
+            const r = claimCombo();
+            if (r.ok && r.reward) {
+              toast.success(`🎊 3 連擊達成！+${r.reward.coins} 金 / +${r.reward.loveXp} 愛意${r.cardId ? ` + 記憶卡 🎴` : ""}`);
+            }
+          }}
+          className="mt-3 w-full py-2 rounded-xl bg-gradient-to-r from-amber-300 via-rose-300 to-fuchsia-300 text-white font-black shadow-md"
+        >
+          🎊 領取 3 連擊獎勵
+        </button>
+      )}
+      {dq.comboClaimed && (
+        <div className="mt-3 text-center text-[11px] text-emerald-700 font-bold">今天 3 任務都完成了，明天再來 ✨</div>
+      )}
     </div>
   );
 }

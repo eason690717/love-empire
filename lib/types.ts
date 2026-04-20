@@ -286,6 +286,10 @@ export interface Pet {
   remoteId?: string;
   // 48h 餓肚子衰減起算時間（pet interaction 記錄）
   lastInteractionAt?: string;
+  // Level 系統（stage 內細級 1-99）
+  level?: number;           // 1-99，stage up 時 reset 為 1
+  petXp?: number;           // 當前 level 內累積 XP
+  totalXp?: number;         // 從出生起累積總 XP（永不 reset，作為血統/成就指標）
 }
 
 export interface IslandItem {

@@ -43,6 +43,8 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   const [hydrated, setHydrated] = useState(false);
   const checkKingdomStatus = useGame((s) => s.checkKingdomStatus);
   const checkPetDecay = useGame((s) => s.checkPetDecay);
+  const refreshDailyQuests = useGame((s) => s.refreshDailyQuests);
+  const claimOfflineReward = useGame((s) => s.claimOfflineReward);
   useEffect(() => { setHydrated(true); }, []);
   useEffect(() => {
     if (hydrated && !loggedIn) router.push("/login");
@@ -50,9 +52,18 @@ export default function GameLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (hydrated) {
       checkKingdomStatus();
-      checkPetDecay(); // 寵物 48h+ 沒互動 → bond 衰減
+      checkPetDecay();        // 寵物 48h+ 沒互動 → bond 衰減
+      refreshDailyQuests();   // 今日 3 個任務（跨天自動 reset）
+      // 離線獎勵：開 app 時檢查
+      const r = claimOfflineReward();
+      if (r.ok && r.reward) {
+        // 用 dynamic import 避免 layout render 依賴 toast
+        import("@/components/Toast").then(({ toast }) => {
+          toast.success(`🎁 歡迎回來！離線 ${r.hours}h 獎勵：+${r.reward!.coins} 金 / +${r.reward!.loveXp} 愛意`);
+        }).catch(() => null);
+      }
     }
-  }, [hydrated, checkKingdomStatus, checkPetDecay]);
+  }, [hydrated, checkKingdomStatus, checkPetDecay, refreshDailyQuests, claimOfflineReward]);
 
   const status = getKingdomStatus(couple);
 

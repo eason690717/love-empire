@@ -52,6 +52,7 @@ import { checkEligibility as mintCheckEligibility, calcCoinCost as mintCalcCoinC
 import { SPECIES as PET_SPECIES, attrBonusMultiplier } from "./pet/species";
 import { RARITY as PET_RARITY, resolveRarity as resolvePetRarity } from "./pet/rarity";
 import { applyBondDecay } from "./pet/mood";
+import { generateDailyQuests, todayKey as questTodayKey, COMBO_REWARD, type DailyQuest } from "./dailyQuest";
 
 type Role = "queen" | "prince";
 
@@ -141,6 +142,17 @@ interface State {
   mintPet: (parentAId: string, parentBId: string, childName?: string) => { ok: boolean; reason?: string; childId?: string };
   /** 檢查所有寵物的 bond 衰減（layout 每次 mount 跑一次） */
   checkPetDecay: () => void;
+  /** 每日任務 */
+  dailyQuests: { date: string; quests: DailyQuest[]; completed: string[]; comboClaimed: boolean };
+  /** 檢查/生成當日 3 個 quest（layout mount 呼叫，跨天自動 reset） */
+  refreshDailyQuests: () => void;
+  /** 領取單個 quest 獎勵 */
+  claimDailyQuest: (questId: string) => { ok: boolean; reward?: { coins: number; loveXp: number; petXp: number } };
+  /** 領取 3 全完成 combo 獎勵 */
+  claimDailyCombo: () => { ok: boolean; reward?: typeof COMBO_REWARD; cardId?: string };
+  /** 離線時長獎勵（開 app 偵測上次關閉） */
+  lastOpenedAt?: string;
+  claimOfflineReward: () => { ok: boolean; hours?: number; reward?: { coins: number; loveXp: number } };
   toggleRitual: (kind: "morning" | "night") => void;
   moveIslandItem: (id: string, x: number, y: number) => void;
   buyIslandItem: (catalogId: string, label: string, emoji: string, price: number) => void;
@@ -262,6 +274,7 @@ export const useGame = create<State>()(
       customRituals: {},
       showAdultRewards: false,
       notice: NOTICE,
+      dailyQuests: { date: "", quests: [], completed: [], comboClaimed: false },
 
       login: (role) => set({ loggedIn: true, role }),
       logout: () => {
@@ -580,6 +593,90 @@ export const useGame = create<State>()(
       },
 
       /** 檢查是否有缺席日、是否需要消耗騎士盾 */
+      refreshDailyQuests: () => {
+        const today = questTodayKey();
+        const cur = get().dailyQuests;
+        if (cur.date === today && cur.quests.length === 3) return; // 已有當日
+        const couple = get().couple;
+        const quests = generateDailyQuests(today, couple.id, couple.relationshipType ?? "any", couple.kingdomLevel);
+        set({ dailyQuests: { date: today, quests, completed: [], comboClaimed: false } });
+      },
+
+      claimDailyQuest: (questId) => {
+        const dq = get().dailyQuests;
+        if (!dq.quests.find((q) => q.id === questId)) return { ok: false };
+        if (dq.completed.includes(questId)) return { ok: false };
+        const quest = dq.quests.find((q) => q.id === questId)!;
+        // 發獎
+        const nextCouple = {
+          ...get().couple,
+          coins: get().couple.coins + quest.reward.coins,
+          loveIndex: get().couple.loveIndex + quest.reward.loveXp,
+        };
+        set({
+          dailyQuests: { ...dq, completed: [...dq.completed, questId] },
+          couple: nextCouple,
+        });
+        mirrorCouple(nextCouple.id, { coins: nextCouple.coins, loveIndex: nextCouple.loveIndex });
+        // 寵物 XP（若可用 level 系統，先加 totalXp 當基礎）
+        const curPet = get().pet;
+        const nextPet = {
+          ...curPet,
+          totalXp: (curPet.totalXp ?? 0) + quest.reward.petXp,
+          petXp: (curPet.petXp ?? 0) + quest.reward.petXp,
+        };
+        set({ pet: nextPet, pets: syncActivePetInArray(get().pets, nextPet) });
+        mirrorPet(nextCouple.id, nextPet);
+        return { ok: true, reward: quest.reward };
+      },
+
+      claimDailyCombo: () => {
+        const dq = get().dailyQuests;
+        if (dq.completed.length < 3 || dq.comboClaimed) return { ok: false };
+        set({ dailyQuests: { ...dq, comboClaimed: true } });
+        // 獎勵
+        const nextCouple = {
+          ...get().couple,
+          coins: get().couple.coins + COMBO_REWARD.coins,
+          loveIndex: get().couple.loveIndex + COMBO_REWARD.loveXp,
+        };
+        set({ couple: nextCouple });
+        mirrorCouple(nextCouple.id, { coins: nextCouple.coins, loveIndex: nextCouple.loveIndex });
+        // 記憶卡機率
+        let cardId: string | undefined;
+        if (Math.random() < COMBO_REWARD.memoryCardChance) {
+          const pool = get().codex.filter((c) => !c.obtainedAt && (c.rarity === "N" || c.rarity === "R"));
+          const lucky = pool[Math.floor(Math.random() * pool.length)];
+          if (lucky) {
+            cardId = lucky.id;
+            set({
+              codex: get().codex.map((c) => c.id === lucky.id ? { ...c, obtainedAt: new Date().toISOString().slice(0, 10) } : c),
+            });
+          }
+        }
+        return { ok: true, reward: COMBO_REWARD, cardId };
+      },
+
+      claimOfflineReward: () => {
+        const last = get().lastOpenedAt;
+        const now = new Date().toISOString();
+        set({ lastOpenedAt: now });
+        if (!last) return { ok: false };
+        const hoursSince = (Date.now() - new Date(last).getTime()) / 3600000;
+        if (hoursSince < 4) return { ok: false };
+        // 階梯獎勵
+        let coins = 0, loveXp = 0;
+        if (hoursSince >= 24)      { coins = 200; loveXp = 30; }
+        else if (hoursSince >= 12) { coins = 100; loveXp = 20; }
+        else if (hoursSince >= 8)  { coins = 50;  loveXp = 10; }
+        else if (hoursSince >= 4)  { coins = 20;  loveXp = 5;  }
+        if (coins === 0) return { ok: false };
+        const nextCouple = { ...get().couple, coins: get().couple.coins + coins, loveIndex: get().couple.loveIndex + loveXp };
+        set({ couple: nextCouple });
+        mirrorCouple(nextCouple.id, { coins: nextCouple.coins, loveIndex: nextCouple.loveIndex });
+        return { ok: true, hours: Math.floor(hoursSince), reward: { coins, loveXp } };
+      },
+
       checkPetDecay: () => {
         const petsArr = get().pets;
         if (!petsArr || petsArr.length === 0) return;
