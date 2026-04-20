@@ -432,15 +432,19 @@ function DraggableItem({
     window.addEventListener("pointerup", up);
   };
 
+  // 依 y 座標算 z-index（2.5D 透視 — 下方物件擋住上方）
+  // y 範圍 2-98，z-index 10-108
+  const zIndex = Math.round(10 + item.y);
+
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none hover:scale-110 transition z-[2]"
-      style={{ left: `${item.x}%`, top: `${item.y}%` }}
+      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none transition"
+      style={{ left: `${item.x}%`, top: `${item.y}%`, zIndex }}
       onPointerDown={handlePointerDown}
       onDoubleClick={onRemove}
       title={`${item.label} (單擊互動 / 雙擊移除)`}
     >
-      <ItemIcon emoji={item.emoji} size={40} glow={item.catalogId === "fountain" || item.catalogId === "rainbow"} />
+      <ItemIcon emoji={item.emoji} size={40} glow={item.catalogId === "fountain" || item.catalogId === "rainbow"} catalogId={item.catalogId} />
     </div>
   );
 }

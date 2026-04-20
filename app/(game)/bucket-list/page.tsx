@@ -296,11 +296,12 @@ function PickerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(20,40,70,0.55)", backdropFilter: "blur(4px)" }}
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain"
+      style={{ background: "rgba(20,40,70,0.55)", backdropFilter: "blur(4px)", WebkitOverflowScrolling: "touch" }}
       onClick={onClose}
     >
-      <div className="max-w-sm w-full card p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="min-h-full flex items-center justify-center p-4">
+      <div className="max-w-sm w-full card p-6 my-auto" onClick={(e) => e.stopPropagation()}>
         <div className="text-center">
           <div className="text-6xl mb-2">{item.emoji}</div>
           <div className="font-display font-black text-xl text-empire-ink">{item.title}</div>
@@ -414,6 +415,7 @@ function PickerModal({
             {alreadyDone ? "儲存" : "我們做到了 ✓"}
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
