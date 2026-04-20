@@ -12,14 +12,20 @@ import { RARITY, resolveRarity } from "@/lib/pet/rarity";
 import { calcMood } from "@/lib/pet/mood";
 import { PageBanner } from "@/components/PageBanner";
 
-// 進化條件（新規則 — 雙主人 bond + 屬性門檻；孵化極簡）
-const STAGE_REQ = [
-  { stage: 0, name: "蛋",    attr: 0,  bond: 0,  hint: "剛送來的蛋，等你們第一次摸摸" },
-  { stage: 1, name: "幼體",  attr: 0,  bond: 0,  hint: "任一人餵 2 次即可破殼", minFeeds: 2 },
-  { stage: 2, name: "成型",  attr: 30, bond: 15, hint: "屬性 30+ 且雙方親密都 15+" },
-  { stage: 3, name: "傳說",  attr: 60, bond: 50, hint: "屬性 60+ 且雙方親密都 50+ (SSR 光暈)" },
-  { stage: 4, name: "神話",  attr: 85, bond: 80, hint: "屬性 85+ 且雙方親密都 80+ (畢生養成)" },
-];
+// 進化條件（v0.9.0：依 rarity 動態調整 attr 門檻，讓每隻寵都有機會進化到神話）
+function getStageReq(rarity: string | undefined) {
+  const cap = RARITY[resolveRarity(rarity as any)].attrCap;
+  const t2 = Math.round(cap * 0.30);
+  const t3 = Math.round(cap * 0.65);
+  const t4 = Math.round(cap * 0.90);
+  return [
+    { stage: 0, name: "蛋",    attr: 0,  bond: 0,  hint: "剛送來的蛋，等你們第一次摸摸" },
+    { stage: 1, name: "幼體",  attr: 0,  bond: 0,  hint: "任一人餵 2 次即可破殼", minFeeds: 2 },
+    { stage: 2, name: "成型",  attr: t2, bond: 15, hint: `屬性 ${t2}+ 且雙方親密都 15+` },
+    { stage: 3, name: "傳說",  attr: t3, bond: 50, hint: `屬性 ${t3}+ 且雙方親密都 50+ (SSR 光暈)` },
+    { stage: 4, name: "神話",  attr: t4, bond: 80, hint: `屬性 ${t4}+ 且雙方親密都 80+ (畢生養成)` },
+  ];
+}
 
 export default function PetPage() {
   const pet = useGame((s) => s.pet);
@@ -64,6 +70,7 @@ export default function PetPage() {
 
   const isMaxStage = pet.stage >= 4;
   const nextStageIdx = Math.min(4, pet.stage + 1);
+  const STAGE_REQ = getStageReq(pet.rarity);
   const nextReq = STAGE_REQ[nextStageIdx];
 
   // 下一階還差什麼
@@ -535,6 +542,7 @@ function ReqLine({ label, current, target, unit }: { label: string; current: num
 function StagePreviewModal({ currentStage, species, rarity, onClose }: { currentStage: 0 | 1 | 2 | 3 | 4; species?: import("@/lib/types").PetSpecies; rarity?: import("@/lib/types").PetGeneRarity; onClose: () => void }) {
   const sp = species ?? "nuzzle";
   const rr = rarity ?? "common";
+  const STAGE_REQ = getStageReq(rarity);
   return (
     <div
       className="fixed inset-0 z-50 overflow-y-auto overscroll-contain"

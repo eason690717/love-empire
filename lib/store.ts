@@ -1615,10 +1615,16 @@ export const useGame = create<State>()(
         //   stage 3 (傳說) — avg ≥ 60 且 兩人 bond 都 ≥ 50
         //   stage 4 (神話) — avg ≥ 85 且 兩人 bond 都 ≥ 80
         const bothBond = (min: number) => bondQueen >= min && bondPrince >= min;
+        // 進化門檻：依稀有度動態調整（v0.9.0 修正 R 稀有度永遠進不了神話的 bug）
+        // stage N 門檻 = rarity attrCap × [0, 0, 0.30, 0.65, 0.90]
+        const stageCap = PET_RARITY[resolvePetRarity(prev.rarity)].attrCap;
+        const threshold2 = Math.round(stageCap * 0.30);
+        const threshold3 = Math.round(stageCap * 0.65);
+        const threshold4 = Math.round(stageCap * 0.90);
         let nextStage: Pet["stage"] = prev.stage;
-        if (avg >= 85 && bothBond(80)) nextStage = 4;
-        else if (avg >= 60 && bothBond(50)) nextStage = 3;
-        else if (avg >= 30 && bothBond(15)) nextStage = 2;
+        if (avg >= threshold4 && bothBond(80)) nextStage = 4;
+        else if (avg >= threshold3 && bothBond(50)) nextStage = 3;
+        else if (avg >= threshold2 && bothBond(15)) nextStage = 2;
         else if (totalFeeds >= 2) nextStage = Math.max(nextStage, 1) as Pet["stage"];
         const nextPet: Pet = {
           ...prev,
