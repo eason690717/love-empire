@@ -8,6 +8,7 @@ import { RELATIONSHIP_LABELS } from "@/lib/types";
 import { TaskEditor } from "@/components/TaskEditor";
 import { RejectModal } from "@/components/RejectModal";
 import { PRESETS_COHABIT, PRESETS_NEARBY, PRESETS_LONGDISTANCE, PRESETS_MARRIED, PRESETS_ANY } from "@/lib/taskPresets";
+import { toast } from "@/components/Toast";
 
 /** 從「當前角色的視角」顯示任務方向 tag
  *  - 我要做（要執行並送審）→ 綠色「我做」
@@ -78,7 +79,11 @@ export default function TasksPage() {
   const pendingPartnerCount = reviewList.length;
 
   const handleSubmit = (id: string) => {
+    const t = tasks.find((x) => x.id === id);
+    if (!t) return;
+    if (remaining <= 0) { toast.error("今日送審上限已滿（10 次），明天再來"); return; }
     submitTask(id);
+    toast.success(`「${t.title}」已送出，等對方審核 ✨`);
     setJustSent(id);
     setTimeout(() => setJustSent(null), 2400);
   };
@@ -231,7 +236,7 @@ export default function TasksPage() {
                       </div>
                       <div className="mt-3 flex gap-2">
                         <button
-                          onClick={() => reviewSubmission(s.id, true)}
+                          onClick={() => { reviewSubmission(s.id, true); toast.success(`已准奏「${s.taskTitle}」 +${s.reward} 金`); }}
                           className="btn bg-empire-sky text-white px-4 py-1.5 text-sm flex-1"
                         >
                           准奏 ✓
@@ -257,7 +262,9 @@ export default function TasksPage() {
         <RejectModal
           taskTitle={rejectTarget.title}
           onConfirm={(reason) => {
+            const title = rejectTarget.title;
             reviewSubmission(rejectTarget.id, false, reason);
+            toast.info(`已駁回「${title}」`);
             setRejectTarget(null);
           }}
           onClose={() => setRejectTarget(null)}
