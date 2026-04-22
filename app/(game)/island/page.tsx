@@ -36,12 +36,12 @@ export default function IslandPage() {
 
   // 季節背景
   const currentSeason = season();
-  // 小窩室內背景：上半牆壁 (奶色) + 下半木地板
+  // 小窩室內背景：上半壁紙 + 下半木地板（多層合成 - v2.1 升級）
   const skyBg: Record<string, string> = {
-    spring: "linear-gradient(180deg, #fff4e4 0%, #fff9ec 55%, #d9b88a 60%, #b89268 100%)",
-    summer: "linear-gradient(180deg, #fef0dc 0%, #fff4e4 55%, #d4a878 60%, #b08558 100%)",
-    autumn: "linear-gradient(180deg, #ffe5c5 0%, #fff2da 55%, #c88a5a 60%, #a86d3a 100%)",
-    winter: "linear-gradient(180deg, #f0f4f8 0%, #fafcfe 55%, #c8a878 60%, #a08858 100%)",
+    spring: "linear-gradient(180deg, #fff4e4 0%, #ffeacc 55%, #c8966a 60%, #8b6846 100%)",
+    summer: "linear-gradient(180deg, #fef0dc 0%, #ffe3b8 55%, #b88658 60%, #7a5436 100%)",
+    autumn: "linear-gradient(180deg, #ffe5c5 0%, #ffd8a5 55%, #a87048 60%, #6e4828 100%)",
+    winter: "linear-gradient(180deg, #f0f4f8 0%, #e4eaf0 55%, #a88860 60%, #705c3c 100%)",
   };
   // 季節家飾：窗外景色/牆上掛飾
   const seasonFlora: Record<string, { emoji: string; positions: { x: number; y: number }[] }> = {
@@ -125,9 +125,37 @@ export default function IslandPage() {
 
       <div
         ref={islandRef}
-        className="relative w-full h-[440px] rounded-[28px] overflow-hidden border-[3px] border-white shadow-lift"
+        className="relative w-full h-[480px] rounded-[28px] overflow-hidden border-[3px] border-white shadow-lift"
         style={{ background: skyBg[currentSeason] }}
       >
+        {/* 壁紙圖案 overlay（上半牆） */}
+        <div
+          className="absolute left-0 right-0 pointer-events-none opacity-25"
+          style={{
+            top: 0, height: "55%",
+            backgroundImage: "radial-gradient(circle at 25% 35%, rgba(255,255,255,0.5) 2px, transparent 2.5px), radial-gradient(circle at 75% 65%, rgba(255,255,255,0.4) 1.5px, transparent 2px)",
+            backgroundSize: "40px 40px, 30px 30px",
+          }}
+        />
+        {/* 地板木紋（下半，真實木板感） */}
+        <div
+          className="absolute left-0 right-0 bottom-0 pointer-events-none"
+          style={{
+            top: "55%",
+            backgroundImage: "repeating-linear-gradient(90deg, rgba(30,15,5,0.18) 0 1px, transparent 1px 80px), repeating-linear-gradient(90deg, rgba(255,255,255,0.12) 0 2px, transparent 2px 80px), repeating-linear-gradient(180deg, rgba(30,15,5,0.08) 0 18px, transparent 18px 20px)",
+          }}
+        />
+        {/* 地板透視陰影（近深遠淺） */}
+        <div
+          className="absolute left-0 right-0 bottom-0 pointer-events-none"
+          style={{
+            top: "55%",
+            background: "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.2) 100%)",
+          }}
+        />
+        {/* 踢腳線（白色線條） */}
+        <div className="absolute left-0 right-0 h-[4px] pointer-events-none" style={{ top: "55%", background: "linear-gradient(90deg, rgba(0,0,0,0.2), rgba(0,0,0,0.35), rgba(0,0,0,0.2))", boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset" }} />
+
         {/* 格線 overlay（snap 開時顯示） */}
         {snapOn && (
           <div
@@ -139,32 +167,9 @@ export default function IslandPage() {
             }}
           />
         )}
-        {/* 牆面裝飾（上半） */}
-        <div className="absolute top-3 left-[25%] text-3xl opacity-80">🖼️</div>
-        <div className="absolute top-5 left-[75%] text-3xl opacity-80">🪞</div>
-        {/* 兩扇窗看出去的景色 */}
-        <div
-          className="absolute top-4 left-[8%] w-16 h-20 rounded-md border-4 border-empire-ink/20 shadow-inner flex items-center justify-center overflow-hidden"
-          style={{ background: "linear-gradient(180deg, #bfe3f9 0%, #d8eefd 60%, #e7f4d5 100%)" }}
-          title={`從窗口看出去 · ${currentSeason === "spring" ? "春" : currentSeason === "summer" ? "夏" : currentSeason === "autumn" ? "秋" : "冬"}`}
-        >
-          <span className="text-2xl">{seasonFlora[currentSeason].emoji}</span>
-        </div>
-        <div
-          className="absolute top-4 right-[8%] w-16 h-20 rounded-md border-4 border-empire-ink/20 shadow-inner flex items-center justify-center overflow-hidden"
-          style={{ background: "linear-gradient(180deg, #bfe3f9 0%, #d8eefd 60%, #e7f4d5 100%)" }}
-        >
-          <span className="text-2xl">{seasonFlora[currentSeason].emoji}</span>
-        </div>
-        {/* 牆面與地板交界線（踢腳線） */}
-        <div className="absolute left-0 right-0 h-[3px] bg-empire-ink/25" style={{ top: "55%" }} />
-        {/* 地板紋路 */}
-        <div
-          className="absolute left-0 right-0 bottom-0 top-[55%] pointer-events-none opacity-25"
-          style={{
-            backgroundImage: "repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 60px)",
-          }}
-        />
+
+        {/* 內建裝飾場景（v2.1 新）— 非互動美術佈景，給小窩真實感 */}
+        <RoomDecor season={currentSeason} flora={seasonFlora[currentSeason].emoji} />
 
         {/* NPC 訪客 */}
         <div
@@ -397,6 +402,121 @@ function ShopByRoom({ couple, buyIslandItem }: { couple: any; buyIslandItem: any
         <p className="text-center text-sm text-empire-mute py-6">這個房間還沒有家具</p>
       )}
     </div>
+  );
+}
+
+// ============================================================
+// 小窩內建美術佈景（v2.1）— 非互動，給空間層次與真實感
+// ============================================================
+function RoomDecor({ season, flora }: { season: string; flora: string }) {
+  return (
+    <>
+      {/* 窗戶 L — 明亮的雙扉框 */}
+      <div
+        className="absolute w-[86px] h-[102px] rounded-md shadow-inner z-[1]"
+        style={{
+          top: "8%", left: "6%",
+          background: "linear-gradient(180deg, #bfe3f9 0%, #e8f4fd 55%, #fbe8d4 100%)",
+          border: "5px solid rgba(60,40,30,0.55)",
+          boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.6), 0 3px 8px rgba(0,0,0,0.15)",
+        }}
+      >
+        {/* 窗框十字 */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-[rgba(60,40,30,0.55)]" />
+        <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-[rgba(60,40,30,0.55)]" />
+        <div className="absolute left-0 right-0 text-center text-2xl select-none pointer-events-none" style={{ bottom: 8 }}>{flora}</div>
+      </div>
+      {/* 窗戶 R */}
+      <div
+        className="absolute w-[86px] h-[102px] rounded-md shadow-inner z-[1]"
+        style={{
+          top: "8%", right: "6%",
+          background: "linear-gradient(180deg, #bfe3f9 0%, #e8f4fd 55%, #fbe8d4 100%)",
+          border: "5px solid rgba(60,40,30,0.55)",
+          boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.6), 0 3px 8px rgba(0,0,0,0.15)",
+        }}
+      >
+        <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-[rgba(60,40,30,0.55)]" />
+        <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-[rgba(60,40,30,0.55)]" />
+        <div className="absolute left-0 right-0 text-center text-2xl select-none pointer-events-none" style={{ bottom: 8 }}>{flora}</div>
+      </div>
+
+      {/* 窗簾（左右兩片） */}
+      <div className="absolute z-[1] pointer-events-none" style={{ top: "6%", left: "3%", width: "26px", height: "118px", background: "linear-gradient(180deg, #ff8eae, #e6729a)", borderRadius: "0 6px 12px 0", boxShadow: "2px 0 6px rgba(0,0,0,0.15)" }} />
+      <div className="absolute z-[1] pointer-events-none" style={{ top: "6%", right: "3%", width: "26px", height: "118px", background: "linear-gradient(180deg, #ff8eae, #e6729a)", borderRadius: "6px 0 0 12px", boxShadow: "-2px 0 6px rgba(0,0,0,0.15)" }} />
+
+      {/* 吊燈（天花板下垂） */}
+      <div className="absolute left-1/2 -translate-x-1/2 z-[1]" style={{ top: "0%" }}>
+        <div className="w-[2px] h-[22px] bg-[rgba(60,40,30,0.6)] mx-auto" />
+        <div className="w-[36px] h-[18px] rounded-b-full -mt-[2px]" style={{ background: "radial-gradient(ellipse at top, #fff5c8 10%, #ffd76a 60%, #c89628 100%)", boxShadow: "0 12px 24px rgba(255,215,106,0.5), 0 0 24px rgba(255,215,106,0.35)" }} />
+      </div>
+
+      {/* 牆上掛畫（一張大一張小） */}
+      <div className="absolute z-[1] pointer-events-none" style={{ top: "10%", left: "35%", width: "54px", height: "42px", background: "linear-gradient(135deg, #ffd1dc, #ffeaa7)", border: "3px solid #3a2a1a", borderRadius: "3px", boxShadow: "0 3px 6px rgba(0,0,0,0.25)" }}>
+        <div className="w-full h-full flex items-center justify-center text-lg">💞</div>
+      </div>
+      <div className="absolute z-[1] pointer-events-none" style={{ top: "14%", left: "58%", width: "38px", height: "38px", background: "linear-gradient(135deg, #c8f0d0, #a4d8f4)", border: "3px solid #3a2a1a", borderRadius: "50%", boxShadow: "0 3px 6px rgba(0,0,0,0.25)" }}>
+        <div className="w-full h-full flex items-center justify-center text-base">🌿</div>
+      </div>
+
+      {/* 左區：沙發（客廳） */}
+      <div className="absolute z-[2] pointer-events-none" style={{ left: "5%", top: "62%", width: "140px", height: "70px" }}>
+        {/* 靠背 */}
+        <div className="absolute left-0 right-0 top-0 h-[32px] rounded-t-xl" style={{ background: "linear-gradient(180deg, #ff9fb5, #ee7591)", boxShadow: "inset 0 -4px 0 rgba(0,0,0,0.12), 0 4px 6px rgba(0,0,0,0.15)" }} />
+        {/* 坐墊 */}
+        <div className="absolute left-0 right-0 top-[28px] h-[28px] rounded-lg" style={{ background: "linear-gradient(180deg, #ffb8c8, #f28fa4)", boxShadow: "inset 0 -3px 0 rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.2)" }} />
+        {/* 扶手 */}
+        <div className="absolute left-0 top-[8px] w-[18px] h-[54px] rounded-lg" style={{ background: "#e67591", boxShadow: "0 3px 6px rgba(0,0,0,0.2)" }} />
+        <div className="absolute right-0 top-[8px] w-[18px] h-[54px] rounded-lg" style={{ background: "#e67591", boxShadow: "0 3px 6px rgba(0,0,0,0.2)" }} />
+        {/* 抱枕 */}
+        <div className="absolute left-[24px] top-[20px] w-[20px] h-[18px] rounded" style={{ background: "#fff5c8", boxShadow: "0 2px 3px rgba(0,0,0,0.2)" }} />
+        <div className="absolute right-[24px] top-[20px] w-[20px] h-[18px] rounded" style={{ background: "#c8f0d0", boxShadow: "0 2px 3px rgba(0,0,0,0.2)" }} />
+      </div>
+
+      {/* 中間：地毯 */}
+      <div className="absolute z-[1] pointer-events-none" style={{ left: "32%", top: "75%", width: "36%", height: "70px", borderRadius: "50%", background: "radial-gradient(ellipse, rgba(255,175,200,0.65), rgba(255,175,200,0.2) 70%, transparent 85%)", transform: "scaleY(0.6)" }} />
+      <div className="absolute z-[1] pointer-events-none" style={{ left: "36%", top: "77%", width: "28%", height: "56px", borderRadius: "50%", border: "3px dashed rgba(255,255,255,0.8)", transform: "scaleY(0.6)" }} />
+
+      {/* 茶几（地毯上面） */}
+      <div className="absolute z-[2] pointer-events-none" style={{ left: "40%", top: "74%", width: "80px", height: "30px" }}>
+        <div className="absolute inset-0 rounded-md" style={{ background: "linear-gradient(180deg, #d4a878 0%, #a87848 100%)", boxShadow: "0 6px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3)" }} />
+        {/* 桌腳 */}
+        <div className="absolute left-[4px] bottom-[-10px] w-[6px] h-[12px]" style={{ background: "#704830" }} />
+        <div className="absolute right-[4px] bottom-[-10px] w-[6px] h-[12px]" style={{ background: "#704830" }} />
+        {/* 桌上的小物 */}
+        <div className="absolute left-[12px] top-[-8px] text-sm">☕</div>
+        <div className="absolute right-[16px] top-[-10px] text-sm">📖</div>
+      </div>
+
+      {/* 右區：床（臥室） */}
+      <div className="absolute z-[2] pointer-events-none" style={{ right: "5%", top: "58%", width: "140px", height: "82px" }}>
+        {/* 床頭板 */}
+        <div className="absolute left-0 top-0 bottom-0 w-[18px] rounded-l-xl" style={{ background: "linear-gradient(90deg, #9b7858, #7a5c42)", boxShadow: "2px 2px 6px rgba(0,0,0,0.2)" }} />
+        {/* 床墊 */}
+        <div className="absolute left-[16px] top-[14px] right-0 h-[32px] rounded" style={{ background: "linear-gradient(180deg, #fff9e6, #f5ebd0)", boxShadow: "0 3px 6px rgba(0,0,0,0.2)" }} />
+        {/* 被子（粉色大波浪） */}
+        <div className="absolute left-[20px] top-[24px] right-[6px] h-[44px] rounded-xl" style={{ background: "linear-gradient(180deg, #ffcbe0, #f2a6c5 60%, #e88aaa)", boxShadow: "0 6px 10px rgba(0,0,0,0.22), inset 0 2px 0 rgba(255,255,255,0.4)" }} />
+        {/* 枕頭 */}
+        <div className="absolute left-[20px] top-[16px] w-[44px] h-[16px] rounded-full" style={{ background: "#ffffff", boxShadow: "0 2px 4px rgba(0,0,0,0.15)" }} />
+        {/* 心心 logo */}
+        <div className="absolute right-[22px] bottom-[12px] text-base">💕</div>
+      </div>
+
+      {/* 床頭櫃 + 檯燈 */}
+      <div className="absolute z-[2] pointer-events-none" style={{ right: "40%", top: "60%", width: "30px", height: "38px", background: "linear-gradient(180deg, #b8906c 0%, #8a6848 100%)", borderRadius: "3px", boxShadow: "0 4px 8px rgba(0,0,0,0.25)" }}>
+        <div className="absolute -top-[16px] left-1/2 -translate-x-1/2 text-base">💡</div>
+      </div>
+
+      {/* 盆栽（客廳邊） */}
+      <div className="absolute z-[2] pointer-events-none text-4xl" style={{ left: "26%", top: "68%", filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.3))" }}>
+        🪴
+      </div>
+
+      {/* 書架 + 植物（牆角） */}
+      <div className="absolute z-[1] pointer-events-none" style={{ left: "22%", top: "40%", width: "16px", height: "30px", background: "linear-gradient(180deg, #9b7858, #7a5c42)", borderRadius: "2px" }}>
+        <div className="absolute -top-[10px] left-1/2 -translate-x-1/2 text-xs">🌿</div>
+      </div>
+    </>
   );
 }
 

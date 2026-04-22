@@ -9,7 +9,7 @@
  *
  * 格式：major.minor.patch（semver）· 日期標籤（YYYY-MM-DD）
  */
-export const APP_VERSION = "2.0.0";
+export const APP_VERSION = "2.1.0";
 export const BUILD_DATE = "2026-04-20";
 export const VERSION_LABEL = `v${APP_VERSION} · ${BUILD_DATE}`;
 export const VERSION_CHANNEL = "公測";
