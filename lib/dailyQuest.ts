@@ -107,11 +107,11 @@ export function generateDailyQuests(
   return [pick(easy), pick(medium), pick(hard)].filter(Boolean);
 }
 
-/** 全 3 quest 完成的 combo 獎勵 */
+/** 全 3 quest 完成的 combo 獎勵（v2.3 經濟平衡微調：100→150 coins，+50% 對沖後期 MIT 通膨） */
 export const COMBO_REWARD = {
-  coins: 100,
-  loveXp: 30,
-  petXp: 20,
+  coins: 150,
+  loveXp: 40,
+  petXp: 25,
   memoryCardChance: 0.3, // 30% 掉 N/R 記憶卡
 };
 
