@@ -1,10 +1,12 @@
 /**
- * 深度問答題庫 — 610 題，17 分類（目標擴至 999）
- *   q001-q200: 原 10 類 × 20 題
- *   q201-q400: 深度對談 3 子類 (listening / unsaid / shared)
- *   q401-q410: 遊戲感互動題 (choice / timed / roleplay / relay / gesture)
- *   q411-q610: 4 大靈魂拷問篇（v1.8 擴充，使用者靈感）
- *     · devotion 心動偏愛 50 / scars 脆弱傷痕 50 / tolerance 矛盾包容 50 / commitment 未來承諾 50
+ * 深度問答題庫 — **999 題** · 17 分類 · 3 深度 · 6 題型
+ *   q001-q200: 原 10 類 × 20 題（v0 基礎）
+ *   q201-q400: 深度對談 3 子類 listening / unsaid / shared
+ *   q401-q410: 遊戲感互動題 choice / timed / roleplay / relay / gesture
+ *   q411-q610: 4 大靈魂拷問篇（v1.8）devotion / scars / tolerance / commitment 各 50
+ *   q611-q810: Part 2 擴充（v1.9）4 新類 +25 / 既有類補 100
+ *   q811-q999: Part 3 最終（v2.0）4 新類 +80 / 既有類 +105 / 結尾 4 題大師精選
+ *   q999: 「你覺得我們這段感情還有什麼沒做過？」收尾題
  * 參考：36 Questions That Lead to Love (Arthur Aron) · Gottman Love Map ·
  *      Esther Perel · 結合台灣情侶文化適度調整
  */
@@ -968,6 +970,232 @@ export const QUESTIONS: Question[] = [
   { id: "q808", category: "listening", depth: "deep",   text: "有沒有一個你講過的故事，我聽完後你希望我記得？" },
   { id: "q809", category: "listening", depth: "medium", text: "你最希望我用什麼方式「證明」我真的聽懂？" },
   { id: "q810", category: "listening", depth: "deep",   featured: true, text: "你最希望我在你說完話後問什麼問題？" },
+
+  // ============================================================
+  // v2.0 Part 3 最終擴充 +189 題（810 → 999）
+  // 跨分類補強 + 新情境題型
+  // ============================================================
+
+  // devotion +20（q811-q830）
+  { id: "q811", category: "devotion", depth: "medium", text: "你會為了我戒掉什麼習慣？不是為了健康、是為了我開心。" },
+  { id: "q812", category: "devotion", depth: "deep",   text: "你覺得愛我讓你變成更好的自己嗎？哪一部分進步最多？" },
+  { id: "q813", category: "devotion", depth: "light",  text: "我讓你笑出來最大聲的一次是哪個場景？" },
+  { id: "q814", category: "devotion", depth: "medium", text: "你覺得你最擅長愛我的方式是什麼？" },
+  { id: "q815", category: "devotion", depth: "deep",   text: "你有沒有一瞬間覺得「愛這個人 = 愛自己」的感覺？" },
+  { id: "q816", category: "devotion", depth: "light",  text: "你最珍惜我送你的一個禮物是什麼？" },
+  { id: "q817", category: "devotion", depth: "medium", text: "你有沒有藏過我留給你的一張小紙條？" },
+  { id: "q818", category: "devotion", depth: "deep",   text: "你心裡有沒有一個「只有我知道的 TA」？" },
+  { id: "q819", category: "devotion", depth: "medium", text: "你最想帶我見哪位朋友？為什麼是那個？" },
+  { id: "q820", category: "devotion", depth: "light",  text: "如果能錄下我 5 秒聲音當鬧鐘，你要哪句？" },
+  { id: "q821", category: "devotion", depth: "deep",   text: "你覺得我最能安慰你的一個動作是什麼？" },
+  { id: "q822", category: "devotion", depth: "medium", text: "如果我要離家旅行 3 天，你最希望我帶回什麼？" },
+  { id: "q823", category: "devotion", depth: "light",  text: "你最喜歡我給你的哪個綽號？" },
+  { id: "q824", category: "devotion", depth: "deep",   text: "你有沒有一首詩 / 歌詞讓你想到我的？" },
+  { id: "q825", category: "devotion", depth: "medium", text: "你最想跟我一起珍藏的一種氣味？" },
+  { id: "q826", category: "devotion", depth: "light",  text: "你最想跟我一起發明什麼？" },
+  { id: "q827", category: "devotion", depth: "deep",   text: "你最近一次覺得「好在有你」是什麼時候？" },
+  { id: "q828", category: "devotion", depth: "medium", text: "你覺得我哪一個優點被低估了？" },
+  { id: "q829", category: "devotion", depth: "light",  text: "你最想在我哪裡輕輕親一下？" },
+  { id: "q830", category: "devotion", depth: "deep",   text: "你最害怕失去我哪一個小動作？" },
+
+  // scars +20（q831-q850）
+  { id: "q831", category: "scars", depth: "medium", text: "你最難開口跟我說「我需要你」的時候是什麼？" },
+  { id: "q832", category: "scars", depth: "deep",   text: "你有沒有一個夢，反覆做很多年？" },
+  { id: "q833", category: "scars", depth: "medium", text: "你受傷時最不想被誰看到？" },
+  { id: "q834", category: "scars", depth: "deep",   text: "你心裡有沒有一個「沒有被好好愛過的小孩」？" },
+  { id: "q835", category: "scars", depth: "medium", text: "你最怕我怎麼對你？（哪怕你相信我不會）" },
+  { id: "q836", category: "scars", depth: "deep",   text: "你最痛的一次「不被理解」發生在哪？" },
+  { id: "q837", category: "scars", depth: "medium", text: "你一個人時最常哭的原因？" },
+  { id: "q838", category: "scars", depth: "deep",   text: "你有沒有一件事 — 跟我在一起後才敢面對的？" },
+  { id: "q839", category: "scars", depth: "medium", text: "你覺得自己最容易被什麼事擊垮？" },
+  { id: "q840", category: "scars", depth: "deep",   text: "你心裡有沒有一個「還沒放下的遺憾」？" },
+  { id: "q841", category: "scars", depth: "medium", text: "你有沒有「故作堅強」到連自己都信了的時候？" },
+  { id: "q842", category: "scars", depth: "deep",   text: "你最不想承認的一個自己的樣子是什麼？" },
+  { id: "q843", category: "scars", depth: "medium", text: "你覺得你最需要療癒的一個部分是？" },
+  { id: "q844", category: "scars", depth: "deep",   text: "你最想對過去某個版本的自己說什麼？" },
+  { id: "q845", category: "scars", depth: "medium", text: "你小時候最常躲在哪裡哭？" },
+  { id: "q846", category: "scars", depth: "deep",   text: "你有沒有一個到現在還無法原諒自己的錯？" },
+  { id: "q847", category: "scars", depth: "medium", text: "你曾經因為什麼事「突然就長大了」？" },
+  { id: "q848", category: "scars", depth: "deep",   text: "你最不想讓我看見的眼淚是為什麼流的？" },
+  { id: "q849", category: "scars", depth: "medium", text: "你有沒有一個「我總是輸」的感覺？輸給誰？" },
+  { id: "q850", category: "scars", depth: "deep",   featured: true, text: "你最希望我在你最脆弱時說什麼？就一句。" },
+
+  // tolerance +20（q851-q870）
+  { id: "q851", category: "tolerance", depth: "medium", text: "你最希望我對你的家人怎麼做？我目前做到了嗎？" },
+  { id: "q852", category: "tolerance", depth: "deep",   text: "你有沒有把我當成「出氣筒」的時候？那時候真正煩的是什麼？" },
+  { id: "q853", category: "tolerance", depth: "medium", text: "你覺得我哪一種沉默讓你最不安？" },
+  { id: "q854", category: "tolerance", depth: "deep",   text: "你最難原諒自己的一次「對我不好」是什麼？" },
+  { id: "q855", category: "tolerance", depth: "medium", text: "你希望我怎麼處理「想獨處」這個需求？" },
+  { id: "q856", category: "tolerance", depth: "deep",   text: "你有沒有一種「你沒變，但我們關係變了」的感覺？" },
+  { id: "q857", category: "tolerance", depth: "medium", text: "你最不希望在朋友面前被我怎麼對待？" },
+  { id: "q858", category: "tolerance", depth: "deep",   text: "你心裡有一個「如果這件事發生我絕對要溝通」的警報線？" },
+  { id: "q859", category: "tolerance", depth: "medium", text: "你覺得我最需要被溫柔對待的時刻是什麼？" },
+  { id: "q860", category: "tolerance", depth: "deep",   text: "你曾經「忍到最後忍不下去」的一次是什麼？我該警覺什麼？" },
+  { id: "q861", category: "tolerance", depth: "medium", text: "你希望我怎麼「接住你」的情緒？不評論那種？" },
+  { id: "q862", category: "tolerance", depth: "deep",   text: "你覺得我最不公平的待你是什麼事？" },
+  { id: "q863", category: "tolerance", depth: "medium", text: "你什麼時候最容易對我失去耐性？" },
+  { id: "q864", category: "tolerance", depth: "deep",   text: "你有沒有一個「為了不讓你擔心，所以騙你」的時候？" },
+  { id: "q865", category: "tolerance", depth: "medium", text: "你覺得我有哪一種情緒反應讓你最無能為力？" },
+  { id: "q866", category: "tolerance", depth: "deep",   text: "你認為我們的關係最強韌的是哪個品質？" },
+  { id: "q867", category: "tolerance", depth: "medium", text: "你覺得我們最需要改的一個溝通模式是什麼？" },
+  { id: "q868", category: "tolerance", depth: "deep",   text: "你有沒有覺得「我不想讓他做我，但他為我做了」的感謝？" },
+  { id: "q869", category: "tolerance", depth: "medium", text: "你希望我在哪種時刻「不要解釋、先擁抱」？" },
+  { id: "q870", category: "tolerance", depth: "deep",   text: "你心裡的「愛到底是什麼」隨著我們的關係改變過嗎？" },
+
+  // commitment +20（q871-q890）
+  { id: "q871", category: "commitment", depth: "medium", text: "你希望我們的老房子裡有一個什麼「傳家」的物品？" },
+  { id: "q872", category: "commitment", depth: "deep",   text: "你想不想 60 歲時我們一起做一件「叛逆的」事？" },
+  { id: "q873", category: "commitment", depth: "medium", text: "你希望我們每隔 10 年做一次什麼大事？（旅行 / 搬家 / 學習）" },
+  { id: "q874", category: "commitment", depth: "deep",   text: "你最希望我們 20 年後還在一起的理由是什麼？" },
+  { id: "q875", category: "commitment", depth: "medium", text: "你希望我們未來的家有什麼氣味？" },
+  { id: "q876", category: "commitment", depth: "deep",   text: "如果我們經濟崩潰，你最想跟我一起做什麼事補回來？" },
+  { id: "q877", category: "commitment", depth: "medium", text: "你希望我在我們小孩心中是什麼樣的角色？" },
+  { id: "q878", category: "commitment", depth: "deep",   text: "你有沒有想過我們家的「家訓」？你會寫什麼？" },
+  { id: "q879", category: "commitment", depth: "medium", text: "你希望我陪你走完的下一個夢想是哪個？" },
+  { id: "q880", category: "commitment", depth: "deep",   text: "你覺得我們這段關係最需要守護的是什麼？" },
+  { id: "q881", category: "commitment", depth: "medium", text: "你希望我們年輕時存下來什麼樣的回憶，老了可以拿出來看？" },
+  { id: "q882", category: "commitment", depth: "deep",   text: "你認為什麼是「一直愛下去」？那個承諾是行動還是感情？" },
+  { id: "q883", category: "commitment", depth: "medium", text: "你希望我們每一年有一個「共同的小冒險」嗎？" },
+  { id: "q884", category: "commitment", depth: "deep",   text: "你最希望 50 歲時我怎麼叫你？寶貝、老婆（公）、本名、暱稱？" },
+  { id: "q885", category: "commitment", depth: "medium", text: "你希望我們最後的家擺在哪一個城市 / 國家？" },
+  { id: "q886", category: "commitment", depth: "deep",   text: "如果要用一個畫面代表我們的「一生」，會是什麼？" },
+  { id: "q887", category: "commitment", depth: "medium", text: "你想不想為我們的未來取一個「目標編號」？例如「任務 2050」？" },
+  { id: "q888", category: "commitment", depth: "deep",   text: "你覺得我們最該永遠保留的「年輕的樣子」是哪部分？" },
+  { id: "q889", category: "commitment", depth: "medium", text: "你會不會擔心我們以後變成「三餐沒話講」的夫妻？怎麼預防？" },
+  { id: "q890", category: "commitment", depth: "deep",   featured: true, text: "你想像過我們 80 歲一起坐在哪裡嗎？描述那個畫面。" },
+
+  // listening +10
+  { id: "q891", category: "listening", depth: "deep", text: "你希望我什麼時候主動問「你還好嗎」？" },
+  { id: "q892", category: "listening", depth: "medium", text: "我講哪類話題你常會走神？怎麼改進？" },
+  { id: "q893", category: "listening", depth: "deep", text: "你有沒有覺得我「聽但沒在聽」的時候？那是什麼樣子？" },
+  { id: "q894", category: "listening", depth: "medium", text: "你覺得被聽見比被理解重要嗎？" },
+  { id: "q895", category: "listening", depth: "deep", text: "我什麼時候讓你感到「終於有人懂了」？" },
+  { id: "q896", category: "listening", depth: "medium", text: "你希望我在你說話時的眼神是什麼樣？" },
+  { id: "q897", category: "listening", depth: "deep", text: "你覺得我哪次聆聽讓你想起某個久違的人？" },
+  { id: "q898", category: "listening", depth: "medium", text: "你希望我在你抱怨時回應還是靜聽？" },
+  { id: "q899", category: "listening", depth: "deep", text: "你最不想被我怎樣打斷？" },
+  { id: "q900", category: "listening", depth: "deep", featured: true, text: "如果你說完一段長話，你最想聽到我說什麼？" },
+
+  // unsaid +10
+  { id: "q901", category: "unsaid", depth: "deep", text: "你心裡有沒有一句「想了三天沒說」的話？" },
+  { id: "q902", category: "unsaid", depth: "medium", text: "你最不敢開口問我的一個問題是？" },
+  { id: "q903", category: "unsaid", depth: "deep", text: "如果今晚什麼都可以講，你會開哪個話題？" },
+  { id: "q904", category: "unsaid", depth: "medium", text: "你有沒有一個「只給我看的感動」是我從沒發現的？" },
+  { id: "q905", category: "unsaid", depth: "deep", text: "你最想讓我知道的一個「我沒說出口的愛」是什麼？" },
+  { id: "q906", category: "unsaid", depth: "medium", text: "你心裡藏著一個什麼樣的「怕被拒絕」的請求？" },
+  { id: "q907", category: "unsaid", depth: "deep", text: "你對我的哪個期待，怕說出來就失去？" },
+  { id: "q908", category: "unsaid", depth: "medium", text: "有沒有一句讚美，你一直想對我說但覺得怪？" },
+  { id: "q909", category: "unsaid", depth: "deep", text: "你最想對我坦承的一件「我以為你不知道」？" },
+  { id: "q910", category: "unsaid", depth: "deep", featured: true, text: "你最希望我讀懂你的一個眼神？那個眼神代表什麼？" },
+
+  // shared +10
+  { id: "q911", category: "shared", depth: "medium", text: "我們最想一起寫下來的一個記憶是什麼？" },
+  { id: "q912", category: "shared", depth: "deep", text: "你希望我們共同記錄什麼？日記、照片、錄音？" },
+  { id: "q913", category: "shared", depth: "medium", text: "我們有什麼只有兩個人懂的梗？舉 3 個。" },
+  { id: "q914", category: "shared", depth: "deep", text: "你最希望我們一起拼完的「大拼圖」是什麼？" },
+  { id: "q915", category: "shared", depth: "medium", text: "我們的「第一次」最值得紀念的是哪次？" },
+  { id: "q916", category: "shared", depth: "deep", text: "你最想我們合寫的一段文字是什麼？" },
+  { id: "q917", category: "shared", depth: "medium", text: "我們最想每年都重做一次的一件事？" },
+  { id: "q918", category: "shared", depth: "deep", text: "你希望我們的故事被寫成書的第一句話？" },
+  { id: "q919", category: "shared", depth: "medium", text: "你最想保留我們哪次對話當成手稿？" },
+  { id: "q920", category: "shared", depth: "deep", featured: true, text: "如果要給我們這段關係取一個書名，你會叫它什麼？" },
+
+  // humor +10
+  { id: "q921", category: "humor", depth: "light", text: "如果我們開 podcast，節目名是什麼？" },
+  { id: "q922", category: "humor", depth: "light", text: "我們最有默契的一個「同時說出同一句」時刻？" },
+  { id: "q923", category: "humor", depth: "light", text: "你最常幫我取的綽號是什麼？" },
+  { id: "q924", category: "humor", depth: "light", text: "我們如果一起開店，賣什麼最可能爆紅？" },
+  { id: "q925", category: "humor", depth: "light", text: "你最想在我臉上看到的一種表情是？" },
+  { id: "q926", category: "humor", depth: "light", text: "我們變成 Line 貼圖你會設計什麼 pose？" },
+  { id: "q927", category: "humor", depth: "light", text: "如果要我們演夫妻檔綜藝，我是搞笑還是吐槽？" },
+  { id: "q928", category: "humor", depth: "light", text: "你最怕我哪次無厘頭的問題？" },
+  { id: "q929", category: "humor", depth: "light", text: "你覺得我們最「不搭但偏偏配的起來」的特點是什麼？" },
+  { id: "q930", category: "humor", depth: "light", text: "我們吵起來是鬥嘴演出還是真的在吵？" },
+
+  // romance +10
+  { id: "q931", category: "romance", depth: "medium", text: "你覺得我們最浪漫的一次夜晚是哪個？" },
+  { id: "q932", category: "romance", depth: "deep", text: "你最想跟我體驗的一種「不用說話的親密」？" },
+  { id: "q933", category: "romance", depth: "light", text: "我最適合的一個花名字？（花種 + 顏色）" },
+  { id: "q934", category: "romance", depth: "medium", text: "你會把哪一次約會寫進我們的備忘錄？" },
+  { id: "q935", category: "romance", depth: "deep", text: "你覺得我最像哪個季節？愛我哪個季節最深？" },
+  { id: "q936", category: "romance", depth: "medium", text: "你最想我們一起去看的一場演唱會？" },
+  { id: "q937", category: "romance", depth: "light", text: "你要我跟你做一個重複 20 年的浪漫小事？" },
+  { id: "q938", category: "romance", depth: "deep", text: "你最想要我為你寫一封什麼樣的信？" },
+  { id: "q939", category: "romance", depth: "medium", text: "你覺得我對你的愛更像火還是水？" },
+  { id: "q940", category: "romance", depth: "deep", text: "你最想跟我共度的一個「世界末日」畫面？" },
+
+  // intimacy +10
+  { id: "q941", category: "intimacy", depth: "deep", text: "你覺得我們最親密的一個瞬間是什麼？" },
+  { id: "q942", category: "intimacy", depth: "medium", text: "你最需要我在身體上如何照顧你？" },
+  { id: "q943", category: "intimacy", depth: "light", text: "你喜歡我牽你哪一隻手散步？" },
+  { id: "q944", category: "intimacy", depth: "deep", text: "你覺得我們擁抱時彼此最想說的一句話是什麼？" },
+  { id: "q945", category: "intimacy", depth: "medium", text: "你最喜歡我抱你的哪個姿勢？" },
+  { id: "q946", category: "intimacy", depth: "deep", text: "你有沒有一個「只有我能讓你放下戒備」的狀態？" },
+  { id: "q947", category: "intimacy", depth: "light", text: "你最喜歡我在你耳邊說什麼？" },
+  { id: "q948", category: "intimacy", depth: "medium", text: "你希望我怎麼吻你最舒服？" },
+  { id: "q949", category: "intimacy", depth: "deep", text: "你心中「被疼」的畫面是什麼樣子？" },
+  { id: "q950", category: "intimacy", depth: "medium", text: "你最希望我陪你做的一件「不用說話」的事？" },
+
+  // future +10
+  { id: "q951", category: "future", depth: "medium", text: "你想帶我去哪國度蜜月？" },
+  { id: "q952", category: "future", depth: "deep",   text: "你最想完成的一個「老後」夢想是什麼？" },
+  { id: "q953", category: "future", depth: "medium", text: "你希望我們的退休生活有一個「日常儀式」是什麼？" },
+  { id: "q954", category: "future", depth: "light",  text: "你最想未來每天都有什麼陪著你？" },
+  { id: "q955", category: "future", depth: "deep",   text: "你覺得 5 年後的我會變得怎樣？" },
+  { id: "q956", category: "future", depth: "medium", text: "你希望 10 年後我們的經濟狀態是什麼樣？" },
+  { id: "q957", category: "future", depth: "deep",   text: "你希望我們未來有個什麼樣的「小小傳承」？" },
+  { id: "q958", category: "future", depth: "medium", text: "你希望我們的第一年週年紀念做什麼？" },
+  { id: "q959", category: "future", depth: "deep",   text: "你未來最想每天起床看到的一個畫面？" },
+  { id: "q960", category: "future", depth: "medium", text: "你希望我們建立什麼「每年一次」的家族傳統？" },
+
+  // past +10
+  { id: "q961", category: "past", depth: "medium", text: "你有沒有一位童年朋友現在變成陌生人？" },
+  { id: "q962", category: "past", depth: "deep",   text: "你國小最尷尬的一次經驗？" },
+  { id: "q963", category: "past", depth: "light",  text: "你童年最愛的一本書 / 卡通？" },
+  { id: "q964", category: "past", depth: "medium", text: "你人生第一次心碎是怎麼回事？" },
+  { id: "q965", category: "past", depth: "deep",   text: "你曾經跟誰有過你最遺憾的一次爭吵？" },
+  { id: "q966", category: "past", depth: "light",  text: "你學生時期最代表你的一個物品？" },
+  { id: "q967", category: "past", depth: "medium", text: "你上大學時最大的迷惘是什麼？" },
+  { id: "q968", category: "past", depth: "deep",   text: "你有沒有一個「還好當年沒走的路」？" },
+  { id: "q969", category: "past", depth: "medium", text: "你 20 歲時最大的夢想是什麼？" },
+  { id: "q970", category: "past", depth: "deep",   text: "你最想刪除的一段人生經歷？" },
+
+  // family +10
+  { id: "q971", category: "family", depth: "medium", text: "你覺得你跟爸 / 媽誰比較像？" },
+  { id: "q972", category: "family", depth: "deep",   text: "你希望我們的家庭文化是什麼樣？" },
+  { id: "q973", category: "family", depth: "light",  text: "你家最常煮的一道菜？" },
+  { id: "q974", category: "family", depth: "medium", text: "你家過年必做的一件事？" },
+  { id: "q975", category: "family", depth: "deep",   text: "你跟兄弟姐妹最大的一次衝突是什麼？" },
+  { id: "q976", category: "family", depth: "medium", text: "你最希望爸 / 媽跟我說什麼？" },
+  { id: "q977", category: "family", depth: "deep",   text: "你最怕爸 / 媽變老的哪個瞬間？" },
+  { id: "q978", category: "family", depth: "light",  text: "你家最有特色的一個傳統？" },
+  { id: "q979", category: "family", depth: "medium", text: "你最敬佩家人的一件事？" },
+  { id: "q980", category: "family", depth: "deep",   text: "你最希望傳給孩子的家訓？" },
+
+  // prefs +10
+  { id: "q981", category: "prefs", depth: "light", text: "你最愛的一家餐廳？為什麼？" },
+  { id: "q982", category: "prefs", depth: "light", text: "你最不能沒有的家電？" },
+  { id: "q983", category: "prefs", depth: "light", text: "你最愛的一個應用程式？" },
+  { id: "q984", category: "prefs", depth: "medium", text: "你最不能接受的生活習慣？" },
+  { id: "q985", category: "prefs", depth: "light", text: "你最愛的一個 YouTuber / 創作者？" },
+  { id: "q986", category: "prefs", depth: "light", text: "你睡前最後做的事是？" },
+  { id: "q987", category: "prefs", depth: "medium", text: "你最愛的一本書？" },
+  { id: "q988", category: "prefs", depth: "light", text: "你最常聽的一首歌？" },
+  { id: "q989", category: "prefs", depth: "light", text: "你洗澡平均幾分鐘？" },
+  { id: "q990", category: "prefs", depth: "medium", text: "你最討厭的一種顏色？" },
+
+  // values +5
+  { id: "q991", category: "values", depth: "deep", text: "你覺得人生最大的罪惡是什麼？" },
+  { id: "q992", category: "values", depth: "medium", text: "你覺得善良和聰明，哪個更重要？" },
+  { id: "q993", category: "values", depth: "deep", text: "你會為了保護信念付出多少？" },
+  { id: "q994", category: "values", depth: "medium", text: "你覺得什麼值得付出一輩子？" },
+  { id: "q995", category: "values", depth: "deep", text: "你人生最重要的一個「是」是對什麼？" },
+
+  // 最後 4 題 — 整合題型 + 大師精選
+  { id: "q996", category: "commitment", depth: "deep",   featured: true, text: "如果此刻我們能交換一個「我想跟你做到 80 歲的事」，你會寫什麼？" },
+  { id: "q997", category: "listening",  depth: "deep",   featured: true, kind: "timed",    text: "30 秒倒數：一口氣講出你此刻最想說的三件事。不想 filter，直接說。" },
+  { id: "q998", category: "unsaid",     depth: "deep",   featured: true, kind: "roleplay", text: "扮演「10 年後的我們」—— 從今晚說起，講 10 年後的一段日常。" },
+  { id: "q999", category: "shared",     depth: "deep",   featured: true, text: "你覺得我們這段感情還有什麼沒做過？今天可以答「下一件要做的事」嗎？" },
 ];
 
 // ============================================================
