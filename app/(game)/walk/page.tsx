@@ -8,22 +8,21 @@ import { PetAvatar } from "@/components/art/PetAvatar";
 import { toast } from "@/components/Toast";
 import { loadWalkState, addSteps, startPedometer, type PedometerHandle } from "@/lib/walk";
 import { SPECIES, resolveSpecies } from "@/lib/pet/species";
+import { useLiff } from "@/components/LiffProvider";
 
 /**
  * /walk — 寵物散步系統（戶外互動）
  *
- * 三種記步方式：
- *  A. 現場散步 — DeviceMotion 粗估（app 前景才算，僅趣味）
- *  B. 手動輸入今日步數（誠實模式，伴侶雙簽監督）
- *  C. 互動事件 — 拾獲小物 / NPC 相遇 / 季節驚喜
+ * 記步方式：DeviceMotion 加速度計（LIFF + Web 通用）
+ * 之後反響好再用 Capacitor 接 HealthKit / Google Fit
  *
- * 每 1000 步 = 1 pet XP + 1 寶箱碎片（treasureFragments 未來接 /treasure）
+ * 每 1000 步 = 1 pet XP + 1 寶箱碎片
  */
 export default function WalkPage() {
   const pet = useGame((s) => s.pet);
+  const liff = useLiff();
   const [walkState, setWalkState] = useState(() => loadWalkState());
   const [pedometer, setPedometer] = useState<PedometerHandle | null>(null);
-  const [manualInput, setManualInput] = useState("");
 
   // 每 3 秒刷新狀態（pedometer tick）
   useEffect(() => {
@@ -55,20 +54,6 @@ export default function WalkPage() {
     setPedometer(null);
     setWalkState(loadWalkState());
     toast.success(`🏁 散步結束 · 今日 ${walkState.steps} 步`);
-  }
-
-  function submitManual() {
-    const n = parseInt(manualInput, 10);
-    if (!n || n < 0 || n > 20000) {
-      toast.error("請輸入 0-20000 的步數（今日累計）");
-      return;
-    }
-    const diff = n - walkState.steps;
-    if (diff <= 0) { toast.info("這個步數已經記過了"); return; }
-    const r = addSteps(diff, "manual");
-    setWalkState(r.newState);
-    setManualInput("");
-    toast.success(`✍️ +${diff} 步 · 寵物 +${r.xpEarned} XP`);
   }
 
   const sp = SPECIES[resolveSpecies(pet.species)];
@@ -123,45 +108,23 @@ export default function WalkPage() {
         </div>
       </div>
 
-      {/* 現場散步模式 */}
-      <div className="card p-4 space-y-2">
-        <h3 className="font-bold text-empire-ink text-sm flex items-center gap-1">🚶 現場散步模式</h3>
-        <p className="text-[11px] text-empire-mute leading-relaxed">
-          手機帶在身上即時記步（粗估 ±30%）。
-          要持續開著這個頁面才會算，切 app 或鎖螢幕就會停。
-          適合現場短程散步趣味用。
-        </p>
+      {/* 散步控制 */}
+      <div className="card p-5 space-y-3">
         {!pedometer ? (
-          <button onClick={startWalk} className="w-full py-2.5 rounded-full bg-gradient-to-r from-emerald-400 to-lime-400 text-white font-black shadow">
+          <button onClick={startWalk} className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-400 via-lime-400 to-amber-400 text-white font-black text-lg shadow-xl hover:shadow-2xl active:scale-95 transition">
             🚶 開始散步
           </button>
         ) : (
-          <button onClick={stopWalk} className="w-full py-2.5 rounded-full bg-rose-400 text-white font-black shadow animate-pulse">
-            🏁 結束散步（目前正在記步）
+          <button onClick={stopWalk} className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-400 text-white font-black text-lg shadow-xl animate-pulse">
+            🏁 結束散步（記步中）
           </button>
         )}
-      </div>
 
-      {/* 誠實手動模式 */}
-      <div className="card p-4 space-y-2">
-        <h3 className="font-bold text-empire-ink text-sm flex items-center gap-1">✍️ 誠實手動模式（推薦）</h3>
-        <p className="text-[11px] text-empire-mute leading-relaxed">
-          從手機健康 app（Apple 健康 / Google Fit / 小米運動）看今日累計步數，填入這裡。
-          伴侶可以看到你的記錄，互相信任。
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={manualInput}
-            onChange={(e) => setManualInput(e.target.value)}
-            placeholder={`今日步數（現有 ${walkState.steps}）`}
-            min={0}
-            max={20000}
-            className="flex-1 px-3 py-2 rounded-lg border-2 border-empire-cloud text-sm focus:outline-none focus:border-empire-sky"
-          />
-          <button onClick={submitManual} className="px-4 py-2 rounded-lg bg-empire-sky text-white font-bold text-sm">
-            更新
-          </button>
+        <div className="text-center text-[11px] text-empire-mute leading-relaxed">
+          {liff.inClient
+            ? <>💚 <b>LINE 內模式</b>：此頁面在 LINE 內持續運作，記步較穩定</>
+            : <>📱 <b>網頁模式</b>：把此頁面保持前景且不鎖屏，才會持續記步</>}
+          <br />帶著手機散步（放口袋 / 手上都可）
         </div>
       </div>
 
