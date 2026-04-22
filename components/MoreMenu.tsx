@@ -13,6 +13,7 @@ export function MoreMenu({ onClose }: { onClose: () => void }) {
       title: "寵物 & 成長", emoji: "🐾",
       items: [
         { href: "/pets",         emoji: "🐾", label: "寵物列表",   tint: "from-rose-100 to-orange-100" },
+        { href: "/walk",         emoji: "🚶", label: "帶寵散步",   tint: "from-emerald-100 to-lime-100" },
         { href: "/market",       emoji: "💞", label: "繁殖市集",   tint: "from-pink-100 to-rose-200" },
         { href: "/invite",       emoji: "💌", label: "情侶邀情侶", tint: "from-rose-100 to-pink-100" },
         { href: "/insights",     emoji: "📊", label: "關係儀表板", tint: "from-violet-100 to-purple-100" },
